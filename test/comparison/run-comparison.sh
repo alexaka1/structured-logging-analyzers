@@ -60,7 +60,8 @@ run_inspect() {
   local out_xml="$REPORTS_DIR/inspectcode-${label}.xml"
   local out_types="$REPORTS_DIR/inspectcode-${label}-issuetypes.xml"
   local log="$REPORTS_DIR/inspectcode-${label}.log"
-  echo "Running InspectCode ($label) via $jb"
+  # Progress goes to stderr so command substitution only captures the report path.
+  echo "Running InspectCode ($label) via $jb" >&2
   "$jb" inspectcode "$ROOT/test/comparison/ComparisonCorpus.sln" \
     -o="$out_xml" \
     -f=Xml \
