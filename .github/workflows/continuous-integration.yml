@@ -1,0 +1,58 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  MSBUILDDISABLENODEREUSE: '1'
+
+jobs:
+  test-pack-and-samples:
+    name: Test, pack, and build samples
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            10.0.x
+
+      - name: Test
+        run: dotnet test StructuredLogging.Roslyn.slnx -c Release
+
+      - name: Pack
+        run: dotnet pack pack/StructuredLogging.Package/Package.csproj -c Release -o artifacts
+
+      - name: Sample TFM matrix
+        run: |
+          dotnet build samples/Net10Example/Net10Example.csproj -c Release
+          dotnet build samples/NetStandard20Example/NetStandard20Example.csproj -c Release
+          dotnet build samples/Net472Example/Net472Example.csproj -c Release
+
+      - name: Upload nupkg
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nuget-package
+          path: artifacts/*.nupkg
+          if-no-files-found: error

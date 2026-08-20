@@ -1,0 +1,4 @@
+plugins/*
+!plugins/.gitkeep
+reports/*.xml
+reports/*.log
