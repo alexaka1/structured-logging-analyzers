@@ -5,7 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Serilog" Version="4.2.0" />
-    <ProjectReference Include="..\..\src\StructuredLogging.Analyzers\Analyzer.csproj"
+    <ProjectReference Include="..\..\src\Alexaka1.Analyzers.StructuredLogging\Analyzer.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>

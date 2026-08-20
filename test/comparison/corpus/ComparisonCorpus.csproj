@@ -20,7 +20,7 @@
     <None Include="PropertiesNamingAnalyzer_SerilogInvalidSyntax.cs" />
   </ItemGroup>
   <ItemGroup Condition="'$(EnableStructuredLoggingAnalyzers)' == 'true'">
-    <ProjectReference Include="..\..\..\src\StructuredLogging.Analyzers\Analyzer.csproj"
+    <ProjectReference Include="..\..\..\src\Alexaka1.Analyzers.StructuredLogging\Analyzer.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>

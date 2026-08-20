@@ -4,8 +4,8 @@ This document is the behavioral contract for the Roslyn analyzers. It maps
 each ReSharper inspection to a diagnostic, records preserved quirks, and
 lists intentional corrections.
 
-Diagnostic prefix: `SLA` (Structured Logging Analyzer).
-Package ID: `StructuredLogging.Analyzers`.
+Diagnostic prefix: `AASL` (`Alexaka1.Analyzers.StructuredLogging`).
+Package ID: `Alexaka1.Analyzers.StructuredLogging`.
 
 ## ReSharper CLI comparison
 
@@ -19,12 +19,12 @@ characterization corpus under `test/comparison/corpus`.
   it in the original comparison environment; the script falls back to
   InspectCode 2025.1.9 if the plugin does not load.
 - The upstream plugin unit tests omit
-  `TemplateIsNotCompileTimeConstantProblem`; Roslyn still reports `SLA0007`
+  `TemplateIsNotCompileTimeConstantProblem`; Roslyn still reports `AASL0007`
   on non-constant templates.
 - Elastic naming and ignored-property regex cases use ReSharper settings
   layers in the plugin. Default InspectCode/Roslyn comparison uses PascalCase
   with no ignore regex.
-- `SLA0011` highlights the trailing period; the plugin highlights the
+- `AASL0011` highlights the trailing period; the plugin highlights the
   whole literal. Comparison is by file and rule id, not span.
 
 See `test/comparison/README.md` and `test/comparison/reports/comparison.md`.
@@ -33,7 +33,7 @@ See `test/comparison/README.md` and `test/comparison/reports/comparison.md`.
 
 | Plugin feature | Roslyn equivalent |
 |---|---|
-| `// ReSharper disable once TemplateIsNotCompileTimeConstantProblem` | `#pragma warning disable SLA0007` or `.editorconfig` severity |
+| `// ReSharper disable once TemplateIsNotCompileTimeConstantProblem` | `#pragma warning disable AASL0007` or `.editorconfig` severity |
 | ReSharper options page | `.editorconfig` keys below |
 | Inspection wiki / PSI highlighting | Diagnostic descriptors and rule docs |
 | Live-template hotspots for interpolation conversion | Deterministic names; extra names as separate code actions |
@@ -42,7 +42,7 @@ See `test/comparison/README.md` and `test/comparison/reports/comparison.md`.
 
 ```editorconfig
 [*.cs]
-dotnet_diagnostic.SLA0001.severity = warning
+dotnet_diagnostic.AASL0001.severity = warning
 
 structured_logging_property_naming = pascal_case
 structured_logging_ignored_properties_regex =
@@ -66,13 +66,13 @@ plugin used source position after the template argument.
 ## Mixed templates
 
 **Preserved.** Templates that mix positional and named holes are treated as
-named templates. `SLA0008` is not reported for mixed templates.
+named templates. `AASL0008` is not reported for mixed templates.
 
 ## Non-constant templates
 
 **Preserved / combined pipeline.** Most template-parsing rules skip dynamic
-templates. Exception placement (`SLA0005`) still runs. The analyzer does not
-return early after `SLA0007`.
+templates. Exception placement (`AASL0005`) still runs. The analyzer does not
+return early after `AASL0007`.
 
 ## Complex-type classification
 
@@ -135,14 +135,14 @@ Code fixes map logical template offsets through:
 
 | Diagnostic | Fix | Notes |
 |---|---|---|
-| SLA0001, SLA0002 | Insert `@` after `{` | Full; Serilog-like invocations only |
-| SLA0008 | Rename positional hole | `[LoggerMessage]` when the remaining parameters match the holes |
-| SLA0009 | Rename hole to suggested name | Full; also `[LoggerMessage]` attribute strings |
-| SLA0010 | Replace `PushProperty` name | Full |
-| SLA0011 | Remove trailing `.` | Full; span is the period |
-| SLA0007 | Convert interpolation | Partial: deterministic names, no hotspots |
+| AASL0001, AASL0002 | Insert `@` after `{` | Full; Serilog-like invocations only |
+| AASL0008 | Rename positional hole | `[LoggerMessage]` when the remaining parameters match the holes |
+| AASL0009 | Rename hole to suggested name | Full; also `[LoggerMessage]` attribute strings |
+| AASL0010 | Replace `PushProperty` name | Full |
+| AASL0011 | Remove trailing `.` | Full; span is the period |
+| AASL0007 | Convert interpolation | Partial: deterministic names, no hotspots |
 
-No first-milestone fixes for SLA0003, SLA0004, SLA0005, or SLA0006.
+No first-milestone fixes for AASL0003, AASL0004, AASL0005, or AASL0006.
 
 ## Source-generated logging (`[LoggerMessage]`)
 
@@ -172,15 +172,15 @@ such as `{Value:E}` are preserved.
 
 | Rule | `[LoggerMessage]` / `Define` |
 |---|---|
-| SLA0006 duplicate properties | Apply (exact names; case-only duplicates are SYSLIB1021) |
-| SLA0008 positional properties | Apply; rename fix when parameters are unambiguous |
-| SLA0009 property naming | Apply |
-| SLA0011 trailing period | Apply |
-| SLA0001 / SLA0002 destructuring | **Not applied.** MEL templates do not accept Serilog `@`. |
-| SLA0004 contextual logger | Still applied to the containing type / injected `ILogger<T>` |
-| SLA0007 compile-time constant | Not applied to attribute arguments. Applied to `Define`/`DefineScope` when the format is not constant. |
-| SLA0005 exception placement | **Not applied.** Use SYSLIB1013 and related generator diagnostics. |
-| SLA0010 context properties | Not applicable |
+| AASL0006 duplicate properties | Apply (exact names; case-only duplicates are SYSLIB1021) |
+| AASL0008 positional properties | Apply; rename fix when parameters are unambiguous |
+| AASL0009 property naming | Apply |
+| AASL0011 trailing period | Apply |
+| AASL0001 / AASL0002 destructuring | **Not applied.** MEL templates do not accept Serilog `@`. |
+| AASL0004 contextual logger | Still applied to the containing type / injected `ILogger<T>` |
+| AASL0007 compile-time constant | Not applied to attribute arguments. Applied to `Define`/`DefineScope` when the format is not constant. |
+| AASL0005 exception placement | **Not applied.** Use SYSLIB1013 and related generator diagnostics. |
+| AASL0010 context properties | Not applicable |
 
 Holes that match the first logger, level, or exception parameter are skipped
 so they are not double-reported with SYSLIB1002 / 1013 / 1018.
@@ -197,76 +197,76 @@ package; see `docs/microsoft-recommendations.md`.
 
 | ID | ReSharper ID | Default | Message |
 |---|---|---|---|
-| SLA0001 | AnonymousObjectDestructuringProblem | Warning | Anonymous objects must be destructured |
-| SLA0002 | ComplexObjectDestructuringProblem | Warning | Complex objects with default ToString() implementation probably need to be destructured |
-| SLA0003 | ComplexObjectInContextDestructuringProblem | Warning | Complex objects with default ToString() implementation probably need to be destructured |
-| SLA0004 | ContextualLoggerProblem | Warning | Incorrect type is used for contextual logger |
-| SLA0005 | ExceptionPassedAsTemplateArgumentProblem | Warning | Exception should be passed to the exception argument |
-| SLA0006 | TemplateDuplicatePropertyProblem | Warning | Duplicate properties in message template |
-| SLA0007 | TemplateIsNotCompileTimeConstantProblem | Warning | Message template should be compile time constant |
-| SLA0008 | PositionalPropertyUsedProblem | Warning | Prefer named properties instead of positional ones |
-| SLA0009 | InconsistentLogPropertyNaming | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
-| SLA0010 | InconsistentContextLogPropertyNaming | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
-| SLA0011 | LogMessageIsSentenceProblem | Warning | Log event messages should be fragments, not sentences. Avoid a trailing period/full stop. |
+| AASL0001 | AnonymousObjectDestructuringProblem | Warning | Anonymous objects must be destructured |
+| AASL0002 | ComplexObjectDestructuringProblem | Warning | Complex objects with default ToString() implementation probably need to be destructured |
+| AASL0003 | ComplexObjectInContextDestructuringProblem | Warning | Complex objects with default ToString() implementation probably need to be destructured |
+| AASL0004 | ContextualLoggerProblem | Warning | Incorrect type is used for contextual logger |
+| AASL0005 | ExceptionPassedAsTemplateArgumentProblem | Warning | Exception should be passed to the exception argument |
+| AASL0006 | TemplateDuplicatePropertyProblem | Warning | Duplicate properties in message template |
+| AASL0007 | TemplateIsNotCompileTimeConstantProblem | Warning | Message template should be compile time constant |
+| AASL0008 | PositionalPropertyUsedProblem | Warning | Prefer named properties instead of positional ones |
+| AASL0009 | InconsistentLogPropertyNaming | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
+| AASL0010 | InconsistentContextLogPropertyNaming | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
+| AASL0011 | LogMessageIsSentenceProblem | Warning | Log event messages should be fragments, not sentences. Avoid a trailing period/full stop. |
 
-### SLA0001 Anonymous object must be destructured
+### AASL0001 Anonymous object must be destructured
 
 - Trigger: logging invocation whose template is constant; a later argument is an anonymous-object creation; the aligned named hole uses default destructuring.
 - Span: the hole in the template.
 - Exclusions: positional-only templates; non-constant templates; holes with `@` or `$`.
 
-### SLA0002 Complex object must be destructured
+### AASL0002 Complex object must be destructured
 
 - Trigger: aligned named hole with default destructuring whose argument needs destructuring.
 - Span: the hole.
 - Exclusions: stringify/destructure holes; types classified as adequate `ToString()`.
 
-### SLA0003 Complex object in log context
+### AASL0003 Complex object in log context
 
 - Trigger: `Serilog.Context.LogContext.PushProperty` with exactly two arguments and a value that needs destructuring.
 - Span: the invocation.
 - Exclusions: explicit `destructureObjects` argument present.
 
-### SLA0004 Contextual logger mismatch
+### AASL0004 Contextual logger mismatch
 
 - Trigger: constructor (including primary) parameter of type `ILogger<T>` where `T` is not the containing type; or `ILogger.ForContext<T>()` where `T` is not the containing type.
 - Span: the `ILogger<T>` type usage, or the `ForContext<T>()` invocation.
 
-### SLA0005 Exception passed as template argument
+### AASL0005 Exception passed as template argument
 
 - Trigger: an argument whose type is `Exception` or a subtype appears at or after the template argument, and an overload exists with an exception parameter before that argument index.
 - Span: the exception argument.
 - Preserved quirk: an exception *before* the template suppresses the diagnostic for later exceptions.
 
-### SLA0006 Duplicate template properties
+### AASL0006 Duplicate template properties
 
 - Trigger: two or more named holes with the same property name.
 - Span: each duplicate hole.
 - Exclusions: positional-only templates.
 
-### SLA0007 Template is not compile-time constant
+### AASL0007 Template is not compile-time constant
 
 - Trigger: the template argument's expression is not a compile-time constant.
 - Span: the template expression.
 - Other rules still run.
 
-### SLA0008 Positional properties
+### AASL0008 Positional properties
 
 - Trigger: every hole is positional.
 - Span: each positional hole.
 - Exclusions: mixed templates.
 
-### SLA0009 Template property naming
+### AASL0009 Template property naming
 
 - Trigger: named hole whose name does not match the configured convention and is not ignored by regex.
 - Span: the hole.
 
-### SLA0010 Context property naming
+### AASL0010 Context property naming
 
 - Trigger: `LogContext.PushProperty` with a constant name that does not match the convention.
 - Span: the name argument.
 
-### SLA0011 Message ends with a period
+### AASL0011 Message ends with a period
 
 - Trigger: last constant template fragment matches `(?<!\.)\.$`.
 - Span: the trailing period (more precise than the plugin's whole-literal span).

@@ -2,7 +2,7 @@
 
 using System.Xml.Linq;
 
-namespace StructuredLogging.Comparison;
+namespace Alexaka1.Analyzers.StructuredLogging.Comparison;
 
 public readonly record struct Finding(
     string Fixture,

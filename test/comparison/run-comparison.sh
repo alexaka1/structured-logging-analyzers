@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Compare marketplace ReSharper plugin (InspectCode) with StructuredLogging.Analyzers.
+# Compare marketplace ReSharper plugin (InspectCode) with Alexaka1.Analyzers.StructuredLogging.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
