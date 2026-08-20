@@ -16,7 +16,7 @@ public sealed class FrameworkInvocationTests
             {
                 void M(ILogger logger)
                 {
-                    logger.LogInformation("{|SLA0009:{myProperty}|}", 1);
+                    logger.LogInformation("{|AASL0009:{myProperty}|}", 1);
                 }
             }
             """);
@@ -31,7 +31,7 @@ public sealed class FrameworkInvocationTests
             {
                 void M(Logger logger)
                 {
-                    logger.Info("{|SLA0009:{myProperty}|}", 1);
+                    logger.Info("{|AASL0009:{myProperty}|}", 1);
                 }
             }
             """);
@@ -47,7 +47,7 @@ public sealed class FrameworkInvocationTests
             {
                 public A(ILogger<A> log)
                 {
-                    log.ZLogInformation("{|SLA0009:{myProperty}|}", 1);
+                    log.ZLogInformation("{|AASL0009:{myProperty}|}", 1);
                 }
             }
             """);
@@ -65,7 +65,7 @@ public sealed class FrameworkInvocationTests
 
                 static void M()
                 {
-                    Write("{|SLA0009:{myProperty}|}", 1);
+                    Write("{|AASL0009:{myProperty}|}", 1);
                 }
             }
 
@@ -87,8 +87,8 @@ public sealed class FrameworkInvocationTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information(messageTemplate: "{|SLA0002:{MyProperty}|}", new Random());
-                    Log.Logger.Information(propertyValues: new object[] { new Random() }, messageTemplate: "{|SLA0002:{MyProperty}|}");
+                    Log.Logger.Information(messageTemplate: "{|AASL0002:{MyProperty}|}", new Random());
+                    Log.Logger.Information(propertyValues: new object[] { new Random() }, messageTemplate: "{|AASL0002:{MyProperty}|}");
                 }
             }
             """);

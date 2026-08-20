@@ -17,7 +17,7 @@ public sealed class ExceptionAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{One} {Exc}", 1, {|SLA0005:new Exception()|});
+                    Log.Logger.Information("{One} {Exc}", 1, {|AASL0005:new Exception()|});
                 }
             }
             """);
@@ -65,7 +65,7 @@ public sealed class ExceptionAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information({|SLA0007:$"{DateTime.Now} {{Error}}"|}, {|SLA0005:new Exception()|});
+                    Log.Logger.Information({|AASL0007:$"{DateTime.Now} {{Error}}"|}, {|AASL0005:new Exception()|});
                 }
             }
             """);

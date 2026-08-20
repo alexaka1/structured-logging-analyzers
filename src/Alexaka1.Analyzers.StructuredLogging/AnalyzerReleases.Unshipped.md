@@ -5,14 +5,14 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
-SLA0001 | StructuredLogging | Warning | AnonymousObjectMustBeDestructured
-SLA0002 | StructuredLogging | Warning | ComplexObjectShouldBeDestructured
-SLA0003 | StructuredLogging | Warning | ComplexObjectInContextShouldBeDestructured
-SLA0004 | StructuredLogging | Warning | ContextualLoggerMismatch
-SLA0005 | StructuredLogging | Warning | ExceptionPassedAsTemplateArgument
-SLA0006 | StructuredLogging | Warning | DuplicateTemplateProperty
-SLA0007 | StructuredLogging | Warning | TemplateIsNotCompileTimeConstant
-SLA0008 | StructuredLogging | Warning | PositionalPropertyUsed
-SLA0009 | StructuredLogging | Warning | InconsistentTemplatePropertyNaming
-SLA0010 | StructuredLogging | Warning | InconsistentContextPropertyNaming
-SLA0011 | StructuredLogging | Warning | LogMessageIsSentence
+AASL0001 | StructuredLogging | Warning | AnonymousObjectMustBeDestructured
+AASL0002 | StructuredLogging | Warning | ComplexObjectShouldBeDestructured
+AASL0003 | StructuredLogging | Warning | ComplexObjectInContextShouldBeDestructured
+AASL0004 | StructuredLogging | Warning | ContextualLoggerMismatch
+AASL0005 | StructuredLogging | Warning | ExceptionPassedAsTemplateArgument
+AASL0006 | StructuredLogging | Warning | DuplicateTemplateProperty
+AASL0007 | StructuredLogging | Warning | TemplateIsNotCompileTimeConstant
+AASL0008 | StructuredLogging | Warning | PositionalPropertyUsed
+AASL0009 | StructuredLogging | Warning | InconsistentTemplatePropertyNaming
+AASL0010 | StructuredLogging | Warning | InconsistentContextPropertyNaming
+AASL0011 | StructuredLogging | Warning | LogMessageIsSentence

@@ -1,14 +1,14 @@
 # Repository Guidelines
 
 ## Project Structure & Modules
-- `src/Alexaka1.Analyzers.StructuredLogging`: `netstandard2.0` diagnostic analyzers (`SLA0001`–`SLA0011`).
+- `src/Alexaka1.Analyzers.StructuredLogging`: `netstandard2.0` diagnostic analyzers (`AASL0001`–`AASL0011`).
 - `src/Alexaka1.Analyzers.StructuredLogging.CodeFixes`: Roslyn code fixes for the analyzers that have safe transformations.
 - `pack/Alexaka1.Analyzers.StructuredLogging`: Analyzer-only NuGet package (`Alexaka1.Analyzers.StructuredLogging`). No `lib/` assets.
 - `test/Alexaka1.Analyzers.StructuredLogging.Tests`: xUnit tests hosted on .NET 10.
 - `test/comparison`: Optional InspectCode comparison against the published ReSharper marketplace plugin.
 - `samples/`: Consuming projects targeting `net10.0`, `netstandard2.0`, and SDK-style `net472`.
 - `docs/`: Rule pages, compatibility notes, and the NuGet package readme. Root solution: `Alexaka1.Analyzers.StructuredLogging.slnx`.
-- NuGet package ID and root namespace: `Alexaka1.Analyzers.StructuredLogging`. GitHub repository: `alexaka1/structured-logging-analyzers`.
+- NuGet package ID and root namespace: `Alexaka1.Analyzers.StructuredLogging`. Diagnostic prefix: `AASL`. GitHub repository: `alexaka1/structured-logging-analyzers`.
 
 ## Build, Test, and Development
 - Test: `dotnet test Alexaka1.Analyzers.StructuredLogging.slnx -c Release`
@@ -21,7 +21,7 @@ Keep analyzer assemblies free of Workspaces references. Do not add runtime or `l
 ## Coding Style & Naming
 - Follow `.editorconfig`. Treat nullable warnings as actionable.
 - C#: file-scoped namespaces; `PascalCase` for types/members; `camelCase` for locals/params.
-- Diagnostic IDs stay in the `SLA` prefix. Preserve documented compatibility unless `docs/compatibility.md` is updated.
+- Diagnostic IDs stay in the `AASL` prefix. Preserve documented compatibility unless `docs/compatibility.md` is updated.
 
 ## Testing Guidelines
 - Framework: xUnit with `Microsoft.CodeAnalysis.CSharp.Workspaces` test hosts.

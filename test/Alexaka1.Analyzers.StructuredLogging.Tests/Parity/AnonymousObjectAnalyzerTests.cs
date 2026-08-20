@@ -16,7 +16,7 @@ public sealed class AnonymousObjectAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0001:{MyProperty}|}", new { Test = 1 });
+                    Log.Logger.Information("{|AASL0001:{MyProperty}|}", new { Test = 1 });
                 }
             }
             """);
@@ -32,7 +32,7 @@ public sealed class AnonymousObjectAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0001:{MyProperty}|}", new { Test = 1, Complex = new Random() });
+                    Log.Logger.Information("{|AASL0001:{MyProperty}|}", new { Test = 1, Complex = new Random() });
                 }
             }
             """);

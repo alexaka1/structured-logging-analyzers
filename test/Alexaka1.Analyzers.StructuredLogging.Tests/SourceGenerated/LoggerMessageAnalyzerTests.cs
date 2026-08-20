@@ -16,7 +16,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|SLA0009:{orderId}|}{|SLA0011:.|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0009:{orderId}|}{|AASL0011:.|}")]
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """);
@@ -29,7 +29,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0009:{orderId}|}")]
                 public static partial void ProcessingOrder(this ILogger logger, int orderId);
             }
             """);
@@ -45,7 +45,7 @@ public sealed class LoggerMessageAnalyzerTests
                 private readonly ILogger _logger;
                 public Worker(ILogger logger) { _logger = logger; }
 
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0009:{orderId}|}")]
                 public partial void ProcessingOrder(int orderId);
             }
             """);
@@ -58,7 +58,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public partial class Worker(ILogger logger)
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0009:{orderId}|}")]
                 public partial void ProcessingOrder(int orderId);
             }
             """);
@@ -71,7 +71,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Message = "Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage(EventId = 1, Message = "Processing {|AASL0009:{orderId}|}")]
                 public static partial void ProcessingOrder(ILogger logger, LogLevel level, int orderId);
             }
             """);
@@ -84,7 +84,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(1, LogLevel.Information, "Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage(1, LogLevel.Information, "Processing {|AASL0009:{orderId}|}")]
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """);
@@ -110,7 +110,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{|SLA0006:{OrderId}|} {|SLA0006:{OrderId}|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{|AASL0006:{OrderId}|} {|AASL0006:{OrderId}|}")]
                 public static partial void ProcessingOrder(int orderId, ILogger logger);
             }
             """);
@@ -164,7 +164,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 110, Level = LogLevel.Debug, Message = "M1 {Ex3} {|SLA0009:{ex2}|}")]
+                [LoggerMessage(EventId = 110, Level = LogLevel.Debug, Message = "M1 {Ex3} {|AASL0009:{ex2}|}")]
                 public static partial void ValidLogMethod(ILogger logger, Exception ex, Exception ex2, Exception ex3);
             }
             """);
@@ -177,7 +177,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Saw {|SLA0009:{value}|}{|SLA0011:.|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Saw {|AASL0009:{value}|}{|AASL0011:.|}")]
                 public static partial void Saw<T>(ILogger logger, T value);
             }
             """);
@@ -190,7 +190,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0009:{orderId}|}")]
                 public static void ProcessingOrder(ILogger logger, int orderId) { }
             }
             """);
@@ -230,7 +230,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|SLA0008:{0}|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0008:{0}|}")]
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """);
@@ -243,7 +243,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                const string Msg = "Processing {|SLA0009:{orderId}|}{|SLA0011:.|}";
+                const string Msg = "Processing {|AASL0009:{orderId}|}{|AASL0011:.|}";
 
                 [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = Msg)]
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
@@ -268,7 +268,7 @@ public sealed class LoggerMessageAnalyzerTests
             }
             """;
         var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(source);
-        var naming = diagnostics.Where(d => d.Id == "SLA0009").ToList();
+        var naming = diagnostics.Where(d => d.Id == "AASL0009").ToList();
         Assert.NotEmpty(naming);
         Assert.All(naming, d =>
         {
@@ -284,7 +284,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage("Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage("Processing {|AASL0009:{orderId}|}")]
                 public static partial void ProcessingOrder(ILogger logger, LogLevel level, int orderId);
             }
             """);
@@ -298,7 +298,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(1, LogLevel.Information, "Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage(1, LogLevel.Information, "Processing {|AASL0009:{orderId}|}")]
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """,
@@ -312,7 +312,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public partial class Worker
             {
-                public Worker({|SLA0004:ILogger<Other>|} log) { }
+                public Worker({|AASL0004:ILogger<Other>|} log) { }
 
                 [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Go")]
                 public partial void Go();
@@ -348,7 +348,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|SLA0009:{orderId}|}{|SLA0011:.|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0009:{orderId}|}{|AASL0011:.|}")]
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """,
@@ -365,7 +365,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0009:{orderId}|}")]
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
 
                 [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Extensions.Logging.Generators", "8.0.0")]
@@ -394,7 +394,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{OrderId} {|SLA0009:{orderId}|}")]
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{OrderId} {|AASL0009:{orderId}|}")]
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """);
@@ -407,7 +407,7 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(LogLevel.Information, "Processing {|SLA0009:{orderId}|}")]
+                [LoggerMessage(LogLevel.Information, "Processing {|AASL0009:{orderId}|}")]
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """);
@@ -430,7 +430,7 @@ public sealed class LoggerMessageAnalyzerTests
             }
             """;
         var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(source);
-        var periods = diagnostics.Where(d => d.Id == "SLA0011").ToList();
+        var periods = diagnostics.Where(d => d.Id == "AASL0011").ToList();
         Assert.NotEmpty(periods);
         Assert.All(periods, d =>
         {
@@ -459,8 +459,8 @@ public sealed class LoggerMessageAnalyzerTests
             var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(
                 source,
                 references: AnalyzerTestHost.CreateReferencesWithLoggingAbstractions(path));
-            var naming = diagnostics.Where(d => d.Id == "SLA0009").ToList();
-            Assert.True(naming.Count == 1, $"Expected SLA0009 against Microsoft.Extensions.Logging.Abstractions {version} at {path}.");
+            var naming = diagnostics.Where(d => d.Id == "AASL0009").ToList();
+            Assert.True(naming.Count == 1, $"Expected AASL0009 against Microsoft.Extensions.Logging.Abstractions {version} at {path}.");
         }
     }
 }
@@ -476,7 +476,7 @@ public sealed class LoggerMessageDefineTests
             public static class C
             {
                 private static readonly System.Action<ILogger, Order, System.Exception?> s_log =
-                    LoggerMessage.Define<Order>(LogLevel.Information, new EventId(1), "Order {|SLA0009:{order}|}{|SLA0011:.|}");
+                    LoggerMessage.Define<Order>(LogLevel.Information, new EventId(1), "Order {|AASL0009:{order}|}{|AASL0011:.|}");
             }
             """);
     }
@@ -489,7 +489,7 @@ public sealed class LoggerMessageDefineTests
             public static class C
             {
                 private static readonly System.Func<ILogger, string, System.IDisposable?> s_scope =
-                    LoggerMessage.DefineScope<string>("Starting {|SLA0009:{name}|}");
+                    LoggerMessage.DefineScope<string>("Starting {|AASL0009:{name}|}");
             }
             """);
     }
@@ -504,7 +504,7 @@ public sealed class LoggerMessageDefineTests
                 static string Format() => "Hi {Name}";
                 static void M()
                 {
-                    _ = LoggerMessage.Define(LogLevel.Information, new EventId(1), {|SLA0007:Format()|});
+                    _ = LoggerMessage.Define(LogLevel.Information, new EventId(1), {|AASL0007:Format()|});
                 }
             }
             """);

@@ -13,10 +13,10 @@ repository does not contain the plugin source. See
 - **InspectCode** loads `ReSharper.Structured.Logging` from
   `test/comparison/plugins` (downloaded from the JetBrains Marketplace;
   latest published plugin is still Wave 251 / ReSharper 2025.1).
-- **Roslyn** runs `SLA0001`–`SLA0011` on `test/comparison/corpus`.
+- **Roslyn** runs `AASL0001`–`AASL0011` on `test/comparison/corpus`.
 
 Keys are `file.cs:diagnostic-id`. Spans are not required to match:
-SLA0011 highlights the trailing period, while the plugin highlights the
+AASL0011 highlights the trailing period, while the plugin highlights the
 whole string literal.
 
 ## Run

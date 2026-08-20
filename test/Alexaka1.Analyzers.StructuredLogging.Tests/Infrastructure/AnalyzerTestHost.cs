@@ -37,7 +37,7 @@ internal static class AnalyzerTestHost
     {
         var diagnostics = await GetDiagnosticsAsync(source, editorConfig, languageVersion, additionalSources).ConfigureAwait(false);
         var actual = diagnostics
-            .Where(d => d.Id.StartsWith("SLA", StringComparison.Ordinal))
+            .Where(d => d.Id.StartsWith(DiagnosticIds.Prefix, StringComparison.Ordinal))
             .OrderBy(d => d.Location.SourceSpan.Start)
             .ThenBy(d => d.Id, StringComparer.Ordinal)
             .ToList();
@@ -382,7 +382,7 @@ internal static class Markup
                 if (colon > idStart)
                 {
                     var id = marked.Substring(idStart, colon - idStart);
-                    if (id.StartsWith("SLA", StringComparison.Ordinal))
+                    if (id.StartsWith(DiagnosticIds.Prefix, StringComparison.Ordinal))
                     {
                         var contentStart = colon + 1;
                         var close = marked.IndexOf("|}", contentStart, StringComparison.Ordinal);

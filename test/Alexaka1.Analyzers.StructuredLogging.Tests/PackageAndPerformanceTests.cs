@@ -36,7 +36,7 @@ public sealed class PackageAndPerformanceTests
         var sw = Stopwatch.StartNew();
         var diagnostics = await Infrastructure.AnalyzerTestHost.GetDiagnosticsAsync(builder.ToString());
         sw.Stop();
-        Assert.Empty(diagnostics.Where(d => d.Id.StartsWith("SLA", StringComparison.Ordinal)));
+        Assert.Empty(diagnostics.Where(d => d.Id.StartsWith("AASL", StringComparison.Ordinal)));
         Assert.True(sw.Elapsed < TimeSpan.FromSeconds(20), $"Unrelated compilation took {sw.Elapsed}");
     }
 
@@ -56,7 +56,7 @@ public sealed class PackageAndPerformanceTests
         var sw = Stopwatch.StartNew();
         var diagnostics = await Infrastructure.AnalyzerTestHost.GetDiagnosticsAsync(builder.ToString());
         sw.Stop();
-        Assert.Empty(diagnostics.Where(d => d.Id.StartsWith("SLA", StringComparison.Ordinal)));
+        Assert.Empty(diagnostics.Where(d => d.Id.StartsWith("AASL", StringComparison.Ordinal)));
         Assert.True(sw.Elapsed < TimeSpan.FromSeconds(20), $"Logging compilation took {sw.Elapsed}");
     }
 
@@ -76,7 +76,7 @@ public sealed class PackageAndPerformanceTests
         var diagnostics = await Infrastructure.AnalyzerTestHost.GetDiagnosticsAsync(
             source,
             editorConfig: "structured_logging_ignored_properties_regex = (unclosed");
-        Assert.Contains(diagnostics, d => d.Id == "SLA0009");
+        Assert.Contains(diagnostics, d => d.Id == "AASL0009");
     }
 
     [Fact]

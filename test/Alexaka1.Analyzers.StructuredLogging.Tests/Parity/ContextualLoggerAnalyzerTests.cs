@@ -15,7 +15,7 @@ public sealed class ContextualLoggerAnalyzerTests
             class A
             {
                 ILogger<B> _log;
-                public A({|SLA0004:ILogger<B>|} log)
+                public A({|AASL0004:ILogger<B>|} log)
                 {
                     _log = log;
                 }
@@ -48,7 +48,7 @@ public sealed class ContextualLoggerAnalyzerTests
             class A
             {
                 ILogger<B> _log;
-                public A(int a, {|SLA0004:ILogger<B>|} log)
+                public A(int a, {|AASL0004:ILogger<B>|} log)
                 {
                     _log = log;
                 }
@@ -68,7 +68,7 @@ public sealed class ContextualLoggerAnalyzerTests
                 class A
                 {
                     ILogger<X.A> _log;
-                    public A({|SLA0004:ILogger<X.A>|} log)
+                    public A({|AASL0004:ILogger<X.A>|} log)
                     {
                         _log = log;
                     }
@@ -84,7 +84,7 @@ public sealed class ContextualLoggerAnalyzerTests
             using Serilog;
             class A
             {
-                private static readonly ILogger Logger = {|SLA0004:Logger.ForContext<B>()|};
+                private static readonly ILogger Logger = {|AASL0004:Logger.ForContext<B>()|};
             }
             class B { }
             """);
@@ -107,7 +107,7 @@ public sealed class ContextualLoggerAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync("""
             using Microsoft.Extensions.Logging;
-            class A({|SLA0004:ILogger<B>|} log)
+            class A({|AASL0004:ILogger<B>|} log)
             {
                 private readonly ILogger<B> _log = log;
             }

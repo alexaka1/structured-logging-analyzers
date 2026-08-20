@@ -18,7 +18,7 @@ public sealed class CodeFixTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0001:{MyProperty}|}", new { Test = 1 });
+                    Log.Logger.Information("{|AASL0001:{MyProperty}|}", new { Test = 1 });
                 }
             }
             """,
@@ -32,7 +32,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            "SLA0001",
+            "AASL0001",
             typeof(AddDestructuringCodeFixProvider));
     }
 
@@ -46,7 +46,7 @@ public sealed class CodeFixTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("Escaped \r\n {|SLA0001:{MyProperty}|} \r\n string", new { Test = 1 });
+                    Log.Logger.Information("Escaped \r\n {|AASL0001:{MyProperty}|} \r\n string", new { Test = 1 });
                 }
             }
             """,
@@ -60,7 +60,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            "SLA0001",
+            "AASL0001",
             typeof(AddDestructuringCodeFixProvider));
     }
 
@@ -75,7 +75,7 @@ public sealed class CodeFixTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0002:{MyProperty}|}", new Random());
+                    Log.Logger.Information("{|AASL0002:{MyProperty}|}", new Random());
                 }
             }
             """,
@@ -90,7 +90,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            "SLA0002",
+            "AASL0002",
             typeof(AddDestructuringCodeFixProvider));
     }
 
@@ -104,7 +104,7 @@ public sealed class CodeFixTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("Test {|SLA0009:{myProperty}|} prop", 1);
+                    Log.Logger.Information("Test {|AASL0009:{myProperty}|} prop", 1);
                 }
             }
             """,
@@ -118,7 +118,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            "SLA0009",
+            "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
 
@@ -132,7 +132,7 @@ public sealed class CodeFixTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("Test {|SLA0009:{@myProperty}|} prop", 1);
+                    Log.Logger.Information("Test {|AASL0009:{@myProperty}|} prop", 1);
                 }
             }
             """,
@@ -146,7 +146,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            "SLA0009",
+            "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
 
@@ -160,7 +160,7 @@ public sealed class CodeFixTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("Test" + " {|SLA0009:{myProperty}|} prop", 1);
+                    Log.Logger.Information("Test" + " {|AASL0009:{myProperty}|} prop", 1);
                 }
             }
             """,
@@ -174,7 +174,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            "SLA0009",
+            "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
 
@@ -188,7 +188,7 @@ public sealed class CodeFixTests
             {
                 public static void Main()
                 {
-                    LogContext.PushProperty({|SLA0010:"test"|}, 1);
+                    LogContext.PushProperty({|AASL0010:"test"|}, 1);
                 }
             }
             """,
@@ -202,7 +202,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            "SLA0010",
+            "AASL0010",
             typeof(RenameContextPropertyCodeFixProvider));
     }
 
@@ -216,7 +216,7 @@ public sealed class CodeFixTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("Test {Property} prop{|SLA0011:.|}", 1);
+                    Log.Logger.Information("Test {Property} prop{|AASL0011:.|}", 1);
                 }
             }
             """,
@@ -230,7 +230,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            "SLA0011",
+            "AASL0011",
             typeof(RemoveTrailingPeriodCodeFixProvider));
     }
 
@@ -244,7 +244,7 @@ public sealed class CodeFixTests
             {
                 void M(ILogger logger, Order order)
                 {
-                    logger.LogInformation({|SLA0007:$"Processed {order.Id}"|});
+                    logger.LogInformation({|AASL0007:$"Processed {order.Id}"|});
                 }
             }
             class Order { public int Id { get; set; } }
@@ -260,7 +260,7 @@ public sealed class CodeFixTests
             }
             class Order { public int Id { get; set; } }
             """,
-            "SLA0007",
+            "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider));
     }
 
@@ -274,7 +274,7 @@ public sealed class CodeFixTests
             {
                 void M(ILogger logger, string name)
                 {
-                    logger.LogInformation({|SLA0007:$"User '{name}'"|});
+                    logger.LogInformation({|AASL0007:$"User '{name}'"|});
                 }
             }
             """,
@@ -288,7 +288,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            "SLA0007",
+            "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider));
     }
 }

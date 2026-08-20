@@ -20,10 +20,10 @@ dotnet_diagnostic.CA2254.severity = warning
 
 | Rule | What it covers | Overlap with this package |
 |---|---|---|
-| [CA2254](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2254) | MEL templates must be constant expressions | `SLA0007` still runs on Serilog/NLog/ZLogger and on `LoggerMessage.Define` when the format is not constant. `[LoggerMessage]` attribute arguments are already constants, so `SLA0007` is not reported there. |
+| [CA2254](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2254) | MEL templates must be constant expressions | `AASL0007` still runs on Serilog/NLog/ZLogger and on `LoggerMessage.Define` when the format is not constant. `[LoggerMessage]` attribute arguments are already constants, so `AASL0007` is not reported there. |
 | [CA2017](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2017) | MEL placeholder/argument count | Not reimplemented. `[LoggerMessage]` uses [SYSLIB1014](https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/syslib1014) / [SYSLIB1015](https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/syslib1015). |
-| [CA2253](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2253) | Numeric MEL placeholders | `SLA0008` still runs across frameworks. For `[LoggerMessage]` it adds a rename fix when an unambiguous parameter exists. |
-| [CA1727](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1727) | PascalCase MEL placeholders | `SLA0009` adds camel/snake/Elastic naming, an ignore regex, and a rename fix, and applies to Serilog/NLog/ZLogger as well. |
+| [CA2253](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2253) | Numeric MEL placeholders | `AASL0008` still runs across frameworks. For `[LoggerMessage]` it adds a rename fix when an unambiguous parameter exists. |
+| [CA1727](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1727) | PascalCase MEL placeholders | `AASL0009` adds camel/snake/Elastic naming, an ignore regex, and a rename fix, and applies to Serilog/NLog/ZLogger as well. |
 | [CA2023](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2023) | Malformed braces in MEL templates | Not reimplemented. Malformed holes are treated as text. |
 | [CA1848](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848) | Prefer `LoggerMessage` delegates / source generation | Not reimplemented. Performance guidance only. |
 
@@ -39,5 +39,5 @@ See the [source-generator diagnostic index](https://learn.microsoft.com/dotnet/f
 ## Optional extra for MEL `ILogger<T>`
 
 [Meziantou.Analyzer](https://github.com/meziantou/Meziantou.Analyzer) `MA0180`
-can rewrite a mismatched `ILogger<T>` category. This package’s `SLA0004`
+can rewrite a mismatched `ILogger<T>` category. This package’s `AASL0004`
 flags the same class of mistake without a type rewrite fix.

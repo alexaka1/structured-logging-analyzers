@@ -16,7 +16,7 @@ public sealed class NamingAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0009:{myProperty}|}", 1);
+                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
                 }
             }
             """);
@@ -61,7 +61,7 @@ public sealed class NamingAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0009:{My.Property}|}", 1);
+                    Log.Logger.Information("{|AASL0009:{My.Property}|}", 1);
                 }
             }
             """);
@@ -76,7 +76,7 @@ public sealed class NamingAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0009:{My Property}|}", 1);
+                    Log.Logger.Information("{|AASL0009:{My Property}|}", 1);
                 }
             }
             """);
@@ -92,7 +92,7 @@ public sealed class NamingAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0009:{myProperty}|}", 1);
+                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
                 }
             }
             """,
@@ -125,7 +125,7 @@ public sealed class NamingAnalyzerTests
             {
                 public static void Main()
                 {
-                    LogContext.PushProperty({|SLA0010:"test"|}, 1);
+                    LogContext.PushProperty({|AASL0010:"test"|}, 1);
                 }
             }
             """);

@@ -16,7 +16,7 @@ public sealed class TemplateRuleAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0006:{Test}|} {|SLA0006:{Test}|}", 1, 2);
+                    Log.Logger.Information("{|AASL0006:{Test}|} {|AASL0006:{Test}|}", 1, 2);
                 }
             }
             """);
@@ -31,7 +31,7 @@ public sealed class TemplateRuleAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0008:{0}|}", 1);
+                    Log.Logger.Information("{|AASL0008:{0}|}", 1);
                 }
             }
             """);
@@ -61,7 +61,7 @@ public sealed class TemplateRuleAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("Hello {Name}{|SLA0011:.|}", "World");
+                    Log.Logger.Information("Hello {Name}{|AASL0011:.|}", "World");
                 }
             }
             """);

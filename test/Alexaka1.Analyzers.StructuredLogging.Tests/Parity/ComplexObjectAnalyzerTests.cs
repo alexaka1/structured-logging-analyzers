@@ -17,7 +17,7 @@ public sealed class ComplexObjectAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Information("{|SLA0002:{MyProperty}|}", new Random());
+                    Log.Logger.Information("{|AASL0002:{MyProperty}|}", new Random());
                 }
             }
             """);
@@ -134,7 +134,7 @@ public sealed class ComplexObjectAnalyzerTests
             {
                 public static void Main()
                 {
-                    Log.Logger.Error(new MyException(), "{|SLA0002:{MyProperty}|}", new Random());
+                    Log.Logger.Error(new MyException(), "{|AASL0002:{MyProperty}|}", new Random());
                 }
             }
             public class MyException : Exception { }
@@ -151,7 +151,7 @@ public sealed class ComplexObjectAnalyzerTests
             {
                 public static void Main()
                 {
-                    {|SLA0003:LogContext.PushProperty("Test", new Random())|};
+                    {|AASL0003:LogContext.PushProperty("Test", new Random())|};
                 }
             }
             """);

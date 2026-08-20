@@ -101,7 +101,7 @@ static async Task<List<Finding>> CollectRoslynAsync(string corpusDir)
     var diagnostics = await withAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
 
     return diagnostics
-        .Where(d => d.Id.StartsWith("SLA", StringComparison.Ordinal) && d.Location.IsInSource)
+        .Where(d => d.Id.StartsWith("AASL", StringComparison.Ordinal) && d.Location.IsInSource)
         .Select(d =>
         {
             var line = d.Location.GetLineSpan().StartLinePosition.Line + 1;
@@ -266,9 +266,9 @@ static string RenderMarkdown(
     sb.AppendLine($"- InspectCode report: `{(inspectXml is null ? "(not provided)" : Path.GetRelativePath(repoRoot, inspectXml).Replace('\\', '/'))}`");
     sb.AppendLine($"- Plugin issue types present in report: **{pluginLoaded}**");
     sb.AppendLine($"- InspectCode plugin findings: {inspect.Count}");
-    sb.AppendLine($"- Roslyn SLA findings: {roslyn.Count}");
+    sb.AppendLine($"- Roslyn AASL findings: {roslyn.Count}");
     sb.AppendLine();
-    sb.AppendLine("Keys are `file.cs:SLAxxxx`. Spans are not compared: SLA0011 highlights the trailing period, while the plugin highlights the whole literal.");
+    sb.AppendLine("Keys are `file.cs:AASLxxxx`. Spans are not compared: AASL0011 highlights the trailing period, while the plugin highlights the whole literal.");
     sb.AppendLine();
     sb.AppendLine("## InspectCode vs Roslyn");
     sb.AppendLine();

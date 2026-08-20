@@ -370,8 +370,8 @@ Severity configuration:
 
 ```editorconfig
 [*.cs]
-dotnet_diagnostic.SLA0001.severity = warning
-dotnet_diagnostic.SLA0002.severity = none
+dotnet_diagnostic.AASL0001.severity = warning
+dotnet_diagnostic.AASL0002.severity = none
 ```
 
 Naming configuration:
@@ -432,9 +432,10 @@ The production analyzer should live in a new standalone repository.
 Reserved identity:
 
 ```text
-GitHub:         alexaka1/structured-logging-analyzers
-NuGet:          Alexaka1.Analyzers.StructuredLogging
-Root namespace: Alexaka1.Analyzers.StructuredLogging
+GitHub:            alexaka1/structured-logging-analyzers
+NuGet:             Alexaka1.Analyzers.StructuredLogging
+Root namespace:    Alexaka1.Analyzers.StructuredLogging
+Diagnostic prefix: AASL
 ```
 
 The repository slug stays kebab-case. The NuGet ID and C# root namespace use the author-prefixed form so they do not collide with [fedarovich/structured-logging-analyzers](https://github.com/fedarovich/structured-logging-analyzers) (`StructuredLogging.Analyzers`).
