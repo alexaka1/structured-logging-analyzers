@@ -60,8 +60,7 @@ run_inspect() {
   local out_xml="$REPORTS_DIR/inspectcode-${label}.xml"
   local out_types="$REPORTS_DIR/inspectcode-${label}-issuetypes.xml"
   local log="$REPORTS_DIR/inspectcode-${label}.log"
-  # Progress goes to stderr so command substitution only captures the report path.
-  echo "Running InspectCode ($label) via $jb" >&2
+  echo "Running InspectCode ($label) via $jb"
   "$jb" inspectcode "$ROOT/test/comparison/ComparisonCorpus.sln" \
     -o="$out_xml" \
     -f=Xml \
@@ -87,23 +86,24 @@ run_inspect() {
     --caches-home="$CACHE_DIR/$label" \
     --verbosity=WARN \
     >>"$log" 2>&1 || true
-  echo "$out_xml"
 }
-
-LATEST_XML="$(run_inspect "$CLI_LATEST_DIR/jb" "2025.3.5")"
 
 plugin_loaded() {
   local xml="$1"
   grep -q "AnonymousObjectDestructuringProblem\|InconsistentLogPropertyNaming\|ContextualLoggerProblem" "$xml" 2>/dev/null
 }
 
-CHOSEN_XML="$LATEST_XML"
+# The report path is deterministic (we pass it to jb via -o=), so we reference it
+# directly instead of capturing it from run_inspect's stdout.
 CHOSEN_LABEL="2025.3.5"
-if ! plugin_loaded "$LATEST_XML"; then
+CHOSEN_XML="$REPORTS_DIR/inspectcode-$CHOSEN_LABEL.xml"
+run_inspect "$CLI_LATEST_DIR/jb" "$CHOSEN_LABEL"
+if ! plugin_loaded "$CHOSEN_XML"; then
   echo "Plugin issue types not found in $CLI_LATEST_VERSION report; installing Wave-matching CLI $CLI_WAVE251_VERSION"
   install_cli "$CLI_WAVE251_DIR" "$CLI_WAVE251_VERSION"
-  CHOSEN_XML="$(run_inspect "$CLI_WAVE251_DIR/jb" "2025.1.9")"
   CHOSEN_LABEL="2025.1.9"
+  CHOSEN_XML="$REPORTS_DIR/inspectcode-$CHOSEN_LABEL.xml"
+  run_inspect "$CLI_WAVE251_DIR/jb" "$CHOSEN_LABEL"
 fi
 
 echo "Using InspectCode report $CHOSEN_XML (CLI $CHOSEN_LABEL)"
