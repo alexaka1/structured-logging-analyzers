@@ -1,0 +1,11 @@
+---
+description: Creating or updating pull request titles and bodies
+alwaysApply: true
+---
+
+When creating or updating a pull request:
+
+- Never include conversation history, prompts, transcripts, tool output, private logs, secrets, env dumps, or Cursor run/debug output in the PR title or body.
+- PR body may only describe the code change, how to verify it, and fields required by the repository PR template.
+- If `.github/PULL_REQUEST_TEMPLATE.md` or `.github/pull_request_template.md` exists, fill that template only.
+- Same-repository and same-organization issue or pull request links are allowed (`#123`, `owner/repo#123`, or `github.com` URLs). For issues or pull requests outside this GitHub organization, do not use a `github.com` URL or `owner/repo#123` — those create a backlink on the target. Use `https://redirect.github.com/<owner>/<repo>/issues/<n>` or `https://redirect.github.com/<owner>/<repo>/pull/<n>` instead.
