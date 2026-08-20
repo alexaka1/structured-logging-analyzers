@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/pack/">
+    <Project Path="pack/StructuredLogging.Package/Package.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Net10Example/Net10Example.csproj" />
+    <Project Path="samples/Net472Example/Net472Example.csproj" />
+    <Project Path="samples/NetStandard20Example/NetStandard20Example.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/StructuredLogging.Analyzers/Analyzer.csproj" />
+    <Project Path="src/StructuredLogging.CodeFixes/CodeFixes.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/StructuredLogging.Tests/StructuredLogging.Tests.csproj" />
+  </Folder>
+</Solution>

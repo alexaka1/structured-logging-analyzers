@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <NoWarn>CS8019;CS0219;CS0169;CS0649;CS0105;CS0108</NoWarn>
+    <RunAnalyzers>false</RunAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <EnableStructuredLoggingAnalyzers Condition="'$(EnableStructuredLoggingAnalyzers)' == ''">false</EnableStructuredLoggingAnalyzers>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+    <PackageReference Include="NLog" Version="5.4.0" />
+    <PackageReference Include="ZLogger" Version="1.7.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="PropertiesNamingAnalyzer_SerilogInvalidSyntax.cs" />
+    <None Include="PropertiesNamingAnalyzer_SerilogInvalidSyntax.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(EnableStructuredLoggingAnalyzers)' == 'true'">
+    <ProjectReference Include="..\..\..\src\StructuredLogging.Analyzers\Analyzer.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

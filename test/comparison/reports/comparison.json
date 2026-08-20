@@ -1,0 +1,369 @@
+{
+  "generatedUtc": "2026-08-20T08:02:25.7062689Z",
+  "inspectCode": "2025.3.5",
+  "plugin": "ReSharper.Structured.Logging 2025.1.0.373",
+  "inspectcodePluginLoaded": true,
+  "inspectcodeReport": "test/comparison/reports/inspectcode.xml",
+  "inspectcodeCount": 23,
+  "roslynCount": 23,
+  "inspectcodeVsRoslyn": {
+    "LeftName": "inspectcode",
+    "RightName": "roslyn",
+    "Matches": [
+      "AnonymousTypeDestructure_SerilogWithComplexPropertyWithoutDestructure.cs:SLA0001",
+      "AnonymousTypeDestructure_SerilogWithoutDestructure.cs:SLA0001",
+      "ComplexTypeDestructure_SerilogContextWithoutDestructure.cs:SLA0003",
+      "ComplexTypeDestructure_SerilogCustomExceptionWithoutDestructure.cs:SLA0002",
+      "ComplexTypeDestructure_SerilogWithoutDestructure.cs:SLA0002",
+      "ContextualLoggerConstructor_MicrosoftWrongContextType.cs:SLA0004",
+      "ContextualLoggerConstructor_MicrosoftWrongContextTypeMultipleNamespaces.cs:SLA0004",
+      "ContextualLoggerConstructor_MicrosoftWrongContextTypeMultipleParameters.cs:SLA0004",
+      "ContextualLoggerSerilogFactory_SerilogWrongContextType.cs:SLA0004",
+      "CorrectExceptionPassing_SerilogIncorrectExceptionPassing.cs:SLA0005",
+      "CorrectExceptionPassing_SerilogIncorrectExceptionPassingDynamicTemplate.cs:SLA0005",
+      "CorrectExceptionPassing_SerilogIncorrectExceptionPassingDynamicTemplate.cs:SLA0007",
+      "DuplicatePropertiesTemplate_SerilogDuplicateNamedProperty.cs:SLA0006",
+      "DuplicatePropertiesTemplate_SerilogDuplicateNamedProperty.cs:SLA0006",
+      "LogMessageIsSentence_SerilogSentenceMessage.cs:SLA0011",
+      "PositionalPropertiesUsage_SerilogPositionProperty.cs:SLA0008",
+      "PropertiesNamingAnalyzerDotNet6_ZLoggerInvalidNamedProperty.cs:SLA0009",
+      "PropertiesNamingAnalyzer_SerilogContextInvalidNamedProperty.cs:SLA0010",
+      "PropertiesNamingAnalyzer_SerilogIgnoredInvalidNamedProperty.cs:SLA0009",
+      "PropertiesNamingAnalyzer_SerilogInvalidElasticNamedProperty.cs:SLA0009",
+      "PropertiesNamingAnalyzer_SerilogInvalidNamedProperty.cs:SLA0009",
+      "PropertiesNamingAnalyzer_SerilogInvalidNamedPropertyWithDot.cs:SLA0009",
+      "PropertiesNamingAnalyzer_SerilogInvalidNamedPropertyWithSpace.cs:SLA0009"
+    ],
+    "LeftOnly": [],
+    "RightOnly": []
+  },
+  "messageMismatches": [
+    "`PropertiesNamingAnalyzer_SerilogIgnoredInvalidNamedProperty.cs:SLA0009`: InspectCode \u201cProperty name 'MY_IGNORED.Property_' does not match naming rules. Suggested name is 'MYIgnoredProperty'.\u201d vs Roslyn \u201cProperty name 'MY_IGNORED.Property_' does not match naming rules. Suggested name is 'MyIgnoredProperty'.\u201d"
+  ],
+  "roslyn": [
+    {
+      "Fixture": "AnonymousTypeDestructure_SerilogWithComplexPropertyWithoutDestructure.cs",
+      "SlaId": "SLA0001",
+      "Source": "roslyn",
+      "Message": "Anonymous objects must be destructured",
+      "Line": 11
+    },
+    {
+      "Fixture": "AnonymousTypeDestructure_SerilogWithoutDestructure.cs",
+      "SlaId": "SLA0001",
+      "Source": "roslyn",
+      "Message": "Anonymous objects must be destructured",
+      "Line": 10
+    },
+    {
+      "Fixture": "ComplexTypeDestructure_SerilogContextWithoutDestructure.cs",
+      "SlaId": "SLA0003",
+      "Source": "roslyn",
+      "Message": "Complex objects with default ToString() implementation probably need to be destructured",
+      "Line": 12
+    },
+    {
+      "Fixture": "ComplexTypeDestructure_SerilogCustomExceptionWithoutDestructure.cs",
+      "SlaId": "SLA0002",
+      "Source": "roslyn",
+      "Message": "Complex objects with default ToString() implementation probably need to be destructured",
+      "Line": 11
+    },
+    {
+      "Fixture": "ComplexTypeDestructure_SerilogWithoutDestructure.cs",
+      "SlaId": "SLA0002",
+      "Source": "roslyn",
+      "Message": "Complex objects with default ToString() implementation probably need to be destructured",
+      "Line": 11
+    },
+    {
+      "Fixture": "ContextualLoggerConstructor_MicrosoftWrongContextType.cs",
+      "SlaId": "SLA0004",
+      "Source": "roslyn",
+      "Message": "Incorrect type is used for contextual logger",
+      "Line": 10
+    },
+    {
+      "Fixture": "ContextualLoggerConstructor_MicrosoftWrongContextTypeMultipleNamespaces.cs",
+      "SlaId": "SLA0004",
+      "Source": "roslyn",
+      "Message": "Incorrect type is used for contextual logger",
+      "Line": 15
+    },
+    {
+      "Fixture": "ContextualLoggerConstructor_MicrosoftWrongContextTypeMultipleParameters.cs",
+      "SlaId": "SLA0004",
+      "Source": "roslyn",
+      "Message": "Incorrect type is used for contextual logger",
+      "Line": 10
+    },
+    {
+      "Fixture": "ContextualLoggerSerilogFactory_SerilogWrongContextType.cs",
+      "SlaId": "SLA0004",
+      "Source": "roslyn",
+      "Message": "Incorrect type is used for contextual logger",
+      "Line": 8
+    },
+    {
+      "Fixture": "CorrectExceptionPassing_SerilogIncorrectExceptionPassing.cs",
+      "SlaId": "SLA0005",
+      "Source": "roslyn",
+      "Message": "Exception should be passed to the exception argument",
+      "Line": 11
+    },
+    {
+      "Fixture": "CorrectExceptionPassing_SerilogIncorrectExceptionPassingDynamicTemplate.cs",
+      "SlaId": "SLA0005",
+      "Source": "roslyn",
+      "Message": "Exception should be passed to the exception argument",
+      "Line": 11
+    },
+    {
+      "Fixture": "CorrectExceptionPassing_SerilogIncorrectExceptionPassingDynamicTemplate.cs",
+      "SlaId": "SLA0007",
+      "Source": "roslyn",
+      "Message": "Message template should be compile time constant",
+      "Line": 11
+    },
+    {
+      "Fixture": "DuplicatePropertiesTemplate_SerilogDuplicateNamedProperty.cs",
+      "SlaId": "SLA0006",
+      "Source": "roslyn",
+      "Message": "Duplicate properties in message template",
+      "Line": 10
+    },
+    {
+      "Fixture": "DuplicatePropertiesTemplate_SerilogDuplicateNamedProperty.cs",
+      "SlaId": "SLA0006",
+      "Source": "roslyn",
+      "Message": "Duplicate properties in message template",
+      "Line": 10
+    },
+    {
+      "Fixture": "LogMessageIsSentence_SerilogSentenceMessage.cs",
+      "SlaId": "SLA0011",
+      "Source": "roslyn",
+      "Message": "Log event messages should be fragments, not sentences. Avoid a trailing period/full stop.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PositionalPropertiesUsage_SerilogPositionProperty.cs",
+      "SlaId": "SLA0008",
+      "Source": "roslyn",
+      "Message": "Prefer named properties instead of positional ones",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzerDotNet6_ZLoggerInvalidNamedProperty.cs",
+      "SlaId": "SLA0009",
+      "Source": "roslyn",
+      "Message": "Property name 'myProperty' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 11
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogContextInvalidNamedProperty.cs",
+      "SlaId": "SLA0010",
+      "Source": "roslyn",
+      "Message": "Property name 'test' does not match naming rules. Suggested name is 'Test'.",
+      "Line": 11
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogIgnoredInvalidNamedProperty.cs",
+      "SlaId": "SLA0009",
+      "Source": "roslyn",
+      "Message": "Property name 'MY_IGNORED.Property_' does not match naming rules. Suggested name is 'MyIgnoredProperty'.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogInvalidElasticNamedProperty.cs",
+      "SlaId": "SLA0009",
+      "Source": "roslyn",
+      "Message": "Property name 'myProperty' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogInvalidNamedProperty.cs",
+      "SlaId": "SLA0009",
+      "Source": "roslyn",
+      "Message": "Property name 'myProperty' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogInvalidNamedPropertyWithDot.cs",
+      "SlaId": "SLA0009",
+      "Source": "roslyn",
+      "Message": "Property name 'My.Property' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogInvalidNamedPropertyWithSpace.cs",
+      "SlaId": "SLA0009",
+      "Source": "roslyn",
+      "Message": "Property name 'My Property' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 10
+    }
+  ],
+  "inspectcode": [
+    {
+      "Fixture": "AnonymousTypeDestructure_SerilogWithComplexPropertyWithoutDestructure.cs",
+      "SlaId": "SLA0001",
+      "Source": "inspectcode",
+      "Message": "Anonymous objects must be destructured",
+      "Line": 11
+    },
+    {
+      "Fixture": "AnonymousTypeDestructure_SerilogWithoutDestructure.cs",
+      "SlaId": "SLA0001",
+      "Source": "inspectcode",
+      "Message": "Anonymous objects must be destructured",
+      "Line": 10
+    },
+    {
+      "Fixture": "ComplexTypeDestructure_SerilogContextWithoutDestructure.cs",
+      "SlaId": "SLA0003",
+      "Source": "inspectcode",
+      "Message": "Complex objects with default ToString() implementation probably need to be destructured",
+      "Line": 12
+    },
+    {
+      "Fixture": "ComplexTypeDestructure_SerilogCustomExceptionWithoutDestructure.cs",
+      "SlaId": "SLA0002",
+      "Source": "inspectcode",
+      "Message": "Complex objects with default ToString() implementation probably need to be destructured",
+      "Line": 11
+    },
+    {
+      "Fixture": "ComplexTypeDestructure_SerilogWithoutDestructure.cs",
+      "SlaId": "SLA0002",
+      "Source": "inspectcode",
+      "Message": "Complex objects with default ToString() implementation probably need to be destructured",
+      "Line": 11
+    },
+    {
+      "Fixture": "ContextualLoggerConstructor_MicrosoftWrongContextType.cs",
+      "SlaId": "SLA0004",
+      "Source": "inspectcode",
+      "Message": "Incorrect type is used for contextual logger",
+      "Line": 10
+    },
+    {
+      "Fixture": "ContextualLoggerConstructor_MicrosoftWrongContextTypeMultipleNamespaces.cs",
+      "SlaId": "SLA0004",
+      "Source": "inspectcode",
+      "Message": "Incorrect type is used for contextual logger",
+      "Line": 15
+    },
+    {
+      "Fixture": "ContextualLoggerConstructor_MicrosoftWrongContextTypeMultipleParameters.cs",
+      "SlaId": "SLA0004",
+      "Source": "inspectcode",
+      "Message": "Incorrect type is used for contextual logger",
+      "Line": 10
+    },
+    {
+      "Fixture": "ContextualLoggerSerilogFactory_SerilogWrongContextType.cs",
+      "SlaId": "SLA0004",
+      "Source": "inspectcode",
+      "Message": "Incorrect type is used for contextual logger",
+      "Line": 8
+    },
+    {
+      "Fixture": "CorrectExceptionPassing_SerilogIncorrectExceptionPassing.cs",
+      "SlaId": "SLA0005",
+      "Source": "inspectcode",
+      "Message": "Exception should be passed to the exception argument",
+      "Line": 11
+    },
+    {
+      "Fixture": "CorrectExceptionPassing_SerilogIncorrectExceptionPassingDynamicTemplate.cs",
+      "SlaId": "SLA0007",
+      "Source": "inspectcode",
+      "Message": "Message template should be compile time constant",
+      "Line": 11
+    },
+    {
+      "Fixture": "CorrectExceptionPassing_SerilogIncorrectExceptionPassingDynamicTemplate.cs",
+      "SlaId": "SLA0005",
+      "Source": "inspectcode",
+      "Message": "Exception should be passed to the exception argument",
+      "Line": 11
+    },
+    {
+      "Fixture": "DuplicatePropertiesTemplate_SerilogDuplicateNamedProperty.cs",
+      "SlaId": "SLA0006",
+      "Source": "inspectcode",
+      "Message": "Duplicate properties in message template",
+      "Line": 10
+    },
+    {
+      "Fixture": "DuplicatePropertiesTemplate_SerilogDuplicateNamedProperty.cs",
+      "SlaId": "SLA0006",
+      "Source": "inspectcode",
+      "Message": "Duplicate properties in message template",
+      "Line": 10
+    },
+    {
+      "Fixture": "LogMessageIsSentence_SerilogSentenceMessage.cs",
+      "SlaId": "SLA0011",
+      "Source": "inspectcode",
+      "Message": "Log event messages should be fragments, not sentences. Avoid a trailing period/full stop.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PositionalPropertiesUsage_SerilogPositionProperty.cs",
+      "SlaId": "SLA0008",
+      "Source": "inspectcode",
+      "Message": "Prefer named properties instead of positional ones",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzerDotNet6_ZLoggerInvalidNamedProperty.cs",
+      "SlaId": "SLA0009",
+      "Source": "inspectcode",
+      "Message": "Property name 'myProperty' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 11
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogContextInvalidNamedProperty.cs",
+      "SlaId": "SLA0010",
+      "Source": "inspectcode",
+      "Message": "Property name 'test' does not match naming rules. Suggested name is 'Test'.",
+      "Line": 11
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogIgnoredInvalidNamedProperty.cs",
+      "SlaId": "SLA0009",
+      "Source": "inspectcode",
+      "Message": "Property name 'MY_IGNORED.Property_' does not match naming rules. Suggested name is 'MYIgnoredProperty'.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogInvalidElasticNamedProperty.cs",
+      "SlaId": "SLA0009",
+      "Source": "inspectcode",
+      "Message": "Property name 'myProperty' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogInvalidNamedProperty.cs",
+      "SlaId": "SLA0009",
+      "Source": "inspectcode",
+      "Message": "Property name 'myProperty' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogInvalidNamedPropertyWithDot.cs",
+      "SlaId": "SLA0009",
+      "Source": "inspectcode",
+      "Message": "Property name 'My.Property' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 10
+    },
+    {
+      "Fixture": "PropertiesNamingAnalyzer_SerilogInvalidNamedPropertyWithSpace.cs",
+      "SlaId": "SLA0009",
+      "Source": "inspectcode",
+      "Message": "Property name 'My Property' does not match naming rules. Suggested name is 'MyProperty'.",
+      "Line": 10
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:best-practices',
+    'github>alexaka1/renovate-config',
+    'github>alexaka1/renovate-config:monorepos',
+    'github>alexaka1/renovate-config//opinionated/schedules',
+    'github>alexaka1/renovate-config//opinionated/labels',
+    'github>alexaka1/renovate-config//opinionated/security',
+    ':automergePr',
+    ':automergePatch',
+    ':automergeMinor',
+    ':automergeDigest',
+    ':automergeRequireAllStatusChecks',
+    ':rebaseStalePrs',
+    ':pinDependencies',
+    'security:minimumReleaseAgeNpm',
+  ],
+  baseBranchPatterns: [
+    '$default',
+    '/^beta$/',
+  ],
+  packageRules: [
+    {
+      description: 'Skip major upgrades for .NET',
+      matchPackageNames: [
+        'mcr.microsoft.com/dotnet/**',
+        'mcr.microsoft.com/dotnet/nightly/**',
+      ],
+      matchUpdateTypes: [
+        'major',
+      ],
+      matchDatasources: [
+        'docker',
+      ],
+      enabled: false,
+    },
+    {
+      description: [
+        "Ignore pnpm workspace overrides",
+      ],
+      matchManagers: ["npm"],
+      matchDepTypes: ["pnpm-workspace.overrides"],
+      matchFileNames: ["pnpm-workspace.yaml"],
+      enabled: false,
+    },
+  ],
+  ignorePaths: [
+    '**/node_modules/**',
+    '**/bower_components/**',
+    '**/vendor/**',
+    '**/examples/**',
+    '**/__tests__/**',
+    '**/tests/**',
+    '**/__fixtures__/**',
+  ],
+  nuget: {
+    managerFilePatterns: [
+      '/(^|/)build\\/.*\\.cs$/',
+    ],
+  },
+}
