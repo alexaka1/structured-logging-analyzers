@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Version.props" />
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -7,7 +8,6 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <NoWarn>$(NoWarn);NU5128;NU5127;NU5125</NoWarn>
     <PackageId>Alexaka1.Analyzers.StructuredLogging</PackageId>
-    <Version>1.0.0-preview.1</Version>
     <Authors>alexaka1</Authors>
     <Copyright>Copyright (c) 2026 alexaka1</Copyright>
     <Description>Roslyn analyzers and code fixes for structured logging templates (Serilog, NLog, Microsoft.Extensions.Logging, ZLogger).</Description>
@@ -26,6 +26,8 @@
   <ItemGroup>
     <None Include="..\..\docs\package-readme.md" Pack="true" PackagePath="README.md" />
     <None Include="..\..\PROVENANCE.md" Pack="true" PackagePath="" />
+    <None Remove="package.json" />
+    <None Remove="CHANGELOG.md" />
   </ItemGroup>
   <PropertyGroup>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackAnalyzerFiles</TargetsForTfmSpecificContentInPackage>

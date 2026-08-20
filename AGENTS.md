@@ -3,18 +3,20 @@
 ## Project Structure & Modules
 - `src/Alexaka1.Analyzers.StructuredLogging`: `netstandard2.0` diagnostic analyzers (`AASL0001`–`AASL0011`).
 - `src/Alexaka1.Analyzers.StructuredLogging.CodeFixes`: Roslyn code fixes for the analyzers that have safe transformations.
-- `pack/Alexaka1.Analyzers.StructuredLogging`: Analyzer-only NuGet package (`Alexaka1.Analyzers.StructuredLogging`). No `lib/` assets.
+- `pack/Alexaka1.Analyzers.StructuredLogging`: Analyzer-only NuGet package (`Alexaka1.Analyzers.StructuredLogging`). No `lib/` assets. Changesets versions this package.
 - `test/Alexaka1.Analyzers.StructuredLogging.Tests`: xUnit tests hosted on .NET 10.
 - `test/comparison`: Optional InspectCode comparison against the published ReSharper marketplace plugin.
 - `samples/`: Consuming projects targeting `net10.0`, `netstandard2.0`, and SDK-style `net472`.
 - `docs/`: Rule pages, compatibility notes, and the NuGet package readme. Root solution: `Alexaka1.Analyzers.StructuredLogging.slnx`.
-- NuGet package ID and root namespace: `Alexaka1.Analyzers.StructuredLogging`. Diagnostic prefix: `AASL`. GitHub repository: `alexaka1/structured-logging-analyzers`.
+- `.changeset/`: Pending release notes consumed by Changesets.
+- `build/`: Release helper scripts (`version.sh`, `extract-changelog.sh`, `detect-duplicate-release.sh`).
 
 ## Build, Test, and Development
 - Test: `dotnet test Alexaka1.Analyzers.StructuredLogging.slnx -c Release`
 - Pack: `dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj -c Release`
 - Samples: `dotnet build samples/Net10Example/Net10Example.csproj -c Release`
 - Comparison (optional): `./test/comparison/run-comparison.sh`
+- Changeset (user-visible package changes): `pnpm changeset`
 
 Keep analyzer assemblies free of Workspaces references. Do not add runtime or `lib/` assets to the NuGet package.
 
@@ -33,9 +35,12 @@ Keep analyzer assemblies free of Workspaces references. Do not add runtime or `l
 - Commits: imperative, concise; squash feature branches to a single commit.
 - PRs: describe behavior, test impact, and any compatibility change.
 - Requirements: green Continuous Integration.
+- Code scanning: `.github/workflows/codeql.yml` is CodeQL advanced setup for `csharp` and `actions`.
 
 ## Publishing
-- NuGet publishes from `.github/workflows/publish-nuget.yml` using [trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (GitHub OIDC). There is no long-lived NuGet API key.
-- Trigger: push a `v*.*.*` tag, or run **Publish NuGet Package** and supply a version.
-- nuget.org policy: package `Alexaka1.Analyzers.StructuredLogging`, repository `alexaka1/structured-logging-analyzers`, workflow file `publish-nuget.yml`, environment `nuget`.
+- Add a changeset on PRs that change the published package: `pnpm changeset`.
+- Versioning: `.github/workflows/version.yml` opens a Version package PR from pending changesets. Merging that PR tags `Alexaka1.Analyzers.StructuredLogging@<version>`.
+- Releases: `.github/workflows/publish-nuget.yml` runs on that tag. It fails if a GitHub release or nuget.org package for that version already exists, then attaches the nupkg to a GitHub release (draft, then publish, for immutable releases) and pushes to nuget.org using [trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (GitHub OIDC). There is no long-lived NuGet API key.
+- nuget.org policy: repository `alexaka1/structured-logging-analyzers`, workflow file `publish-nuget.yml`, environment `nuget`.
+- GitHub release tags and the Version package PR use the `release` environment and GitHub App secrets `RELEASE_BOT_APP_ID` / `RELEASE_BOT_PRIVATE_KEY`.
 - Set repository variable `NUGET_USER` to the nuget.org profile name (not an email).
