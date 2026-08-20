@@ -1,6 +1,6 @@
 // Copyright (c) 2026 alexaka1
 
-namespace StructuredLogging.Comparison;
+namespace Alexaka1.Analyzers.StructuredLogging.Comparison;
 
 public static class RuleMap
 {

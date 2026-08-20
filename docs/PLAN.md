@@ -209,19 +209,19 @@ Recommended structure:
 
 ```text
 src/
-  StructuredLogging.Analyzers/
+  Alexaka1.Analyzers.StructuredLogging/
     netstandard2.0
     Compiler APIs only
 
-  StructuredLogging.CodeFixes/
+  Alexaka1.Analyzers.StructuredLogging.CodeFixes/
     netstandard2.0
     Workspaces APIs
 
 pack/
-  StructuredLogging.Package/
+  Alexaka1.Analyzers.StructuredLogging/
 
 test/
-  StructuredLogging.Tests/
+  Alexaka1.Analyzers.StructuredLogging.Tests/
 
 samples/
   Net10Example/
@@ -232,8 +232,8 @@ samples/
 Package structure:
 
 ```text
-analyzers/dotnet/cs/StructuredLogging.Analyzers.dll
-analyzers/dotnet/cs/StructuredLogging.CodeFixes.dll
+analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.dll
+analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll
 README.md
 license and provenance files
 ```
@@ -354,7 +354,7 @@ Consumer project:
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="StructuredLogging.Analyzers"
+  <PackageReference Include="Alexaka1.Analyzers.StructuredLogging"
                     Version="1.0.0"
                     PrivateAssets="all" />
 </ItemGroup>
@@ -363,7 +363,7 @@ Consumer project:
 .NET 10 CLI:
 
 ```shell
-dotnet package add StructuredLogging.Analyzers
+dotnet package add Alexaka1.Analyzers.StructuredLogging
 ```
 
 Severity configuration:
@@ -429,11 +429,15 @@ The MIT-only approach is preferable for the new package.
 
 The production analyzer should live in a new standalone repository.
 
-A suitable naming style is:
+Reserved identity:
 
 ```text
-structured-logging-analyzers
+GitHub:         alexaka1/structured-logging-analyzers
+NuGet:          Alexaka1.Analyzers.StructuredLogging
+Root namespace: Alexaka1.Analyzers.StructuredLogging
 ```
+
+The repository slug stays kebab-case. The NuGet ID and C# root namespace use the author-prefixed form so they do not collide with [fedarovich/structured-logging-analyzers](https://github.com/fedarovich/structured-logging-analyzers) (`StructuredLogging.Analyzers`).
 
 The product, package, and repository name should avoid “ReSharper” and “Rider”. Those names describe JetBrains products and are not the identity of the Roslyn analyzer.
 

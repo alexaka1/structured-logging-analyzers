@@ -10,7 +10,7 @@ reference to consuming applications.
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="StructuredLogging.Analyzers"
+  <PackageReference Include="Alexaka1.Analyzers.StructuredLogging"
                     Version="1.0.0-preview.1"
                     PrivateAssets="all" />
 </ItemGroup>
@@ -19,17 +19,17 @@ reference to consuming applications.
 .NET 10 CLI:
 
 ```shell
-dotnet package add StructuredLogging.Analyzers
+dotnet package add Alexaka1.Analyzers.StructuredLogging
 ```
 
 Central package management:
 
 ```xml
-<PackageVersion Include="StructuredLogging.Analyzers" Version="1.0.0-preview.1" />
+<PackageVersion Include="Alexaka1.Analyzers.StructuredLogging" Version="1.0.0-preview.1" />
 ```
 
 ```xml
-<PackageReference Include="StructuredLogging.Analyzers" PrivateAssets="all" />
+<PackageReference Include="Alexaka1.Analyzers.StructuredLogging" PrivateAssets="all" />
 ```
 
 ## Configuration

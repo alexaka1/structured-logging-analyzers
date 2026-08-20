@@ -6,8 +6,8 @@ using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
-using StructuredLogging.Analyzers;
-using StructuredLogging.Comparison;
+using Alexaka1.Analyzers.StructuredLogging;
+using Alexaka1.Analyzers.StructuredLogging.Comparison;
 
 var repoRoot = FindRepoRoot();
 var corpusDir = Path.Combine(repoRoot, "test", "comparison", "corpus");
@@ -66,7 +66,7 @@ static string FindRepoRoot()
     var dir = new DirectoryInfo(AppContext.BaseDirectory);
     while (dir is not null)
     {
-        if (File.Exists(Path.Combine(dir.FullName, "StructuredLogging.Roslyn.slnx")))
+        if (File.Exists(Path.Combine(dir.FullName, "Alexaka1.Analyzers.StructuredLogging.slnx")))
         {
             return dir.FullName;
         }

@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <NoWarn>$(NoWarn);NU5128;NU5127;NU5125</NoWarn>
+    <PackageId>Alexaka1.Analyzers.StructuredLogging</PackageId>
+    <Version>1.0.0-preview.1</Version>
+    <Authors>alexaka1</Authors>
+    <Copyright>Copyright (c) 2026 alexaka1</Copyright>
+    <Description>Roslyn analyzers and code fixes for structured logging templates (Serilog, NLog, Microsoft.Extensions.Logging, ZLogger).</Description>
+    <PackageTags>analyzers;roslyn;serilog;nlog;logging;structured-logging</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <RepositoryUrl>https://github.com/alexaka1/structured-logging-analyzers</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/alexaka1/structured-logging-analyzers</PackageProjectUrl>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Alexaka1.Analyzers.StructuredLogging\Analyzer.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\..\src\Alexaka1.Analyzers.StructuredLogging.CodeFixes\CodeFixes.csproj" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\docs\package-readme.md" Pack="true" PackagePath="README.md" />
+    <None Include="..\..\PROVENANCE.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackAnalyzerFiles</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+  <Target Name="PackAnalyzerFiles">
+    <PropertyGroup>
+      <_AnalyzerDll>$(MSBuildThisFileDirectory)..\..\src\Alexaka1.Analyzers.StructuredLogging\bin\$(Configuration)\netstandard2.0\Alexaka1.Analyzers.StructuredLogging.dll</_AnalyzerDll>
+      <_CodeFixDll>$(MSBuildThisFileDirectory)..\..\src\Alexaka1.Analyzers.StructuredLogging.CodeFixes\bin\$(Configuration)\netstandard2.0\Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll</_CodeFixDll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_AnalyzerDll)')" Text="Analyzer assembly not found at $(_AnalyzerDll)" />
+    <Error Condition="!Exists('$(_CodeFixDll)')" Text="Code-fix assembly not found at $(_CodeFixDll)" />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(_AnalyzerDll)" PackagePath="analyzers/dotnet/cs" />
+      <TfmSpecificPackageFile Include="$(_CodeFixDll)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+</Project>

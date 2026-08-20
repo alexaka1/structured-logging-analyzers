@@ -5,7 +5,7 @@ each ReSharper inspection to a diagnostic, records preserved quirks, and
 lists intentional corrections.
 
 Diagnostic prefix: `SLA` (Structured Logging Analyzer).
-Package ID: `StructuredLogging.Analyzers`.
+Package ID: `Alexaka1.Analyzers.StructuredLogging`.
 
 ## ReSharper CLI comparison
 

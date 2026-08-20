@@ -55,11 +55,11 @@ jobs:
           fi
 
       - name: Test
-        run: dotnet test StructuredLogging.Roslyn.slnx -c Release
+        run: dotnet test Alexaka1.Analyzers.StructuredLogging.slnx -c Release
 
       - name: Pack
         run: >
-          dotnet pack pack/StructuredLogging.Package/Package.csproj
+          dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj
           -c Release
           -o artifacts
           -p:Version=${{ steps.version.outputs.version }}

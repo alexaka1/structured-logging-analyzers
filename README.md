@@ -8,11 +8,11 @@ This package inspects structured logging templates in any C# IDE or
 [ReSharper/Rider Structured Logging plugin](https://github.com/olsh/resharper-structured-logging).
 See [PROVENANCE.md](PROVENANCE.md) and [docs/compatibility.md](docs/compatibility.md).
 
-Package ID: `StructuredLogging.Analyzers` (diagnostic prefix `SLA`).
+Package ID: `Alexaka1.Analyzers.StructuredLogging` (diagnostic prefix `SLA`).
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="StructuredLogging.Analyzers"
+  <PackageReference Include="Alexaka1.Analyzers.StructuredLogging"
                     Version="1.0.0-preview.1"
                     PrivateAssets="all" />
 </ItemGroup>
@@ -28,8 +28,8 @@ structured_logging_ignored_properties_regex = ^Legacy\.
 Build and test:
 
 ```shell
-dotnet test StructuredLogging.Roslyn.slnx
-dotnet pack pack/StructuredLogging.Package/Package.csproj
+dotnet test Alexaka1.Analyzers.StructuredLogging.slnx
+dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj
 ```
 
 The production assemblies target `netstandard2.0` and analyze projects targeting

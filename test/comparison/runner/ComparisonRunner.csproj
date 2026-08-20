@@ -5,8 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <RootNamespace>StructuredLogging.Comparison</RootNamespace>
-    <AssemblyName>StructuredLogging.Comparison</AssemblyName>
+    <RootNamespace>Alexaka1.Analyzers.StructuredLogging.Comparison</RootNamespace>
+    <AssemblyName>Alexaka1.Analyzers.StructuredLogging.Comparison</AssemblyName>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
@@ -17,6 +17,6 @@
     <PackageReference Include="ZLogger" Version="1.7.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\StructuredLogging.Analyzers\Analyzer.csproj" />
+    <ProjectReference Include="..\..\..\src\Alexaka1.Analyzers.StructuredLogging\Analyzer.csproj" />
   </ItemGroup>
 </Project>

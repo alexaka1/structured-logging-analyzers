@@ -1,7 +1,7 @@
 # ReSharper CLI vs Roslyn comparison
 
 This folder runs the published ReSharper plugin through InspectCode and
-compares its findings with `StructuredLogging.Analyzers` on the same
+compares its findings with `Alexaka1.Analyzers.StructuredLogging` on the same
 characterization corpus.
 
 The published plugin is downloaded from the JetBrains Marketplace. This
