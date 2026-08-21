@@ -7,7 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Serilog" Version="4.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <ProjectReference Include="..\..\src\Alexaka1.Analyzers.StructuredLogging\Analyzer.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
