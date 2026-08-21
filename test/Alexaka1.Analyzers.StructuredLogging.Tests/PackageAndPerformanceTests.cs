@@ -75,7 +75,7 @@ public sealed class PackageAndPerformanceTests
             """;
         var diagnostics = await Infrastructure.AnalyzerTestHost.GetDiagnosticsAsync(
             source,
-            editorConfig: "structured_logging_ignored_properties_regex = (unclosed");
+            editorConfig: "dotnet_code_quality.AASL.ignored_properties_regex = (unclosed");
         Assert.Contains(diagnostics, d => d.Id == "AASL0009");
     }
 

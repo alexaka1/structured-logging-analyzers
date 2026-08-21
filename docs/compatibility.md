@@ -44,16 +44,20 @@ See `test/comparison/README.md` and `test/comparison/reports/comparison.md`.
 [*.cs]
 dotnet_diagnostic.AASL0001.severity = warning
 
-structured_logging_property_naming = pascal_case
-structured_logging_ignored_properties_regex =
+dotnet_code_quality.AASL.property_naming = pascal_case
+dotnet_code_quality.AASL.ignored_properties_regex =
 ```
 
-`structured_logging_property_naming` values:
+`dotnet_code_quality.AASL.property_naming` values:
 
 - `pascal_case` (default)
 - `camel_case`
 - `snake_case`
 - `elastic_naming`
+
+The same options can be scoped to `AASL0009` or `AASL0010`, for example
+`dotnet_code_quality.AASL0009.property_naming`. Prefix-level keys win when
+both are set.
 
 Invalid configuration is ignored; analyzers do not throw.
 

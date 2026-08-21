@@ -8,8 +8,11 @@ namespace Alexaka1.Analyzers.StructuredLogging.Configuration;
 
 internal readonly struct AnalyzerSettings
 {
-    public const string NamingKey = "structured_logging_property_naming";
-    public const string IgnoredRegexKey = "structured_logging_ignored_properties_regex";
+    public const string NamingOptionName = "property_naming";
+    public const string IgnoredRegexOptionName = "ignored_properties_regex";
+
+    public const string NamingKey = "dotnet_code_quality." + DiagnosticIds.Prefix + "." + NamingOptionName;
+    public const string IgnoredRegexKey = "dotnet_code_quality." + DiagnosticIds.Prefix + "." + IgnoredRegexOptionName;
 
     public AnalyzerSettings(PropertyNamingStyle naming, string? ignoredPattern)
     {
@@ -27,13 +30,13 @@ internal readonly struct AnalyzerSettings
     {
         var options = provider.GetOptions(tree);
         var naming = PropertyNamingStyle.PascalCase;
-        if (options.TryGetValue(NamingKey, out var namingValue))
+        if (TryGetOption(options, NamingOptionName, out var namingValue))
         {
             naming = ParseNaming(namingValue);
         }
 
         string? pattern = null;
-        if (options.TryGetValue(IgnoredRegexKey, out var regexValue) && !string.IsNullOrWhiteSpace(regexValue))
+        if (TryGetOption(options, IgnoredRegexOptionName, out var regexValue))
         {
             pattern = regexValue;
         }
@@ -50,6 +53,35 @@ internal readonly struct AnalyzerSettings
 
         var regex = cache.Get(IgnoredPattern!);
         return regex != null && regex.IsMatch(propertyName);
+    }
+
+    private static bool TryGetOption(AnalyzerConfigOptions options, string optionName, out string value)
+    {
+        if (TryGetScoped(options, DiagnosticIds.Prefix, optionName, out value) ||
+            TryGetScoped(options, DiagnosticIds.InconsistentTemplatePropertyNaming, optionName, out value) ||
+            TryGetScoped(options, DiagnosticIds.InconsistentContextPropertyNaming, optionName, out value))
+        {
+            return true;
+        }
+
+        value = null!;
+        return false;
+    }
+
+    private static bool TryGetScoped(
+        AnalyzerConfigOptions options,
+        string scope,
+        string optionName,
+        out string value)
+    {
+        if (options.TryGetValue("dotnet_code_quality." + scope + "." + optionName, out value) &&
+            !string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        value = null!;
+        return false;
     }
 
     private static PropertyNamingStyle ParseNaming(string value)

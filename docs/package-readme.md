@@ -39,12 +39,13 @@ Central package management:
 dotnet_diagnostic.AASL0001.severity = warning
 dotnet_diagnostic.AASL0002.severity = none
 
-structured_logging_property_naming = pascal_case
-structured_logging_ignored_properties_regex = ^Legacy\.
+dotnet_code_quality.AASL.property_naming = pascal_case
+dotnet_code_quality.AASL.ignored_properties_regex = ^Legacy\.
 ```
 
 Naming values: `pascal_case` (default), `camel_case`, `snake_case`,
-`elastic_naming`.
+`elastic_naming`. The same options can be scoped to `AASL0009` or
+`AASL0010` (for example `dotnet_code_quality.AASL0009.property_naming`).
 
 ## Diagnostics
 
