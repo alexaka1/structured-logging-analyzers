@@ -15,9 +15,8 @@ else
   SED_INPLACE=(sed -i '')
 fi
 
-PACKAGE_DIR="pack/Alexaka1.Analyzers.StructuredLogging"
-PACKAGE_JSON="${PACKAGE_DIR}/package.json"
-VERSION_FILE="${PACKAGE_DIR}/Version.props"
+PACKAGE_JSON="package.json"
+VERSION_FILE="pack/Alexaka1.Analyzers.StructuredLogging/Version.props"
 VERSION=$(jq -r '.version // empty' "${PACKAGE_JSON}")
 
 if [ -z "${VERSION}" ]; then

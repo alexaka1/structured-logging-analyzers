@@ -13,8 +13,7 @@
     <PackageTags>analyzers;roslyn;serilog;nlog;logging;structured-logging</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <!-- GitHub tree URL so Renovate sets sourceDirectory to this package and finds CHANGELOG.md. -->
-    <RepositoryUrl>https://github.com/alexaka1/structured-logging-analyzers/tree/main/pack/Alexaka1.Analyzers.StructuredLogging</RepositoryUrl>
+    <RepositoryUrl>https://github.com/alexaka1/structured-logging-analyzers</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/alexaka1/structured-logging-analyzers</PackageProjectUrl>
     <IsPackable>true</IsPackable>
@@ -26,8 +25,6 @@
   <ItemGroup>
     <None Include="..\..\docs\package-readme.md" Pack="true" PackagePath="README.md" />
     <None Include="..\..\PROVENANCE.md" Pack="true" PackagePath="" />
-    <None Remove="package.json" />
-    <None Remove="CHANGELOG.md" />
   </ItemGroup>
   <PropertyGroup>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackAnalyzerFiles</TargetsForTfmSpecificContentInPackage>

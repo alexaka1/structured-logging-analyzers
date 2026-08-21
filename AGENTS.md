@@ -3,7 +3,7 @@
 ## Project Structure & Modules
 - `src/Alexaka1.Analyzers.StructuredLogging`: `netstandard2.0` diagnostic analyzers (`AASL0001`–`AASL0011`).
 - `src/Alexaka1.Analyzers.StructuredLogging.CodeFixes`: Roslyn code fixes for the analyzers that have safe transformations.
-- `pack/Alexaka1.Analyzers.StructuredLogging`: Analyzer-only NuGet package (`Alexaka1.Analyzers.StructuredLogging`). No `lib/` assets. Changesets versions this package.
+- `pack/Alexaka1.Analyzers.StructuredLogging`: Analyzer-only NuGet pack project (`Alexaka1.Analyzers.StructuredLogging`). No `lib/` assets.
 - `test/Alexaka1.Analyzers.StructuredLogging.Tests`: xUnit tests hosted on .NET 10.
 - `test/comparison`: Optional InspectCode comparison against the published ReSharper marketplace plugin.
 - `samples/`: Consuming projects targeting `net10.0`, `netstandard2.0`, and SDK-style `net472`.

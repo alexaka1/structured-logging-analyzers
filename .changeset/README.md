@@ -1,6 +1,6 @@
 # Changesets
 
-This folder is used by `@changesets/cli` to version `pack/Alexaka1.Analyzers.StructuredLogging` and generate its `CHANGELOG.md`.
+This folder is used by `@changesets/cli` to version `Alexaka1.Analyzers.StructuredLogging` and generate `CHANGELOG.md`.
 
 Add a changeset when a pull request changes the published `Alexaka1.Analyzers.StructuredLogging` package:
 
