@@ -1,0 +1,8 @@
+# Comparison corpus contains upstream samples with unused members and duplicate usings.
+[*.cs]
+dotnet_diagnostic.CS0105.severity = none
+dotnet_diagnostic.CS0108.severity = none
+dotnet_diagnostic.CS0169.severity = none
+dotnet_diagnostic.CS0219.severity = none
+dotnet_diagnostic.CS0649.severity = none
+dotnet_diagnostic.CS8019.severity = none

@@ -1,0 +1,5 @@
+# Analyzer-only nupkg: no lib/ref assemblies and no licenseUrl.
+[*.csproj]
+dotnet_diagnostic.NU5125.severity = none
+dotnet_diagnostic.NU5127.severity = none
+dotnet_diagnostic.NU5128.severity = none
