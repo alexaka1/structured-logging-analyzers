@@ -42,5 +42,5 @@ Keep analyzer assemblies free of Workspaces references. Do not add runtime or `l
 - Versioning: `.github/workflows/version.yml` opens a Version package PR from pending changesets. Merging that PR tags `Alexaka1.Analyzers.StructuredLogging@<version>`.
 - Releases: `.github/workflows/publish-nuget.yml` runs on that tag. It fails if a GitHub release or nuget.org package for that version already exists, then attaches the nupkg to a GitHub release (draft, then publish, for immutable releases) and pushes to nuget.org using [trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) (GitHub OIDC). There is no long-lived NuGet API key.
 - nuget.org policy: repository `alexaka1/structured-logging-analyzers`, workflow file `publish-nuget.yml`, environment `nuget`.
-- GitHub release tags and the Version package PR use the `release` environment and GitHub App secrets `RELEASE_BOT_APP_ID` / `RELEASE_BOT_PRIVATE_KEY`.
+- GitHub release tags and the Version package PR use the `release` environment and GitHub App secrets `RELEASE_BOT_CLIENT_ID` / `RELEASE_BOT_PRIVATE_KEY`.
 - Set repository variable `NUGET_USER` to the nuget.org profile name (not an email).
