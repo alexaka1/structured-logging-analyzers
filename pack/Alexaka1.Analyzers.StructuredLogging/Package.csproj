@@ -13,6 +13,7 @@
     <PackageTags>analyzers;roslyn;serilog;nlog;logging;structured-logging</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <!-- GitHub tree URL so Renovate sets sourceDirectory to this package and finds CHANGELOG.md. -->
     <RepositoryUrl>https://github.com/alexaka1/structured-logging-analyzers/tree/main/pack/Alexaka1.Analyzers.StructuredLogging</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/alexaka1/structured-logging-analyzers</PackageProjectUrl>

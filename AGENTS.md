@@ -7,7 +7,7 @@
 - `test/Alexaka1.Analyzers.StructuredLogging.Tests`: xUnit tests hosted on .NET 10.
 - `test/comparison`: Optional InspectCode comparison against the published ReSharper marketplace plugin.
 - `samples/`: Consuming projects targeting `net10.0`, `netstandard2.0`, and SDK-style `net472`.
-- `docs/`: Rule pages, compatibility notes, the NuGet package readme, and Renovate changelog discovery notes. Root solution: `Alexaka1.Analyzers.StructuredLogging.slnx`.
+- `docs/`: Rule pages, compatibility notes, and the NuGet package readme. Root solution: `Alexaka1.Analyzers.StructuredLogging.slnx`.
 - `.changeset/`: Pending release notes consumed by Changesets.
 - `build/`: Release helper scripts (`version.sh`, `extract-changelog.sh`, `detect-duplicate-release.sh`).
 
@@ -17,7 +17,6 @@
 - Samples: `dotnet build samples/Net10Example/Net10Example.csproj -c Release`
 - Comparison (optional): `./test/comparison/run-comparison.sh`
 - Changeset (user-visible package changes): `pnpm changeset`
-- Renovate changelog discovery: `./scripts/verify-renovate-changelog.sh`
 
 Keep analyzer assemblies free of Workspaces references. Do not add runtime or `lib/` assets to the NuGet package.
 
