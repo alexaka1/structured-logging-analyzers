@@ -14,7 +14,7 @@
     <PackageTags>analyzers;roslyn;serilog;nlog;logging;structured-logging</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <RepositoryUrl>https://github.com/alexaka1/structured-logging-analyzers</RepositoryUrl>
+    <RepositoryUrl>https://github.com/alexaka1/structured-logging-analyzers/tree/main/pack/Alexaka1.Analyzers.StructuredLogging</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/alexaka1/structured-logging-analyzers</PackageProjectUrl>
     <IsPackable>true</IsPackable>

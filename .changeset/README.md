@@ -9,3 +9,6 @@ pnpm changeset
 ```
 
 See the [Changesets documentation](https://github.com/changesets/changesets) for details.
+
+The packed `RepositoryUrl` points at this directory so Renovate can find
+`CHANGELOG.md`. See [docs/renovate-release-notes.md](../docs/renovate-release-notes.md).
