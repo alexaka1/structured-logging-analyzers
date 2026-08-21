@@ -4,7 +4,6 @@
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>disable</ImplicitUsings>
-    <NoWarn>CS8019;CS0219;CS0169;CS0649;CS0105;CS0108</NoWarn>
     <RunAnalyzers>false</RunAnalyzers>
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <EnableStructuredLoggingAnalyzers Condition="'$(EnableStructuredLoggingAnalyzers)' == ''">false</EnableStructuredLoggingAnalyzers>

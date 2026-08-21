@@ -6,7 +6,6 @@
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <DevelopmentDependency>true</DevelopmentDependency>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <NoWarn>$(NoWarn);NU5128;NU5127;NU5125</NoWarn>
     <PackageId>Alexaka1.Analyzers.StructuredLogging</PackageId>
     <Authors>alexaka1</Authors>
     <Copyright>Copyright (c) 2026 alexaka1</Copyright>

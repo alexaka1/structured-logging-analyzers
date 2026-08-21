@@ -11,3 +11,18 @@ indent_size = 4
 
 [{*.csproj,*.json,*.json5,*.yml,*.yaml,*.xml,*.props,*.nuspec,*.config}]
 indent_size = 2
+
+# Analyzer-only nupkg: no lib/ref assemblies and no licenseUrl.
+[pack/Alexaka1.Analyzers.StructuredLogging/*.csproj]
+dotnet_diagnostic.NU5125.severity = none
+dotnet_diagnostic.NU5127.severity = none
+dotnet_diagnostic.NU5128.severity = none
+
+# Comparison corpus contains upstream samples with unused members and duplicate usings.
+[test/comparison/corpus/*.cs]
+dotnet_diagnostic.CS0105.severity = none
+dotnet_diagnostic.CS0108.severity = none
+dotnet_diagnostic.CS0169.severity = none
+dotnet_diagnostic.CS0219.severity = none
+dotnet_diagnostic.CS0649.severity = none
+dotnet_diagnostic.CS8019.severity = none
