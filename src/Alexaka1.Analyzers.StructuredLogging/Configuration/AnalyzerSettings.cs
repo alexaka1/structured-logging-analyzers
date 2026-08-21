@@ -74,9 +74,10 @@ internal readonly struct AnalyzerSettings
         string optionName,
         out string value)
     {
-        if (options.TryGetValue("dotnet_code_quality." + scope + "." + optionName, out value) &&
-            !string.IsNullOrWhiteSpace(value))
+        if (options.TryGetValue("dotnet_code_quality." + scope + "." + optionName, out var raw) &&
+            !string.IsNullOrWhiteSpace(raw))
         {
+            value = raw;
             return true;
         }
 
