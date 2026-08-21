@@ -5,14 +5,52 @@ on:
     branches:
       - main
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}-changesets
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-changesets
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
+  select-mode:
+    name: Select Changesets mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.select-mode.outputs.mode }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.node-version'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Select Changesets mode
+        id: select-mode
+        uses: changesets/action/select-mode@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
+
   version:
-    name: Prepare or create release
+    name: Version packages
+    if: needs.select-mode.outputs.mode == 'version'
+    needs: select-mode
     runs-on: ubuntu-latest
     environment: release
     timeout-minutes: 10
@@ -21,14 +59,15 @@ jobs:
         shell: bash
     permissions:
       contents: read
-      id-token: write
     steps:
-      - name: Generate GitHub App token to create releases
+      - name: Generate GitHub App token to create the version PR
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         id: app-token
         with:
           client-id: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,16 +89,59 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create Pull Request or tag
-        id: changesets
-        uses: changesets/action@198f833dd7d863100ea6e28967bc9a9fdefadb0a # v2.1.0
+      - name: Version packages
+        uses: changesets/action/version@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
         with:
           github-token: ${{ steps.app-token.outputs.token }}
-          version-script: pnpm run version
-          publish-script: pnpm exec changeset tag
-          create-github-releases: false
-          push-git-tags: true
+          script: pnpm run version
           commit-message: 'Version package'
           pr-title: 'Version package'
-        env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+  publish:
+    name: Tag release
+    if: needs.select-mode.outputs.mode == 'publish'
+    needs: select-mode
+    runs-on: ubuntu-latest
+    environment: release
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    permissions:
+      contents: read
+    steps:
+      - name: Generate GitHub App token to push git tags
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.node-version'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create git tags
+        uses: changesets/action/publish@8488615a623b1b9c987934bb89eae8af6a946ac1 # v2.1.1
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: pnpm exec changeset git-tag
+          create-github-releases: false
+          push-git-tags: true

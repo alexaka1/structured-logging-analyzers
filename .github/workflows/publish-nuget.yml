@@ -3,7 +3,7 @@ name: Publish NuGet Package
 on:
   push:
     tags:
-      - 'Alexaka1.Analyzers.StructuredLogging@*'
+      - 'v*.*.*'
 
 permissions:
   contents: read
@@ -44,18 +44,7 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          prefix="${PACKAGE_NAME}@"
-          case "${GITHUB_REF_NAME}" in
-            "${prefix}"*) version="${GITHUB_REF_NAME#"${prefix}"}" ;;
-            *)
-              echo "::error::Unexpected tag '${GITHUB_REF_NAME}'."
-              exit 1
-              ;;
-          esac
-          if [ -z "${version}" ]; then
-            echo "::error::Failed to resolve package version from '${GITHUB_REF_NAME}'."
-            exit 1
-          fi
+          version="$(./build/resolve-release-version.sh "${GITHUB_REF_NAME}")"
           props_version="$(sed -n 's#.*<Version>\([^<]*\)</Version>.*#\1#p' pack/Alexaka1.Analyzers.StructuredLogging/Version.props | head -n 1)"
           if [ "${props_version}" != "${version}" ]; then
             echo "::error::Tag version '${version}' does not match Version.props '${props_version}'."
@@ -92,6 +81,7 @@ jobs:
         with:
           client-id: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
 
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

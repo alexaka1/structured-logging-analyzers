@@ -11,7 +11,7 @@ reference to consuming applications.
 ```xml
 <ItemGroup>
   <PackageReference Include="Alexaka1.Analyzers.StructuredLogging"
-                    Version="0.1.0-preview.1"
+                    Version="0.1.0-preview.2"
                     PrivateAssets="all" />
 </ItemGroup>
 ```
@@ -25,7 +25,7 @@ dotnet package add Alexaka1.Analyzers.StructuredLogging
 Central package management:
 
 ```xml
-<PackageVersion Include="Alexaka1.Analyzers.StructuredLogging" Version="0.1.0-preview.1" />
+<PackageVersion Include="Alexaka1.Analyzers.StructuredLogging" Version="0.1.0-preview.2" />
 ```
 
 ```xml
