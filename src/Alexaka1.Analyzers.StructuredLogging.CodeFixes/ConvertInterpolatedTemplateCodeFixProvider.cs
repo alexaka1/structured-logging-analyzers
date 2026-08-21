@@ -67,13 +67,9 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var style = PropertyNamingStyle.PascalCase;
-        var options = document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider.GetOptions(interpolated.SyntaxTree);
-        if (options.TryGetValue(AnalyzerSettings.NamingKey, out var namingValue))
-        {
-            style = AnalyzerSettings.From(document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider, interpolated.SyntaxTree).Naming;
-            _ = namingValue;
-        }
+        var style = AnalyzerSettings.From(
+            document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider,
+            interpolated.SyntaxTree).GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
 
         if (!TryBuild(interpolated, style, out var template, out var valueExpressions))
         {

@@ -21,8 +21,8 @@ Package ID: `Alexaka1.Analyzers.StructuredLogging` (diagnostic prefix `AASL`).
 ```editorconfig
 [*.cs]
 dotnet_diagnostic.AASL0001.severity = warning
-structured_logging_property_naming = pascal_case
-structured_logging_ignored_properties_regex = ^Legacy\.
+dotnet_code_quality.AASL.property_naming = pascal_case
+dotnet_code_quality.AASL.ignored_properties_regex = ^Legacy\.
 ```
 
 Build and test:

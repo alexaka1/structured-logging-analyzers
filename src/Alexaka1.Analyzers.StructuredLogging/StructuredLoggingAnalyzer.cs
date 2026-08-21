@@ -529,9 +529,11 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             var constant = context.SemanticModel.GetConstantValue(nameExpression, context.CancellationToken);
             if (constant.HasValue && constant.Value is string propertyName && !string.IsNullOrEmpty(propertyName))
             {
-                if (!settings.IsIgnored(propertyName, regexCache))
+                if (!settings.IsIgnored(propertyName, regexCache, DiagnosticIds.InconsistentContextPropertyNaming))
                 {
-                    var suggested = PropertyNaming.Suggest(propertyName, settings.Naming);
+                    var suggested = PropertyNaming.Suggest(
+                        propertyName,
+                        settings.GetNaming(DiagnosticIds.InconsistentContextPropertyNaming));
                     if (!string.Equals(suggested, propertyName, StringComparison.Ordinal))
                     {
                         var properties = ImmutableDictionary<string, string?>.Empty
