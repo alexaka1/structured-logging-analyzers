@@ -56,8 +56,8 @@ dotnet_code_quality.AASL.ignored_properties_regex =
 - `elastic_naming`
 
 The same options can be scoped to `AASL0009` or `AASL0010`, for example
-`dotnet_code_quality.AASL0009.property_naming`. Prefix-level keys win when
-both are set.
+`dotnet_code_quality.AASL0009.property_naming`. A rule-scoped key applies
+only to that diagnostic. Prefix-level keys apply to both and win when set.
 
 Invalid configuration is ignored; analyzers do not throw.
 

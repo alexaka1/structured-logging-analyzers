@@ -44,7 +44,9 @@ internal static class TemplateStyleRules
             ImmutableDictionary<string, string?>? properties = null;
             if (canRename)
             {
-                var suggested = PropertyNaming.Suggest(templateParameters![i].Name, settings.Naming);
+                var suggested = PropertyNaming.Suggest(
+                    templateParameters![i].Name,
+                    settings.GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming));
                 if (!string.IsNullOrEmpty(suggested))
                 {
                     properties = ImmutableDictionary<string, string?>.Empty
@@ -153,12 +155,14 @@ internal static class TemplateStyleRules
                 continue;
             }
 
-            if (settings.IsIgnored(hole.PropertyName, regexCache))
+            if (settings.IsIgnored(hole.PropertyName, regexCache, DiagnosticIds.InconsistentTemplatePropertyNaming))
             {
                 continue;
             }
 
-            var suggested = PropertyNaming.Suggest(hole.PropertyName, settings.Naming);
+            var suggested = PropertyNaming.Suggest(
+                hole.PropertyName,
+                settings.GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming));
             if (string.Equals(suggested, hole.PropertyName, StringComparison.Ordinal))
             {
                 continue;

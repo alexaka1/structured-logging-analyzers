@@ -69,7 +69,7 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
 
         var style = AnalyzerSettings.From(
             document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider,
-            interpolated.SyntaxTree).Naming;
+            interpolated.SyntaxTree).GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
 
         if (!TryBuild(interpolated, style, out var template, out var valueExpressions))
         {

@@ -185,6 +185,29 @@ public sealed class NamingAnalyzerTests
     }
 
     [Fact]
+    public Task Conflicting_rule_scoped_naming_is_isolated()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Serilog;
+            using Serilog.Context;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{myProperty}", 1);
+                    LogContext.PushProperty({|AASL0010:"myProperty"|}, 1);
+                }
+            }
+            """,
+            editorConfig: """
+            dotnet_code_quality.AASL0009.property_naming = camel_case
+            dotnet_code_quality.AASL0010.property_naming = snake_case
+            """);
+    }
+    }
+
+    [Fact]
     public Task Context_property_naming()
     {
         return AnalyzerTestHost.VerifyAsync("""

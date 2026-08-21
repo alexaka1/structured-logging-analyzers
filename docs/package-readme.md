@@ -46,6 +46,8 @@ dotnet_code_quality.AASL.ignored_properties_regex = ^Legacy\.
 Naming values: `pascal_case` (default), `camel_case`, `snake_case`,
 `elastic_naming`. The same options can be scoped to `AASL0009` or
 `AASL0010` (for example `dotnet_code_quality.AASL0009.property_naming`).
+A rule-scoped key applies only to that diagnostic. Prefix-level keys
+apply to both and win when set.
 
 ## Diagnostics
 

@@ -14,58 +14,95 @@ internal readonly struct AnalyzerSettings
     public const string NamingKey = "dotnet_code_quality." + DiagnosticIds.Prefix + "." + NamingOptionName;
     public const string IgnoredRegexKey = "dotnet_code_quality." + DiagnosticIds.Prefix + "." + IgnoredRegexOptionName;
 
-    public AnalyzerSettings(PropertyNamingStyle naming, string? ignoredPattern)
+    private readonly PropertyNamingStyle? _prefixNaming;
+    private readonly PropertyNamingStyle? _templateNaming;
+    private readonly PropertyNamingStyle? _contextNaming;
+    private readonly string? _prefixIgnored;
+    private readonly string? _templateIgnored;
+    private readonly string? _contextIgnored;
+
+    private AnalyzerSettings(
+        PropertyNamingStyle? prefixNaming,
+        PropertyNamingStyle? templateNaming,
+        PropertyNamingStyle? contextNaming,
+        string? prefixIgnored,
+        string? templateIgnored,
+        string? contextIgnored)
     {
-        Naming = naming;
-        IgnoredPattern = ignoredPattern;
+        _prefixNaming = prefixNaming;
+        _templateNaming = templateNaming;
+        _contextNaming = contextNaming;
+        _prefixIgnored = prefixIgnored;
+        _templateIgnored = templateIgnored;
+        _contextIgnored = contextIgnored;
     }
 
-    public static AnalyzerSettings Default { get; } = new(PropertyNamingStyle.PascalCase, ignoredPattern: null);
-
-    public PropertyNamingStyle Naming { get; }
-
-    public string? IgnoredPattern { get; }
+    public static AnalyzerSettings Default { get; } = default;
 
     public static AnalyzerSettings From(AnalyzerConfigOptionsProvider provider, SyntaxTree tree)
     {
         var options = provider.GetOptions(tree);
-        var naming = PropertyNamingStyle.PascalCase;
-        if (TryGetOption(options, NamingOptionName, out var namingValue))
-        {
-            naming = ParseNaming(namingValue);
-        }
-
-        string? pattern = null;
-        if (TryGetOption(options, IgnoredRegexOptionName, out var regexValue))
-        {
-            pattern = regexValue;
-        }
-
-        return new AnalyzerSettings(naming, pattern);
+        return new AnalyzerSettings(
+            TryGetNaming(options, DiagnosticIds.Prefix),
+            TryGetNaming(options, DiagnosticIds.InconsistentTemplatePropertyNaming),
+            TryGetNaming(options, DiagnosticIds.InconsistentContextPropertyNaming),
+            TryGetIgnored(options, DiagnosticIds.Prefix),
+            TryGetIgnored(options, DiagnosticIds.InconsistentTemplatePropertyNaming),
+            TryGetIgnored(options, DiagnosticIds.InconsistentContextPropertyNaming));
     }
 
-    public bool IsIgnored(string propertyName, RegexCache cache)
+    public PropertyNamingStyle GetNaming(string diagnosticId)
     {
-        if (string.IsNullOrEmpty(IgnoredPattern))
+        if (_prefixNaming is { } prefix)
+        {
+            return prefix;
+        }
+
+        if (diagnosticId == DiagnosticIds.InconsistentContextPropertyNaming)
+        {
+            return _contextNaming ?? PropertyNamingStyle.PascalCase;
+        }
+
+        return _templateNaming ?? PropertyNamingStyle.PascalCase;
+    }
+
+    public bool IsIgnored(string propertyName, RegexCache cache, string diagnosticId)
+    {
+        var pattern = _prefixIgnored;
+        if (string.IsNullOrEmpty(pattern))
+        {
+            pattern = diagnosticId == DiagnosticIds.InconsistentContextPropertyNaming
+                ? _contextIgnored
+                : _templateIgnored;
+        }
+
+        if (string.IsNullOrEmpty(pattern))
         {
             return false;
         }
 
-        var regex = cache.Get(IgnoredPattern!);
+        var regex = cache.Get(pattern!);
         return regex != null && regex.IsMatch(propertyName);
     }
 
-    private static bool TryGetOption(AnalyzerConfigOptions options, string optionName, out string value)
+    private static PropertyNamingStyle? TryGetNaming(AnalyzerConfigOptions options, string scope)
     {
-        if (TryGetScoped(options, DiagnosticIds.Prefix, optionName, out value) ||
-            TryGetScoped(options, DiagnosticIds.InconsistentTemplatePropertyNaming, optionName, out value) ||
-            TryGetScoped(options, DiagnosticIds.InconsistentContextPropertyNaming, optionName, out value))
+        if (TryGetScoped(options, scope, NamingOptionName, out var value))
         {
-            return true;
+            return ParseNaming(value);
         }
 
-        value = null!;
-        return false;
+        return null;
+    }
+
+    private static string? TryGetIgnored(AnalyzerConfigOptions options, string scope)
+    {
+        if (TryGetScoped(options, scope, IgnoredRegexOptionName, out var value))
+        {
+            return value;
+        }
+
+        return null;
     }
 
     private static bool TryGetScoped(
