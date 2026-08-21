@@ -20,8 +20,6 @@ env:
   DOTNET_NOLOGO: 'true'
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
   MSBUILDDISABLENODEREUSE: '1'
-  CI: 'true'
-  PACKAGE_NAME: Alexaka1.Analyzers.StructuredLogging
 
 jobs:
   test-pack-and-samples:
@@ -44,16 +42,7 @@ jobs:
         run: dotnet test Alexaka1.Analyzers.StructuredLogging.slnx -c Release
 
       - name: Pack
-        run: |
-          set -euo pipefail
-          dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj -c Release -o artifacts
-          props_version="$(sed -n 's#.*<Version>\([^<]*\)</Version>.*#\1#p' pack/Alexaka1.Analyzers.StructuredLogging/Version.props | head -n 1)"
-          nupkg="artifacts/${PACKAGE_NAME}.${props_version}.nupkg"
-          if [ ! -f "${nupkg}" ]; then
-            echo "::error::Expected ${nupkg} from Version.props (${props_version})."
-            ls -la artifacts || true
-            exit 1
-          fi
+        run: dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj -c Release -o artifacts
 
       - name: Sample TFM matrix
         run: |

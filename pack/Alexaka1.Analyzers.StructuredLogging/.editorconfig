@@ -1,4 +1,0 @@
-# Analyzer-only nupkg: no lib/ref assemblies.
-[*.csproj]
-dotnet_diagnostic.NU5127.severity = none
-dotnet_diagnostic.NU5128.severity = none
