@@ -372,3 +372,6 @@ FodyWeavers.xsd
 
 ### Windows
 Thumbs.db
+
+### Node / Changesets
+.pnpm-store

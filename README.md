@@ -13,7 +13,7 @@ Package ID: `Alexaka1.Analyzers.StructuredLogging` (diagnostic prefix `AASL`).
 ```xml
 <ItemGroup>
   <PackageReference Include="Alexaka1.Analyzers.StructuredLogging"
-                    Version="1.0.0-preview.1"
+                    Version="0.1.0-preview.1"
                     PrivateAssets="all" />
 </ItemGroup>
 ```

@@ -13,3 +13,6 @@ Please:
   (InspectCode plus the published marketplace plugin vs Roslyn).
 - Do not reimplement .NET SDK `CA*` or `SYSLIB10xx` diagnostics unless the
   extra behavior is documented in `docs/microsoft-recommendations.md`.
+- Add a changeset (`pnpm changeset`) when a pull request changes the
+  published `Alexaka1.Analyzers.StructuredLogging` package. CI versioning and GitHub
+  releases are driven by those files.
