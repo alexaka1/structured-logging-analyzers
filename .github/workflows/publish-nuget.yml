@@ -3,7 +3,13 @@ name: Publish NuGet Package
 on:
   push:
     tags:
-      - 'Alexaka1.Analyzers.StructuredLogging@*'
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing git tag to publish (for example v0.1.0-preview.1)
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -28,11 +34,13 @@ jobs:
       contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -42,25 +50,17 @@ jobs:
 
       - name: Resolve package version
         id: version
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
         run: |
           set -euo pipefail
-          prefix="${PACKAGE_NAME}@"
-          case "${GITHUB_REF_NAME}" in
-            "${prefix}"*) version="${GITHUB_REF_NAME#"${prefix}"}" ;;
-            *)
-              echo "::error::Unexpected tag '${GITHUB_REF_NAME}'."
-              exit 1
-              ;;
-          esac
-          if [ -z "${version}" ]; then
-            echo "::error::Failed to resolve package version from '${GITHUB_REF_NAME}'."
-            exit 1
-          fi
+          version="$(./build/resolve-release-version.sh "${RELEASE_TAG}")"
           props_version="$(sed -n 's#.*<Version>\([^<]*\)</Version>.*#\1#p' pack/Alexaka1.Analyzers.StructuredLogging/Version.props | head -n 1)"
           if [ "${props_version}" != "${version}" ]; then
             echo "::error::Tag version '${version}' does not match Version.props '${props_version}'."
             exit 1
           fi
+          echo "tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Test
@@ -92,11 +92,13 @@ jobs:
         with:
           client-id: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
 
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ needs.build.outputs.tag }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -108,7 +110,8 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           VERSION: ${{ needs.build.outputs.version }}
-        run: ./build/detect-duplicate-release.sh "${GITHUB_REF_NAME}" "${VERSION}" "${PACKAGE_NAME}"
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+        run: ./build/detect-duplicate-release.sh "${RELEASE_TAG}" "${VERSION}" "${PACKAGE_NAME}"
 
       - name: Download nupkg
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -128,6 +131,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           VERSION: ${{ needs.build.outputs.version }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
           NOTES_FILE: ${{ steps.changelog.outputs.changes }}
         run: |
           set -euo pipefail
@@ -138,7 +142,7 @@ jobs:
             exit 1
           fi
 
-          tag="${GITHUB_REF_NAME}"
+          tag="${RELEASE_TAG}"
           title="${PACKAGE_NAME} ${VERSION}"
           extra_args=()
           if [[ "${VERSION}" == *-* ]]; then
