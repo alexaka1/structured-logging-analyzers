@@ -205,7 +205,6 @@ public sealed class NamingAnalyzerTests
             dotnet_code_quality.AASL0010.property_naming = snake_case
             """);
     }
-    }
 
     [Fact]
     public Task Context_property_naming()

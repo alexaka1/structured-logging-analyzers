@@ -37,8 +37,6 @@ internal readonly struct AnalyzerSettings
         _contextIgnored = contextIgnored;
     }
 
-    public static AnalyzerSettings Default { get; } = default;
-
     public static AnalyzerSettings From(AnalyzerConfigOptionsProvider provider, SyntaxTree tree)
     {
         var options = provider.GetOptions(tree);
