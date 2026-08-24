@@ -207,6 +207,64 @@ public sealed class CodeFixTests
     }
 
     [Fact]
+    public Task Rename_context_property_semantic_conventions()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            """
+            using Serilog.Context;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    LogContext.PushProperty({|AASL0010:"OrderId"|}, 1);
+                }
+            }
+            """,
+            """
+            using Serilog.Context;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    LogContext.PushProperty("order_id", 1);
+                }
+            }
+            """,
+            "AASL0010",
+            typeof(RenameContextPropertyCodeFixProvider),
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task Rename_template_property_semantic_conventions()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{|AASL0009:{http.response.StatusCode}|}", 200);
+                }
+            }
+            """,
+            """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{http.response.status_code}", 200);
+                }
+            }
+            """,
+            "AASL0009",
+            typeof(RenameTemplatePropertyCodeFixProvider),
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
     public Task Remove_trailing_period()
     {
         return AnalyzerTestHost.VerifyFixAsync(

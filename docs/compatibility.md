@@ -54,6 +54,7 @@ dotnet_code_quality.AASL.ignored_properties_regex =
 - `camel_case`
 - `snake_case`
 - `elastic_naming`
+- `semantic_conventions` (alias `semconv`)
 
 The same options can be scoped to `AASL0009` or `AASL0010`, for example
 `dotnet_code_quality.AASL0009.property_naming`. A rule-scoped key applies
@@ -108,6 +109,14 @@ Replacement for JetBrains `StringUtil` naming:
 - `camel_case`: PascalCase then decapitalize the first letter.
 - `snake_case`: lowercase words joined by `_`.
 - `elastic_naming`: snake_case with `_` replaced by `.`.
+- `semantic_conventions`: lowercase ASCII; `.` is a namespace delimiter and `_`
+  joins words inside a component (`service.name`,
+  `http.response.status_code`). This matches Semantic Conventions
+  attribute naming. Names that already match are left
+  unchanged. Otherwise existing `.` separators are kept and remaining
+  words are joined with `_`. `elastic_naming` is not a substitute: it
+  would rewrite `http.response.status_code` to
+  `http.response.status.code`.
 
 ## Contextual loggers
 

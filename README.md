@@ -25,6 +25,11 @@ dotnet_code_quality.AASL.property_naming = pascal_case
 dotnet_code_quality.AASL.ignored_properties_regex = ^Legacy\.
 ```
 
+Naming values: `pascal_case` (default), `camel_case`, `snake_case`,
+`elastic_naming`, and `semantic_conventions` (for `service.name`,
+`http.response.status_code`). Scope Semantic Conventions names to context
+properties only with `dotnet_code_quality.AASL0010.property_naming`.
+
 Build and test:
 
 ```shell

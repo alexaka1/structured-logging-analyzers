@@ -133,6 +133,10 @@ internal readonly struct AnalyzerSettings
             case "elastic_naming":
             case "elastic":
                 return PropertyNamingStyle.ElasticNaming;
+            case "semantic_conventions":
+            case "semantic_convention":
+            case "semconv":
+                return PropertyNamingStyle.SemanticConventions;
             default:
                 return PropertyNamingStyle.PascalCase;
         }

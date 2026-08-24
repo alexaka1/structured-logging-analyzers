@@ -36,6 +36,36 @@ public sealed class LoggerMessageAnalyzerTests
     }
 
     [Fact]
+    public Task SemanticConventions_name_is_valid()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Microsoft.Extensions.Logging;
+            public static partial class Log
+            {
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Call {http.request.method}")]
+                public static partial void RequestStarted(ILogger logger, string method);
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_pascal_name_is_flagged()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Microsoft.Extensions.Logging;
+            public static partial class Log
+            {
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Order {|AASL0009:{OrderId}|} started")]
+                public static partial void OrderStarted(ILogger logger, string orderId);
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
     public Task Instance_logger_field()
     {
         return AnalyzerTestHost.VerifyAsync("""
