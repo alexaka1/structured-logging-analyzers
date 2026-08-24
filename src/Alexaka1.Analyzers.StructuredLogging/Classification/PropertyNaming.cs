@@ -98,7 +98,7 @@ internal static class PropertyNaming
             var length = i - segmentStart;
             if (length > 0)
             {
-                var words = SplitWords(propertyName.Substring(segmentStart, length));
+                var words = SplitWords(propertyName.Substring(segmentStart, length), asciiOnly: true);
                 if (words.Count > 0)
                 {
                     if (wroteSegment)
@@ -155,6 +155,9 @@ internal static class PropertyNaming
 
     private static bool IsAsciiDigit(char c) => (uint)(c - '0') <= 9;
 
+    private static bool IsAsciiLetterOrDigit(char c) =>
+        IsAsciiLowerLetter(c) || ((uint)(c - 'A') <= 'Z' - 'A') || IsAsciiDigit(c);
+
     private static string Join(List<string> words, char separator)
     {
         var builder = new StringBuilder();
@@ -189,7 +192,7 @@ internal static class PropertyNaming
         }
     }
 
-    internal static List<string> SplitWords(string name)
+    internal static List<string> SplitWords(string name, bool asciiOnly = false)
     {
         var words = new List<string>();
         var builder = new StringBuilder();
@@ -206,7 +209,7 @@ internal static class PropertyNaming
         for (var i = 0; i < name.Length; i++)
         {
             var c = name[i];
-            if (!char.IsLetterOrDigit(c))
+            if (asciiOnly ? !IsAsciiLetterOrDigit(c) : !char.IsLetterOrDigit(c))
             {
                 Flush();
                 continue;

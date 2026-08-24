@@ -349,6 +349,40 @@ public sealed class NamingAnalyzerTests
     }
 
     [Fact]
+    public Task SemanticConventions_non_ascii_is_rewritten()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{|AASL0009:{MyCafé}|}", 1);
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_leading_digit_is_not_flagged()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{1name}", 1);
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
     public Task Context_interpolated_name_is_ignored()
     {
         return AnalyzerTestHost.VerifyAsync("""

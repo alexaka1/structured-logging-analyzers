@@ -58,6 +58,9 @@ public sealed class PropertyNamingTests
     [InlineData("order-id", "order_id")]
     [InlineData("service..name", "service.name")]
     [InlineData(".service.name.", "service.name")]
+    [InlineData("caf\u00e9", "caf")]
+    [InlineData("MyCaf\u00e9", "my_caf")]
+    [InlineData("1name", "1name")]
     public void SemanticConventions(string input, string expected)
     {
         Assert.Equal(expected, PropertyNaming.Suggest(input, PropertyNamingStyle.SemanticConventions));

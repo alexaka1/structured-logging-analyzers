@@ -112,10 +112,13 @@ Replacement for JetBrains `StringUtil` naming:
 - `semantic_conventions`: lowercase ASCII; `.` is a namespace delimiter and `_`
   joins words inside a component (`service.name`,
   `http.response.status_code`). This matches Semantic Conventions
-  attribute naming. Names that already match are left
-  unchanged. Otherwise existing `.` separators are kept and remaining
-  words are joined with `_`. `elastic_naming` is not a substitute: it
-  would rewrite `http.response.status_code` to
+  attribute naming. Names that already match are left unchanged.
+  Otherwise existing `.` separators are kept, non-ASCII characters are
+  treated as separators, and remaining ASCII words are joined with `_`
+  (`MyProperty` → `my_property`). Names that cannot be rewritten to a
+  valid form (for example a leading digit with no letter to start the
+  name) are not reported, matching the other styles. `elastic_naming` is
+  not a substitute: it would rewrite `http.response.status_code` to
   `http.response.status.code`.
 
 ## Contextual loggers
