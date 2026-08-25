@@ -155,4 +155,37 @@ public sealed class FixAllTests
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider));
     }
+
+    [Fact]
+    public Task Convert_interpolations_qualified_names_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation({|AASL0007:$"Processed {order.Id}"|});
+                    logger.LogInformation({|AASL0007:$"Counted {order.Total}"|});
+                }
+            }
+            class Order { public int Id { get; set; } public int Total { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation("Processed {OrderId}", order.Id);
+                    logger.LogInformation("Counted {OrderTotal}", order.Total);
+                }
+            }
+            class Order { public int Id { get; set; } public int Total { get; set; } }
+            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            codeActionIndex: 1);
+    }
 }

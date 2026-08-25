@@ -173,6 +173,7 @@ internal static class AnalyzerTestHost
             .ConfigureAwait(false);
 
         var remainingDiagnostics = await GetAnalyzerDiagnosticsAsync(updated).ConfigureAwait(false);
+        Assert.DoesNotContain(remainingDiagnostics, d => d.Id == diagnosticId);
         var secondFixAll = await fixAllProvider.GetFixAsync(
             new FixAllContext(
                 updated,

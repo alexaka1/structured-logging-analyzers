@@ -43,7 +43,7 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                 context.Document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider,
                 interpolated.SyntaxTree).GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
 
-            if (!TryBuild(interpolated, style, InterpolationNameKind.Leaf, out _, out _))
+            if (!TryBuild(interpolated, style, InterpolationNameKind.Leaf, out var leafTemplate, out _))
             {
                 continue;
             }
@@ -56,7 +56,6 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                 diagnostic);
 
             if (TryBuild(interpolated, style, InterpolationNameKind.Qualified, out var qualifiedTemplate, out _) &&
-                TryBuild(interpolated, style, InterpolationNameKind.Leaf, out var leafTemplate, out _) &&
                 !string.Equals(qualifiedTemplate, leafTemplate, StringComparison.Ordinal))
             {
                 context.RegisterCodeFix(

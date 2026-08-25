@@ -363,7 +363,7 @@ public sealed class CodeFixTests
             {
                 void M(ILogger logger, string name)
                 {
-                    logger.LogInformation({|AASL0007:$"User '{name}'"|});
+                    logger.LogInformation({|AASL0007:$"User {name}"|});
                 }
             }
             """,
@@ -373,7 +373,7 @@ public sealed class CodeFixTests
             {
                 void M(ILogger logger, string name)
                 {
-                    logger.LogInformation("User '{Name}'", name);
+                    logger.LogInformation("User {Name}", name);
                 }
             }
             """,
