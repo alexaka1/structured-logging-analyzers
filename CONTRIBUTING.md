@@ -7,6 +7,10 @@ Please:
 - Do not copy Apache-2.0 Serilog parser sources from the upstream plugin
   into the analyzer.
 - Add tests for new diagnostics, invocation shapes, and code fixes.
+- When a logging library ships a new major, add that version to
+  `test/Alexaka1.Analyzers.StructuredLogging.Tests/Infrastructure/PackageVersionMatrix.cs`
+  rather than creating another test project. See
+  [docs/package-version-testing.md](docs/package-version-testing.md).
 - Preserve documented compatibility behavior unless a change is called out
   in `docs/compatibility.md`.
 - After analyzer behavior changes, run `./test/comparison/run-comparison.sh`

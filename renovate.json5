@@ -20,6 +20,20 @@
     '$default',
     '/^beta$/',
   ],
+  customManagers: [
+    {
+      customType: 'regex',
+      description: 'Latest logging-library canary versions in the analyzer package matrix',
+      managerFilePatterns: [
+        '/(^|/)PackageVersionMatrix\\.cs$/',
+      ],
+      matchStrings: [
+        'datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+public const string \\w+ = "(?<currentValue>[^"]+)"',
+      ],
+      datasourceTemplate: 'nuget',
+      versioningTemplate: 'nuget',
+    },
+  ],
   packageRules: [
     {
       description: [
@@ -38,6 +52,32 @@
       matchManagers: ["nuget"],
       matchPackageNames: ["jetbrains.resharper.globaltools"],
       versioning: "nuget",
+    },
+    {
+      description: [
+        "Keep the analyzer compile-time Roslyn API at the VS 2022 17.8 floor",
+      ],
+      matchManagers: ["nuget"],
+      matchPackageNames: [
+        "Microsoft.CodeAnalysis.CSharp",
+        "Microsoft.CodeAnalysis.CSharp.Workspaces",
+        "Microsoft.CodeAnalysis.Analyzers",
+      ],
+      enabled: false,
+    },
+    {
+      description: [
+        "Do not major-bump logging libraries in the default test host; majors are restored from PackageVersionMatrix.cs",
+      ],
+      matchManagers: ["nuget"],
+      matchPackageNames: [
+        "Serilog",
+        "NLog",
+        "ZLogger",
+        "Microsoft.Extensions.Logging.Abstractions",
+      ],
+      matchUpdateTypes: ["major"],
+      enabled: false,
     },
   ],
   ignorePaths: [

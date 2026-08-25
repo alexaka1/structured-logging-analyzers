@@ -20,10 +20,12 @@ internal static class AnalyzerTestHost
         string markedSource,
         string? editorConfig = null,
         LanguageVersion languageVersion = LanguageVersion.Latest,
-        IReadOnlyList<(string Path, string Text)>? additionalSources = null)
+        IReadOnlyList<(string Path, string Text)>? additionalSources = null,
+        ImmutableArray<MetadataReference>? references = null,
+        bool requireSuccessfulCompilation = false)
     {
         var (source, expected) = Markup.Parse(markedSource);
-        return VerifyAsync(source, expected, editorConfig, languageVersion, additionalSources);
+        return VerifyAsync(source, expected, editorConfig, languageVersion, additionalSources, references, requireSuccessfulCompilation);
     }
 
     public static async Task VerifyAsync(
@@ -31,9 +33,17 @@ internal static class AnalyzerTestHost
         IReadOnlyList<ExpectedDiagnostic> expected,
         string? editorConfig = null,
         LanguageVersion languageVersion = LanguageVersion.Latest,
-        IReadOnlyList<(string Path, string Text)>? additionalSources = null)
+        IReadOnlyList<(string Path, string Text)>? additionalSources = null,
+        ImmutableArray<MetadataReference>? references = null,
+        bool requireSuccessfulCompilation = false)
     {
-        var diagnostics = await GetDiagnosticsAsync(source, editorConfig, languageVersion, additionalSources).ConfigureAwait(false);
+        var diagnostics = await GetDiagnosticsAsync(
+            source,
+            editorConfig,
+            languageVersion,
+            additionalSources,
+            references,
+            requireSuccessfulCompilation).ConfigureAwait(false);
         var actual = diagnostics
             .Where(d => d.Id.StartsWith(DiagnosticIds.Prefix, StringComparison.Ordinal))
             .OrderBy(d => d.Location.SourceSpan.Start)
@@ -64,13 +74,44 @@ internal static class AnalyzerTestHost
         string? editorConfig = null,
         LanguageVersion languageVersion = LanguageVersion.Latest,
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
-        ImmutableArray<MetadataReference>? references = null)
+        ImmutableArray<MetadataReference>? references = null,
+        bool requireSuccessfulCompilation = false)
     {
         var (compilation, _, options) = CreateCompilation(source, editorConfig, languageVersion, additionalSources, references);
+        if (requireSuccessfulCompilation)
+        {
+            AssertCompilationSucceeded(compilation, "Analyzer test compilation");
+        }
+
         var compilationWithAnalyzers = compilation.WithAnalyzers(
             ImmutableArray.Create(Analyzer),
             options);
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
+    }
+
+    public static Task VerifyPackageVersionAsync(
+        string markedSource,
+        string packageId,
+        string version,
+        string? editorConfig = null)
+    {
+        var references = NuGetPackageResolver.GetReferences((packageId, version));
+        return VerifyAsync(
+            markedSource,
+            editorConfig,
+            references: references,
+            requireSuccessfulCompilation: true);
+    }
+
+    internal static void AssertCompilationSucceeded(Compilation compilation, string context)
+    {
+        var errors = compilation.GetDiagnostics()
+            .Where(diagnostic =>
+                diagnostic.Severity == DiagnosticSeverity.Error &&
+                diagnostic.Id is not ("CS8795" or "CS0759"))
+            .Select(diagnostic => diagnostic.Id + ": " + diagnostic.GetMessage())
+            .ToList();
+        Assert.True(errors.Count == 0, context + " failed: " + string.Join("; ", errors));
     }
 
     private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(Document document)
@@ -400,111 +441,17 @@ internal static class AnalyzerTestHost
     private static ImmutableArray<MetadataReference> CreateReferences()
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var trusted = (string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!;
-        foreach (var path in trusted.Split(Path.PathSeparator))
-        {
-            var name = Path.GetFileNameWithoutExtension(path);
-            switch (name)
-            {
-                case "mscorlib":
-                case "netstandard":
-                case "System.Private.CoreLib":
-                case "System.Runtime":
-                case "System.Console":
-                case "System.Linq":
-                case "System.Linq.Expressions":
-                case "System.Collections":
-                case "System.Collections.Concurrent":
-                case "System.Memory":
-                case "System.Threading":
-                case "System.Threading.Tasks":
-                case "System.Runtime.Extensions":
-                case "System.Runtime.InteropServices":
-                case "System.ComponentModel":
-                case "System.ObjectModel":
-                case "System.Text.RegularExpressions":
-                case "System.Net.Primitives":
-                case "System.Net.Http":
-                case "System.Private.Uri":
-                case "System.Linq.Queryable":
-                    paths.Add(path);
-                    break;
-            }
-        }
-
-        void AddAssembly(Type type)
-        {
-            if (!string.IsNullOrEmpty(type.Assembly.Location))
-            {
-                paths.Add(type.Assembly.Location);
-            }
-        }
-
-        AddAssembly(typeof(object));
-        AddAssembly(typeof(Serilog.Log));
-        AddAssembly(typeof(Serilog.Context.LogContext));
-        AddAssembly(typeof(Serilog.ILogger));
-        AddAssembly(typeof(Microsoft.Extensions.Logging.ILogger));
-        AddAssembly(typeof(Microsoft.Extensions.Logging.LoggerExtensions));
-        AddAssembly(typeof(NLog.LogManager));
-        AddAssembly(typeof(ZLogger.ZLoggerExtensions));
+        NuGetPackageResolver.AddTrustedPlatformAssemblies(paths);
+        NuGetPackageResolver.AddAssembly(paths, typeof(object));
+        NuGetPackageResolver.AddAssembly(paths, typeof(Serilog.Log));
+        NuGetPackageResolver.AddAssembly(paths, typeof(Serilog.Context.LogContext));
+        NuGetPackageResolver.AddAssembly(paths, typeof(Serilog.ILogger));
+        NuGetPackageResolver.AddAssembly(paths, typeof(Microsoft.Extensions.Logging.ILogger));
+        NuGetPackageResolver.AddAssembly(paths, typeof(Microsoft.Extensions.Logging.LoggerExtensions));
+        NuGetPackageResolver.AddAssembly(paths, typeof(NLog.LogManager));
+        NuGetPackageResolver.AddAssembly(paths, typeof(ZLogger.ZLoggerExtensions));
 
         return paths.Select(p => (MetadataReference)MetadataReference.CreateFromFile(p)).ToImmutableArray();
-    }
-
-    internal static ImmutableArray<MetadataReference> CreateReferencesWithLoggingAbstractions(string loggingAbstractionsPath)
-    {
-        var builder = ImmutableArray.CreateBuilder<MetadataReference>();
-        foreach (var reference in References)
-        {
-            var path = reference.Display;
-            if (path is not null &&
-                path.IndexOf("Microsoft.Extensions.Logging.Abstractions", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                continue;
-            }
-
-            builder.Add(reference);
-        }
-
-        builder.Add(MetadataReference.CreateFromFile(loggingAbstractionsPath));
-        return builder.ToImmutable();
-    }
-
-    internal static IReadOnlyList<(string Version, string Path)> FindLoggingAbstractionsAssemblies()
-    {
-        var found = new List<(string Version, string Path)>();
-        var current = typeof(Microsoft.Extensions.Logging.ILogger).Assembly.Location;
-        if (string.IsNullOrEmpty(current))
-        {
-            return found;
-        }
-
-        var versionDir = Directory.GetParent(current)?.Parent?.Parent;
-        var packageDir = versionDir?.Parent;
-        if (packageDir is null || !packageDir.Exists)
-        {
-            found.Add((versionDir?.Name ?? "current", current));
-            return found;
-        }
-
-        foreach (var version in packageDir.EnumerateDirectories())
-        {
-            var dll = version
-                .EnumerateFiles("Microsoft.Extensions.Logging.Abstractions.dll", SearchOption.AllDirectories)
-                .FirstOrDefault(file => file.FullName.IndexOf($"{Path.DirectorySeparatorChar}lib{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) >= 0);
-            if (dll is not null)
-            {
-                found.Add((version.Name, dll.FullName));
-            }
-        }
-
-        if (found.Count == 0)
-        {
-            found.Add(("current", current));
-        }
-
-        return found.OrderBy(item => item.Version, StringComparer.OrdinalIgnoreCase).ToList();
     }
 
     private static string Normalize(string text) => text.Replace("\r\n", "\n");
