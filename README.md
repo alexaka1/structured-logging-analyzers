@@ -1,5 +1,7 @@
 # structured-logging-analyzers
 
+[![NuGet](https://img.shields.io/nuget/vpre/Alexaka1.Analyzers.StructuredLogging?logo=nuget)](https://www.nuget.org/packages/Alexaka1.Analyzers.StructuredLogging)
+
 Fast Roslyn analyzers and code fixes for structured logging across
 Microsoft.Extensions.Logging, Serilog, NLog, and ZLogger.
 
