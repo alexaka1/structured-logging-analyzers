@@ -12,7 +12,7 @@
 - `build/`: Release helper scripts (`version.sh`, `extract-changelog.sh`, `detect-duplicate-release.sh`).
 
 ## Build, Test, and Development
-- Test: `dotnet test Alexaka1.Analyzers.StructuredLogging.slnx -c Release`
+- Test (native xUnit.net v3 runner): `dotnet run --project test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj -c Release --no-launch-profile`
 - Pack: `dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj -c Release`
 - Samples: `dotnet build samples/Net10Example/Net10Example.csproj -c Release`
 - Comparison (optional): `./test/comparison/run-comparison.sh`
@@ -27,6 +27,7 @@ Keep analyzer assemblies free of Workspaces references. Do not add runtime or `l
 
 ## Testing Guidelines
 - Framework: xUnit.net v3 (`xunit.v3`) with `Microsoft.CodeAnalysis.CSharp.Workspaces` test hosts.
+- CI runs the stand-alone test executable via `dotnet run` (native in-process runner). `xunit.runner.visualstudio` remains for IDE Test Explorer / optional VSTest.
 - Group analyzer cases under `Parity/`, `Fixes/`, `Frameworks/`, and `SourceGenerated/`.
 - Add tests for new diagnostics, invocation shapes, and code fixes.
 - After analyzer behavior changes, run `./test/comparison/run-comparison.sh` when InspectCode is available.

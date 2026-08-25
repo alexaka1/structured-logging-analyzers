@@ -37,7 +37,7 @@ context properties only.
 Build and test:
 
 ```shell
-dotnet test Alexaka1.Analyzers.StructuredLogging.slnx
+dotnet run --project test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj -c Release --no-launch-profile
 dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj
 ```
 
