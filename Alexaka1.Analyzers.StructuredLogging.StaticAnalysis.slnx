@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/pack/">
+    <Project Path="pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Alexaka1.Analyzers.StructuredLogging/Analyzer.csproj" />
+    <Project Path="src/Alexaka1.Analyzers.StructuredLogging.CodeFixes/CodeFixes.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj" />
+  </Folder>
+</Solution>

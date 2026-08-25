@@ -60,7 +60,7 @@ jobs:
       - name: Build inspected projects
         run: >
           dotnet build
-          test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj
+          Alexaka1.Analyzers.StructuredLogging.StaticAnalysis.slnx
           -c Release
           --nologo
 
@@ -68,9 +68,9 @@ jobs:
         id: resharper
         run: |
           mkdir -p artifacts/resharper
-          dotnet jb inspectcode Alexaka1.Analyzers.StructuredLogging.slnx \
-            --project="Alexaka1.Analyzers.StructuredLogging*" \
+          dotnet jb inspectcode Alexaka1.Analyzers.StructuredLogging.StaticAnalysis.slnx \
             --no-build \
+            --properties:Configuration=Release \
             --severity=WARNING \
             --format=Sarif \
             --output=artifacts/resharper/inspectcode.sarif \
