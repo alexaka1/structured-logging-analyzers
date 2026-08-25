@@ -317,6 +317,130 @@ public sealed class CodeFixTests
             class Order { public int Id { get; set; } }
             """,
             "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 2);
+    }
+
+    [Fact]
+    public Task Convert_interpolation_qualified_names()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation({|AASL0007:$"Processed {order.Id}"|});
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation("Processed {OrderId}", order.Id);
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            codeActionIndex: 1,
+            expectedActionCount: 2);
+    }
+
+    [Fact]
+    public Task Convert_interpolation_identifier_has_single_action()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, string name)
+                {
+                    logger.LogInformation({|AASL0007:$"User '{name}'"|});
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, string name)
+                {
+                    logger.LogInformation("User '{Name}'", name);
+                }
+            }
+            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 1);
+    }
+
+    [Fact]
+    public Task Convert_interpolation_preserves_leading_trivia()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation(/* keep */ {|AASL0007:$"Processed {order.Id}"|});
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation(/* keep */ "Processed {Id}", order.Id);
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Convert_interpolation_keeps_exception_overload()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using System;
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Exception ex, Order order)
+                {
+                    logger.LogError(ex, {|AASL0007:$"Processed {order.Id}"|});
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using System;
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Exception ex, Order order)
+                {
+                    logger.LogError(ex, "Processed {Id}", order.Id);
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider));
     }
 
@@ -345,6 +469,7 @@ public sealed class CodeFixTests
             }
             """,
             "AASL0007",
-            typeof(ConvertInterpolatedTemplateCodeFixProvider));
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 1);
     }
 }
