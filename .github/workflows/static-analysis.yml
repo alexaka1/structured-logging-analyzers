@@ -23,7 +23,7 @@ env:
 
 jobs:
   inspect:
-    name: ReSharper and slopwatch
+    name: Static analysis
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
