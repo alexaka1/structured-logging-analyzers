@@ -1,5 +1,3 @@
-// Copyright (c) 2026 alexaka1
-
 using System.Diagnostics;
 using System.IO.Compression;
 using Xunit;

@@ -1,5 +1,3 @@
-// Copyright (c) 2026 alexaka1
-
 using Alexaka1.Analyzers.StructuredLogging.Classification;
 using Xunit;
 

@@ -1,5 +1,3 @@
-// Copyright (c) 2026 alexaka1
-
 global using System;
 global using System.Collections.Concurrent;
 global using System.Collections.Generic;
