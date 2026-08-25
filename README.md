@@ -59,6 +59,6 @@ The production assemblies target `netstandard2.0` and analyze projects targeting
 
 `[LoggerMessage]` declarations and `LoggerMessage.Define` / `DefineScope` are
 included. When template naming is `semantic_conventions`, AASL0012 (generated
-logging cannot use Semantic Conventions property names) warns on those APIs.
+logging cannot use Semantic Conventions property names) warns on `[LoggerMessage]`.
 See [docs/microsoft-recommendations.md](docs/microsoft-recommendations.md)
 for .NET SDK `CA*` / `SYSLIB10xx` rules to enable alongside this package.

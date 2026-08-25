@@ -191,7 +191,7 @@ such as `{Value:E}` are preserved.
 | AASL0008 positional properties | Apply; rename fix when parameters are unambiguous |
 | AASL0009 property naming | Apply |
 | AASL0011 trailing period | Apply |
-| AASL0012 generated logging vs Semantic Conventions | Apply when template naming is `semantic_conventions` |
+| AASL0012 generated logging vs Semantic Conventions | Apply to `[LoggerMessage]` when template naming is `semantic_conventions`. Not applied to `Define` / `DefineScope`. |
 | AASL0001 / AASL0002 destructuring | **Not applied.** MEL templates do not accept Serilog `@`. |
 | AASL0004 contextual logger | Still applied to the containing type / injected `ILogger<T>` |
 | AASL0007 compile-time constant | Not applied to attribute arguments. Applied to `Define`/`DefineScope` when the format is not constant. |
@@ -224,7 +224,7 @@ package; see `docs/microsoft-recommendations.md`.
 | AASL0009 | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
 | AASL0010 | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
 | AASL0011 | Warning | Log event messages should be fragments, not sentences. Avoid a trailing period/full stop. |
-| AASL0012 | Warning | Generated logging cannot use Semantic Conventions property names. LoggerMessage methods bind template holes to C# parameter names, which cannot contain '.'. |
+| AASL0012 | Warning | Generated logging cannot use Semantic Conventions property names. [LoggerMessage] binds template holes to C# parameter names, which cannot contain '.'. |
 
 ### AASL0001 Anonymous object must be destructured
 
@@ -291,6 +291,6 @@ package; see `docs/microsoft-recommendations.md`.
 
 ### AASL0012 Generated logging cannot use Semantic Conventions property names
 
-- Trigger: `[LoggerMessage]` or `LoggerMessage.Define` / `DefineScope` when template property naming (`AASL0009`) is `semantic_conventions` (prefix `AASL` or rule-scoped `AASL0009`).
-- Span: the attribute name, or the `Define` / `DefineScope` member access.
-- Exclusions: PascalCase, camelCase, snake_case, and Elastic naming; `semantic_conventions` scoped only to `AASL0010` (context property naming). AASL0009 still reports hole names on the same templates.
+- Trigger: `[LoggerMessage]` when template property naming (`AASL0009`) is `semantic_conventions` (prefix `AASL` or rule-scoped `AASL0009`).
+- Span: the attribute name.
+- Exclusions: `LoggerMessage.Define` / `DefineScope` (positional binding); PascalCase, camelCase, snake_case, and Elastic naming; `semantic_conventions` scoped only to `AASL0010` (context property naming). AASL0009 still reports hole names on the same templates.

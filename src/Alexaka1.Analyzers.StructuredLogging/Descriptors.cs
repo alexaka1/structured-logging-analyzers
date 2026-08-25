@@ -64,7 +64,7 @@ internal static class Descriptors
     public static readonly DiagnosticDescriptor GeneratedLoggingCannotUseSemanticConventions = Create(
         DiagnosticIds.GeneratedLoggingCannotUseSemanticConventions,
         "Generated logging cannot use Semantic Conventions property names",
-        "Generated logging cannot use Semantic Conventions property names. LoggerMessage methods bind template holes to C# parameter names, which cannot contain '.'.");
+        "Generated logging cannot use Semantic Conventions property names. [LoggerMessage] binds template holes to C# parameter names, which cannot contain '.'.");
 
     public static readonly ImmutableArray<DiagnosticDescriptor> All = ImmutableArray.Create(
         AnonymousObjectMustBeDestructured,

@@ -153,11 +153,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
         var settings = GetSettings(invocation.SyntaxTree, context.Options, settingsCache);
 
-        if (LoggerMessageParameterMapper.IsLoggerMessageDefine(method, known))
-        {
-            ReportGeneratedLoggingSemanticConventions(context, settings, invocation.Expression.GetLocation());
-        }
-
         if (LoggingInvocationClassifier.IsSerilogForContext(method))
         {
             AnalyzeForContext(context, invocation, method);

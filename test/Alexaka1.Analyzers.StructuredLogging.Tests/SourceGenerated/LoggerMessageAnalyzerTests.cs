@@ -557,7 +557,7 @@ public sealed class LoggerMessageDefineTests
     }
 
     [Fact]
-    public Task SemanticConventions_warns_on_define()
+    public Task SemanticConventions_does_not_warn_on_define()
     {
         return AnalyzerTestHost.VerifyAsync(
             """
@@ -565,14 +565,14 @@ public sealed class LoggerMessageDefineTests
             public static class C
             {
                 private static readonly System.Action<ILogger, string, System.Exception?> s_log =
-                    {|AASL0012:LoggerMessage.Define<string>|}(LogLevel.Information, new EventId(1), "Call {http.request.method}");
+                    LoggerMessage.Define<string>(LogLevel.Information, new EventId(1), "Call {http.request.method}");
             }
             """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
     [Fact]
-    public Task SemanticConventions_warns_on_define_scope()
+    public Task SemanticConventions_does_not_warn_on_define_scope()
     {
         return AnalyzerTestHost.VerifyAsync(
             """
@@ -580,14 +580,14 @@ public sealed class LoggerMessageDefineTests
             public static class C
             {
                 private static readonly System.Func<ILogger, string, System.IDisposable?> s_scope =
-                    {|AASL0012:LoggerMessage.DefineScope<string>|}("Starting {http.request.method}");
+                    LoggerMessage.DefineScope<string>("Starting {http.request.method}");
             }
             """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
     [Fact]
-    public Task SemanticConventions_warns_on_define_when_template_is_not_constant()
+    public Task SemanticConventions_does_not_warn_on_define_when_template_is_not_constant()
     {
         return AnalyzerTestHost.VerifyAsync(
             """
@@ -597,7 +597,7 @@ public sealed class LoggerMessageDefineTests
                 static string Format() => "Hi {Name}";
                 static void M()
                 {
-                    _ = {|AASL0012:LoggerMessage.Define|}(LogLevel.Information, new EventId(1), {|AASL0007:Format()|});
+                    _ = LoggerMessage.Define(LogLevel.Information, new EventId(1), {|AASL0007:Format()|});
                 }
             }
             """,
