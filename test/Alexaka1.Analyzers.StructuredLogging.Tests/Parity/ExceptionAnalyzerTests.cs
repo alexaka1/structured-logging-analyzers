@@ -10,7 +10,7 @@ public sealed class ExceptionAnalyzerTests
     [Fact]
     public Task Exception_as_template_argument()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program
@@ -26,7 +26,7 @@ public sealed class ExceptionAnalyzerTests
     [Fact]
     public Task Exception_before_template_is_valid()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program
@@ -42,7 +42,7 @@ public sealed class ExceptionAnalyzerTests
     [Fact]
     public Task Exception_before_template_suppresses_later_exception()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program
@@ -58,7 +58,7 @@ public sealed class ExceptionAnalyzerTests
     [Fact]
     public Task Dynamic_template_still_reports_exception()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program

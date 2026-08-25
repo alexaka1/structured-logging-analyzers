@@ -10,7 +10,7 @@ public sealed class AnonymousObjectAnalyzerTests
     [Fact]
     public Task Without_destructure()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -25,7 +25,7 @@ public sealed class AnonymousObjectAnalyzerTests
     [Fact]
     public Task Nested_anonymous_still_warns_on_template()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             using System;
             public static class Program

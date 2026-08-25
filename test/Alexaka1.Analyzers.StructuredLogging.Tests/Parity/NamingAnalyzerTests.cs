@@ -10,7 +10,7 @@ public sealed class NamingAnalyzerTests
     [Fact]
     public Task Pascal_invalid()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -25,7 +25,7 @@ public sealed class NamingAnalyzerTests
     [Fact]
     public Task Pascal_valid()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -40,7 +40,7 @@ public sealed class NamingAnalyzerTests
     [Fact]
     public Task Destructured_valid()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -55,7 +55,7 @@ public sealed class NamingAnalyzerTests
     [Fact]
     public Task Dot_in_name()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -70,7 +70,7 @@ public sealed class NamingAnalyzerTests
     [Fact]
     public Task Space_in_name()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -86,7 +86,7 @@ public sealed class NamingAnalyzerTests
     public Task Elastic_naming()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -103,7 +103,7 @@ public sealed class NamingAnalyzerTests
     public Task Camel_case_template_property()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -120,7 +120,7 @@ public sealed class NamingAnalyzerTests
     public Task Unprefixed_editorconfig_keys_are_ignored()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -137,7 +137,7 @@ public sealed class NamingAnalyzerTests
     public Task Elastic_naming_rule_scoped_key()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -154,7 +154,7 @@ public sealed class NamingAnalyzerTests
     public Task Ignored_regex()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -171,7 +171,7 @@ public sealed class NamingAnalyzerTests
     public Task Camel_case_context_property()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog.Context;
             public static class Program
             {
@@ -188,7 +188,7 @@ public sealed class NamingAnalyzerTests
     public Task Conflicting_rule_scoped_naming_is_isolated()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             using Serilog.Context;
             public static class Program
@@ -200,7 +200,7 @@ public sealed class NamingAnalyzerTests
                 }
             }
             """,
-            editorConfig: """
+            editorConfig: /*lang=editorconfig*/ """
             dotnet_code_quality.AASL0009.property_naming = camel_case
             dotnet_code_quality.AASL0010.property_naming = snake_case
             """);
@@ -209,7 +209,7 @@ public sealed class NamingAnalyzerTests
     [Fact]
     public Task Context_property_naming()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog.Context;
             public static class Program
             {
@@ -402,7 +402,7 @@ public sealed class NamingAnalyzerTests
     [Fact]
     public Task Context_interpolated_name_is_ignored()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog.Context;
             public static class Program
             {

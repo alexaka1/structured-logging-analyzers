@@ -12,7 +12,7 @@ public sealed class CodeFixTests
     public Task Add_destructuring_anonymous()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -22,7 +22,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -40,7 +40,7 @@ public sealed class CodeFixTests
     public Task Add_destructuring_escaped_string()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -50,7 +50,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -68,7 +68,7 @@ public sealed class CodeFixTests
     public Task Add_destructuring_complex()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program
@@ -79,7 +79,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program
@@ -98,7 +98,7 @@ public sealed class CodeFixTests
     public Task Rename_template_property()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -108,7 +108,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -126,7 +126,7 @@ public sealed class CodeFixTests
     public Task Rename_destructured_template_property()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -136,7 +136,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -154,7 +154,7 @@ public sealed class CodeFixTests
     public Task Rename_concatenated_template_property()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -164,7 +164,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -182,7 +182,7 @@ public sealed class CodeFixTests
     public Task Rename_context_property()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog.Context;
             public static class Program
             {
@@ -192,7 +192,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Serilog.Context;
             public static class Program
             {
@@ -268,7 +268,7 @@ public sealed class CodeFixTests
     public Task Remove_trailing_period()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -278,7 +278,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -296,7 +296,7 @@ public sealed class CodeFixTests
     public Task Convert_interpolation()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             class C
             {
@@ -307,7 +307,7 @@ public sealed class CodeFixTests
             }
             class Order { public int Id { get; set; } }
             """,
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             class C
             {
@@ -326,7 +326,7 @@ public sealed class CodeFixTests
     public Task Convert_interpolation_preserves_quotes()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             class C
             {
@@ -336,7 +336,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             class C
             {

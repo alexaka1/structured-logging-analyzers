@@ -10,7 +10,7 @@ public sealed class FrameworkInvocationTests
     [Fact]
     public Task Microsoft_extensions_logging()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             class C
             {
@@ -25,7 +25,7 @@ public sealed class FrameworkInvocationTests
     [Fact]
     public Task NLog()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using NLog;
             class C
             {
@@ -40,7 +40,7 @@ public sealed class FrameworkInvocationTests
     [Fact]
     public Task ZLogger()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             using ZLogger;
             class A
@@ -56,7 +56,7 @@ public sealed class FrameworkInvocationTests
     [Fact]
     public Task Custom_attributed_method()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             class C
             {
@@ -80,7 +80,7 @@ public sealed class FrameworkInvocationTests
     [Fact]
     public Task Named_and_reordered_arguments()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program
@@ -97,7 +97,7 @@ public sealed class FrameworkInvocationTests
     [Fact]
     public Task Unrelated_invocation_is_ignored()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             public static class Program
             {

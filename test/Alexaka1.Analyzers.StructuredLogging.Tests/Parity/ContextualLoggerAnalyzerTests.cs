@@ -10,7 +10,7 @@ public sealed class ContextualLoggerAnalyzerTests
     [Fact]
     public Task Mel_wrong_type()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             class A
             {
@@ -27,7 +27,7 @@ public sealed class ContextualLoggerAnalyzerTests
     [Fact]
     public Task Mel_correct_type()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             class A
             {
@@ -43,7 +43,7 @@ public sealed class ContextualLoggerAnalyzerTests
     [Fact]
     public Task Mel_wrong_type_multiple_parameters()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             class A
             {
@@ -60,7 +60,7 @@ public sealed class ContextualLoggerAnalyzerTests
     [Fact]
     public Task Mel_wrong_type_across_namespaces()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             namespace X { class A { } }
             namespace Y
@@ -80,7 +80,7 @@ public sealed class ContextualLoggerAnalyzerTests
     [Fact]
     public Task Serilog_wrong_context_type()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             class A
             {
@@ -93,7 +93,7 @@ public sealed class ContextualLoggerAnalyzerTests
     [Fact]
     public Task Serilog_correct_context_type()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             class A
             {
@@ -105,7 +105,7 @@ public sealed class ContextualLoggerAnalyzerTests
     [Fact]
     public Task Primary_constructor_wrong_type()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             class A({|AASL0004:ILogger<B>|} log)
             {
