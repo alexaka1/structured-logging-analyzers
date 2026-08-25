@@ -27,8 +27,10 @@ dotnet_code_quality.AASL.ignored_properties_regex = ^Legacy\.
 
 Naming values: `pascal_case` (default), `camel_case`, `snake_case`,
 `elastic_naming`, and `semantic_conventions` (for `service.name`,
-`http.response.status_code`). Scope Semantic Conventions names to context
-properties only with `dotnet_code_quality.AASL0010.property_naming`.
+`http.response.status_code` on template and context properties).
+Prefix-level `AASL` or `AASL0009` covers template properties.
+`dotnet_code_quality.AASL0010.property_naming` scopes the style to
+context properties only.
 
 Build and test:
 
