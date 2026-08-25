@@ -64,6 +64,9 @@ internal readonly struct AnalyzerSettings
         return _templateNaming ?? PropertyNamingStyle.PascalCase;
     }
 
+    public bool TemplateNamingIsSemanticConventions =>
+        GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming) == PropertyNamingStyle.SemanticConventions;
+
     public bool IsIgnored(string propertyName, RegexCache cache, string diagnosticId)
     {
         var pattern = _prefixIgnored;
@@ -133,6 +136,10 @@ internal readonly struct AnalyzerSettings
             case "elastic_naming":
             case "elastic":
                 return PropertyNamingStyle.ElasticNaming;
+            case "semantic_conventions":
+            case "semantic_convention":
+            case "semconv":
+                return PropertyNamingStyle.SemanticConventions;
             default:
                 return PropertyNamingStyle.PascalCase;
         }

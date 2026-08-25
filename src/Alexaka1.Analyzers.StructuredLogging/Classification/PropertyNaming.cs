@@ -13,6 +13,11 @@ internal static class PropertyNaming
             return propertyName;
         }
 
+        if (style == PropertyNamingStyle.SemanticConventions)
+        {
+            return ToSemanticConventions(propertyName);
+        }
+
         var words = SplitWords(propertyName);
         if (words.Count == 0)
         {
@@ -70,6 +75,89 @@ internal static class PropertyNaming
         return char.ToLowerInvariant(pascal[0]) + pascal.Substring(1);
     }
 
+    // Semantic Conventions attribute names:
+    // lowercase ASCII, '.' namespaces, '_' within a component.
+    // https://opentelemetry.io/docs/specs/semconv/general/naming/
+    private static string ToSemanticConventions(string propertyName)
+    {
+        if (IsSemanticConventionName(propertyName))
+        {
+            return propertyName;
+        }
+
+        var builder = new StringBuilder(propertyName.Length);
+        var segmentStart = 0;
+        var wroteSegment = false;
+        for (var i = 0; i <= propertyName.Length; i++)
+        {
+            if (i < propertyName.Length && propertyName[i] != '.')
+            {
+                continue;
+            }
+
+            var length = i - segmentStart;
+            if (length > 0)
+            {
+                var words = SplitWords(propertyName.Substring(segmentStart, length), asciiOnly: true);
+                if (words.Count > 0)
+                {
+                    if (wroteSegment)
+                    {
+                        builder.Append('.');
+                    }
+
+                    builder.Append(Join(words, '_'));
+                    wroteSegment = true;
+                }
+            }
+
+            segmentStart = i + 1;
+        }
+
+        return builder.Length == 0 ? propertyName : builder.ToString();
+    }
+
+    private static bool IsSemanticConventionName(string name)
+    {
+        if (!IsAsciiLowerLetter(name[0]))
+        {
+            return false;
+        }
+
+        var lastWasDelimiter = false;
+        for (var i = 1; i < name.Length; i++)
+        {
+            var c = name[i];
+            if (c is '.' or '_')
+            {
+                if (lastWasDelimiter)
+                {
+                    return false;
+                }
+
+                lastWasDelimiter = true;
+                continue;
+            }
+
+            if (IsAsciiLowerLetter(c) || IsAsciiDigit(c))
+            {
+                lastWasDelimiter = false;
+                continue;
+            }
+
+            return false;
+        }
+
+        return !lastWasDelimiter;
+    }
+
+    private static bool IsAsciiLowerLetter(char c) => (uint)(c - 'a') <= 'z' - 'a';
+
+    private static bool IsAsciiDigit(char c) => (uint)(c - '0') <= 9;
+
+    private static bool IsAsciiLetterOrDigit(char c) =>
+        IsAsciiLowerLetter(c) || ((uint)(c - 'A') <= 'Z' - 'A') || IsAsciiDigit(c);
+
     private static string Join(List<string> words, char separator)
     {
         var builder = new StringBuilder();
@@ -104,7 +192,7 @@ internal static class PropertyNaming
         }
     }
 
-    internal static List<string> SplitWords(string name)
+    internal static List<string> SplitWords(string name, bool asciiOnly = false)
     {
         var words = new List<string>();
         var builder = new StringBuilder();
@@ -121,7 +209,7 @@ internal static class PropertyNaming
         for (var i = 0; i < name.Length; i++)
         {
             var c = name[i];
-            if (!char.IsLetterOrDigit(c))
+            if (asciiOnly ? !IsAsciiLetterOrDigit(c) : !char.IsLetterOrDigit(c))
             {
                 Flush();
                 continue;

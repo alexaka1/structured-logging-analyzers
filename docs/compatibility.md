@@ -1,8 +1,7 @@
 # Compatibility specification
 
-This document is the behavioral contract for the Roslyn analyzers. It maps
-each ReSharper inspection to a diagnostic, records preserved quirks, and
-lists intentional corrections.
+This document is the behavioral contract for the Roslyn analyzers. It records
+preserved quirks and intentional corrections.
 
 Diagnostic prefix: `AASL` (`Alexaka1.Analyzers.StructuredLogging`).
 Package ID: `Alexaka1.Analyzers.StructuredLogging`.
@@ -54,6 +53,7 @@ dotnet_code_quality.AASL.ignored_properties_regex =
 - `camel_case`
 - `snake_case`
 - `elastic_naming`
+- `semantic_conventions` (alias `semconv`)
 
 The same options can be scoped to `AASL0009` or `AASL0010`, for example
 `dotnet_code_quality.AASL0009.property_naming`. A rule-scoped key applies
@@ -108,6 +108,17 @@ Replacement for JetBrains `StringUtil` naming:
 - `camel_case`: PascalCase then decapitalize the first letter.
 - `snake_case`: lowercase words joined by `_`.
 - `elastic_naming`: snake_case with `_` replaced by `.`.
+- `semantic_conventions`: lowercase ASCII; `.` is a namespace delimiter and `_`
+  joins words inside a component (`service.name`,
+  `http.response.status_code`). This matches Semantic Conventions
+  attribute naming. Names that already match are left unchanged.
+  Otherwise existing `.` separators are kept, non-ASCII characters are
+  treated as separators, and remaining ASCII words are joined with `_`
+  (`MyProperty` → `my_property`). Names that cannot be rewritten to a
+  valid form (for example a leading digit with no letter to start the
+  name) are not reported, matching the other styles. `elastic_naming` is
+  not a substitute: it would rewrite `http.response.status_code` to
+  `http.response.status.code`.
 
 ## Contextual loggers
 
@@ -146,7 +157,7 @@ Code fixes map logical template offsets through:
 | AASL0011 | Remove trailing `.` | Full; span is the period |
 | AASL0007 | Convert interpolation | Partial: deterministic names, no hotspots |
 
-No first-milestone fixes for AASL0003, AASL0004, AASL0005, or AASL0006.
+No first-milestone fixes for AASL0003, AASL0004, AASL0005, AASL0006, or AASL0012.
 
 ## Source-generated logging (`[LoggerMessage]`)
 
@@ -180,6 +191,7 @@ such as `{Value:E}` are preserved.
 | AASL0008 positional properties | Apply; rename fix when parameters are unambiguous |
 | AASL0009 property naming | Apply |
 | AASL0011 trailing period | Apply |
+| AASL0012 generated logging vs Semantic Conventions | Apply to `[LoggerMessage]` when template naming is `semantic_conventions`. Not applied to `Define` / `DefineScope`. |
 | AASL0001 / AASL0002 destructuring | **Not applied.** MEL templates do not accept Serilog `@`. |
 | AASL0004 contextual logger | Still applied to the containing type / injected `ILogger<T>` |
 | AASL0007 compile-time constant | Not applied to attribute arguments. Applied to `Define`/`DefineScope` when the format is not constant. |
@@ -199,19 +211,20 @@ package; see `docs/microsoft-recommendations.md`.
 
 ## Diagnostic catalog
 
-| ID | ReSharper ID | Default | Message |
-|---|---|---|---|
-| AASL0001 | AnonymousObjectDestructuringProblem | Warning | Anonymous objects must be destructured |
-| AASL0002 | ComplexObjectDestructuringProblem | Warning | Complex objects with default ToString() implementation probably need to be destructured |
-| AASL0003 | ComplexObjectInContextDestructuringProblem | Warning | Complex objects with default ToString() implementation probably need to be destructured |
-| AASL0004 | ContextualLoggerProblem | Warning | Incorrect type is used for contextual logger |
-| AASL0005 | ExceptionPassedAsTemplateArgumentProblem | Warning | Exception should be passed to the exception argument |
-| AASL0006 | TemplateDuplicatePropertyProblem | Warning | Duplicate properties in message template |
-| AASL0007 | TemplateIsNotCompileTimeConstantProblem | Warning | Message template should be compile time constant |
-| AASL0008 | PositionalPropertyUsedProblem | Warning | Prefer named properties instead of positional ones |
-| AASL0009 | InconsistentLogPropertyNaming | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
-| AASL0010 | InconsistentContextLogPropertyNaming | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
-| AASL0011 | LogMessageIsSentenceProblem | Warning | Log event messages should be fragments, not sentences. Avoid a trailing period/full stop. |
+| ID | Default | Message |
+|---|---|---|
+| AASL0001 | Warning | Anonymous objects must be destructured |
+| AASL0002 | Warning | Complex objects with default ToString() implementation probably need to be destructured |
+| AASL0003 | Warning | Complex objects with default ToString() implementation probably need to be destructured |
+| AASL0004 | Warning | Incorrect type is used for contextual logger |
+| AASL0005 | Warning | Exception should be passed to the exception argument |
+| AASL0006 | Warning | Duplicate properties in message template |
+| AASL0007 | Warning | Message template should be compile time constant |
+| AASL0008 | Warning | Prefer named properties over positional ones |
+| AASL0009 | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
+| AASL0010 | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
+| AASL0011 | Warning | Log event messages should be fragments, not sentences. Avoid a trailing period/full stop. |
+| AASL0012 | Warning | Generated logging cannot use Semantic Conventions property names. [LoggerMessage] binds template holes to C# parameter names, which cannot contain '.'. |
 
 ### AASL0001 Anonymous object must be destructured
 
@@ -275,3 +288,9 @@ package; see `docs/microsoft-recommendations.md`.
 - Trigger: last constant template fragment matches `(?<!\.)\.$`.
 - Span: the trailing period (more precise than the plugin's whole-literal span).
 - Exclusions: ellipses (`...`).
+
+### AASL0012 Generated logging cannot use Semantic Conventions property names
+
+- Trigger: `[LoggerMessage]` when template property naming (`AASL0009`) is `semantic_conventions` (prefix `AASL` or rule-scoped `AASL0009`).
+- Span: the attribute name.
+- Exclusions: `LoggerMessage.Define` / `DefineScope` (positional binding); PascalCase, camelCase, snake_case, and Elastic naming; `semantic_conventions` scoped only to `AASL0010` (context property naming). AASL0009 still reports hole names on the same templates.

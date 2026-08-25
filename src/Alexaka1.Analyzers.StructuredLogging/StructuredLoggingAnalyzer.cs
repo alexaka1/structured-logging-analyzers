@@ -115,6 +115,21 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         return cache.GetOrAdd(tree, t => AnalyzerSettings.From(options.AnalyzerConfigOptionsProvider, t));
     }
 
+    private static void ReportGeneratedLoggingSemanticConventions(
+        SyntaxNodeAnalysisContext context,
+        AnalyzerSettings settings,
+        Location location)
+    {
+        if (!settings.TemplateNamingIsSemanticConventions)
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            Descriptors.GeneratedLoggingCannotUseSemanticConventions,
+            location));
+    }
+
     private static void AnalyzeInvocation(
         SyntaxNodeAnalysisContext context,
         KnownSymbols known,
@@ -285,12 +300,14 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        var settings = GetSettings(methodDecl.SyntaxTree, context.Options, settingsCache);
+        ReportGeneratedLoggingSemanticConventions(context, settings, template.Attribute.Name.GetLocation());
+
         if (template.Expression is not null && template.Expression.ContainsDiagnostics)
         {
             return;
         }
 
-        var settings = GetSettings(methodDecl.SyntaxTree, context.Options, settingsCache);
         var parameters = LoggerMessageParameterMapper.Classify(method, known);
         var source = ConstTemplateMapper.Resolve(
             context.SemanticModel,

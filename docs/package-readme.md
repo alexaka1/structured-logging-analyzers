@@ -44,8 +44,12 @@ dotnet_code_quality.AASL.ignored_properties_regex = ^Legacy\.
 ```
 
 Naming values: `pascal_case` (default), `camel_case`, `snake_case`,
-`elastic_naming`. The same options can be scoped to `AASL0009` or
-`AASL0010` (for example `dotnet_code_quality.AASL0009.property_naming`).
+`elastic_naming`, `semantic_conventions` (alias `semconv`).
+Use `semantic_conventions` for Semantic Conventions names such as
+`service.name` and `http.response.status_code`. The same options
+can be scoped to
+`AASL0009` or `AASL0010` (for example
+`dotnet_code_quality.AASL0009.property_naming`).
 A rule-scoped key applies only to that diagnostic. Prefix-level keys
 apply to both and win when set.
 
@@ -64,13 +68,17 @@ apply to both and win when set.
 | AASL0009 | Template property naming |
 | AASL0010 | Context property naming |
 | AASL0011 | Log messages should not end with a period |
+| AASL0012 | Generated logging cannot use Semantic Conventions property names |
 
 `[LoggerMessage]` declarations and `LoggerMessage.Define` / `DefineScope` are
-included. Destructure (`@`) and exception-placement rules are not applied
-there; use the .NET SDK `CA*` / `SYSLIB10xx` recommendations in
+included. When template naming is `semantic_conventions`, AASL0012 warns on
+`[LoggerMessage]`. `LoggerMessage.Define` / `DefineScope` bind by position and
+are not reported. Destructure (`@`) and
+exception-placement rules are not applied there; use the .NET SDK `CA*` /
+`SYSLIB10xx` recommendations in
 [microsoft-recommendations.md](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/microsoft-recommendations.md).
 
 See [compatibility notes](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/compatibility.md)
-for ReSharper ID mapping and intentional differences, and
+for trigger, span, and intentional-difference details, and
 [Microsoft shipped logging rules](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/microsoft-recommendations.md)
 for CA/SYSLIB rules to enable alongside this package.

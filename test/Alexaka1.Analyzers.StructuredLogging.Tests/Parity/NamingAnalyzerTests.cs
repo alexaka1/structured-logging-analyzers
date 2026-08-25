@@ -222,6 +222,184 @@ public sealed class NamingAnalyzerTests
     }
 
     [Fact]
+    public Task SemanticConventions_context_names_are_valid()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Serilog.Context;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    LogContext.PushProperty("service.name", "api");
+                    LogContext.PushProperty("http.request.method", "GET");
+                    LogContext.PushProperty("http.response.status_code", 200);
+                    LogContext.PushProperty("exception.type", "IOException");
+                    LogContext.PushProperty("db.system.name", "postgresql");
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_template_names_are_valid()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("Call {http.request.method} {url.scheme}", "GET", "https");
+                    Log.Logger.Information("Status {http.response.status_code}", 200);
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_does_not_warn_on_mel_log_extensions()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            public static class Program
+            {
+                public static void Main(ILogger logger)
+                {
+                    logger.LogInformation("Call {http.request.method}", "GET");
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_alias_semconv()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Serilog.Context;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    LogContext.PushProperty("service.name", "api");
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semconv");
+    }
+
+    [Fact]
+    public Task SemanticConventions_pascal_context_property()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Serilog.Context;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    LogContext.PushProperty({|AASL0010:"OrderId"|}, 1);
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_pascal_template_property()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{|AASL0009:{OrderId}|}", 1);
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_scoped_to_context_rule()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            using Serilog.Context;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{OrderId}", 1);
+                    LogContext.PushProperty("service.name", "api");
+                    LogContext.PushProperty({|AASL0010:"OrderId"|}, 1);
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL0010.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task Elastic_naming_rewrites_underscore_components()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{|AASL0009:{http.response.status_code}|}", 200);
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = elastic_naming");
+    }
+
+    [Fact]
+    public Task SemanticConventions_non_ascii_is_rewritten()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{|AASL0009:{MyCafé}|}", 1);
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_leading_digit_is_not_flagged()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{1name}", 1);
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
     public Task Context_interpolated_name_is_ignored()
     {
         return AnalyzerTestHost.VerifyAsync("""

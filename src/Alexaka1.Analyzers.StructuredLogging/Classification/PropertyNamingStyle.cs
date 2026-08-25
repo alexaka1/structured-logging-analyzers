@@ -7,5 +7,6 @@ internal enum PropertyNamingStyle
     PascalCase,
     CamelCase,
     SnakeCase,
-    ElasticNaming
+    ElasticNaming,
+    SemanticConventions
 }

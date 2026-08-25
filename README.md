@@ -25,6 +25,13 @@ dotnet_code_quality.AASL.property_naming = pascal_case
 dotnet_code_quality.AASL.ignored_properties_regex = ^Legacy\.
 ```
 
+Naming values: `pascal_case` (default), `camel_case`, `snake_case`,
+`elastic_naming`, and `semantic_conventions` (for `service.name`,
+`http.response.status_code` on template and context properties).
+Prefix-level `AASL` or `AASL0009` covers template properties.
+`dotnet_code_quality.AASL0010.property_naming` scopes the style to
+context properties only.
+
 Build and test:
 
 ```shell
@@ -50,7 +57,10 @@ The production assemblies target `netstandard2.0` and analyze projects targeting
 | [AASL0009](docs/rules/AASL0009.md) | Template property naming |
 | [AASL0010](docs/rules/AASL0010.md) | Context property naming |
 | [AASL0011](docs/rules/AASL0011.md) | Log messages should not end with a period |
+| [AASL0012](docs/rules/AASL0012.md) | Generated logging cannot use Semantic Conventions property names |
 
 `[LoggerMessage]` declarations and `LoggerMessage.Define` / `DefineScope` are
-included. See [docs/microsoft-recommendations.md](docs/microsoft-recommendations.md)
+included. When template naming is `semantic_conventions`, AASL0012 (generated
+logging cannot use Semantic Conventions property names) warns on `[LoggerMessage]`.
+See [docs/microsoft-recommendations.md](docs/microsoft-recommendations.md)
 for .NET SDK `CA*` / `SYSLIB10xx` rules to enable alongside this package.

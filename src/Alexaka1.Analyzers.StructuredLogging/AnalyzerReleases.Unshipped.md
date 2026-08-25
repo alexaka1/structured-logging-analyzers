@@ -16,3 +16,4 @@ AASL0008 | StructuredLogging | Warning | PositionalPropertyUsed
 AASL0009 | StructuredLogging | Warning | InconsistentTemplatePropertyNaming
 AASL0010 | StructuredLogging | Warning | InconsistentContextPropertyNaming
 AASL0011 | StructuredLogging | Warning | LogMessageIsSentence
+AASL0012 | StructuredLogging | Warning | GeneratedLoggingCannotUseSemanticConventions

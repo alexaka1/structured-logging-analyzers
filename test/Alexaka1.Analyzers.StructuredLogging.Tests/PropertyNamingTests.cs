@@ -38,8 +38,31 @@ public sealed class PropertyNamingTests
     [Theory]
     [InlineData("myProperty", "my.property")]
     [InlineData("UserId", "user.id")]
+    [InlineData("http.response.status_code", "http.response.status.code")]
     public void Elastic(string input, string expected)
     {
         Assert.Equal(expected, PropertyNaming.Suggest(input, PropertyNamingStyle.ElasticNaming));
+    }
+
+    [Theory]
+    [InlineData("service.name", "service.name")]
+    [InlineData("http.request.method", "http.request.method")]
+    [InlineData("http.response.status_code", "http.response.status_code")]
+    [InlineData("exception.type", "exception.type")]
+    [InlineData("db.system.name", "db.system.name")]
+    [InlineData("OrderId", "order_id")]
+    [InlineData("http.response.StatusCode", "http.response.status_code")]
+    [InlineData("myProperty", "my_property")]
+    [InlineData("HTTP.StatusCode", "http.status_code")]
+    [InlineData("ORDER_ID", "order_id")]
+    [InlineData("order-id", "order_id")]
+    [InlineData("service..name", "service.name")]
+    [InlineData(".service.name.", "service.name")]
+    [InlineData("caf\u00e9", "caf")]
+    [InlineData("MyCaf\u00e9", "my_caf")]
+    [InlineData("1name", "1name")]
+    public void SemanticConventions(string input, string expected)
+    {
+        Assert.Equal(expected, PropertyNaming.Suggest(input, PropertyNamingStyle.SemanticConventions));
     }
 }
