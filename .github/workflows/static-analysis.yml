@@ -57,10 +57,10 @@ jobs:
       - name: Restore analysis tools
         run: dotnet tool restore
 
-      - name: Build inspected projects
+      - name: Build solution
         run: >
           dotnet build
-          Alexaka1.Analyzers.StructuredLogging.StaticAnalysis.slnx
+          Alexaka1.Analyzers.StructuredLogging.slnx
           -c Release
           --nologo
 
@@ -68,9 +68,10 @@ jobs:
         id: resharper
         run: |
           mkdir -p artifacts/resharper
-          dotnet jb inspectcode Alexaka1.Analyzers.StructuredLogging.StaticAnalysis.slnx \
+          dotnet jb inspectcode Alexaka1.Analyzers.StructuredLogging.slnx \
             --no-build \
             --properties:Configuration=Release \
+            --exclude="samples/**" \
             --severity=WARNING \
             --format=Sarif \
             --output=artifacts/resharper/inspectcode.sarif \
