@@ -17,7 +17,7 @@ public sealed class LiteralSpanMapperTests
         var start = map.Value.IndexOf("{Name}", StringComparison.Ordinal);
         var span = map.TryGetSpan(start, "{Name}".Length);
         Assert.NotNull(span);
-        var source = map.Expression.SyntaxTree.GetText(TestContext.Current.CancellationToken).ToString(span!.Value);
+        var source = map.Expression.SyntaxTree.GetText(TestContext.Current.CancellationToken).ToString(span.Value);
         Assert.Equal("{Name}", source);
     }
 
@@ -28,7 +28,7 @@ public sealed class LiteralSpanMapperTests
         var start = map.Value.IndexOf("{Name}", StringComparison.Ordinal);
         var span = map.TryGetSpan(start, "{Name}".Length);
         Assert.NotNull(span);
-        var source = map.Expression.SyntaxTree.GetText(TestContext.Current.CancellationToken).ToString(span!.Value);
+        var source = map.Expression.SyntaxTree.GetText(TestContext.Current.CancellationToken).ToString(span.Value);
         Assert.Equal("{Name}", source);
     }
 

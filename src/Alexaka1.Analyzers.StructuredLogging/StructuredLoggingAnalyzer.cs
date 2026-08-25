@@ -1,6 +1,5 @@
 // Copyright (c) 2026 alexaka1
 
-using System.Collections.Concurrent;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
