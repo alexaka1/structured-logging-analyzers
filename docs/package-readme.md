@@ -32,6 +32,27 @@ Central package management:
 <PackageReference Include="Alexaka1.Analyzers.StructuredLogging" PrivateAssets="all" />
 ```
 
+## Recommended Microsoft analyzers
+
+This package complements the .NET SDK logging rules. After installing,
+enable these `CA*` diagnostics if they are not already on. Several are
+disabled or only suggestions by default.
+
+```editorconfig
+[*.cs]
+dotnet_diagnostic.CA1727.severity = warning
+dotnet_diagnostic.CA1848.severity = suggestion
+dotnet_diagnostic.CA2017.severity = warning
+dotnet_diagnostic.CA2023.severity = warning
+dotnet_diagnostic.CA2253.severity = warning
+dotnet_diagnostic.CA2254.severity = warning
+```
+
+Projects targeting .NET Standard or .NET Framework also need
+`<EnableNETAnalyzers>true</EnableNETAnalyzers>`. Overlap with AASL rules
+and `SYSLIB10xx` notes:
+[microsoft-recommendations.md](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/microsoft-recommendations.md).
+
 ## Configuration
 
 ```editorconfig
@@ -74,11 +95,9 @@ apply to both and win when set.
 included. When template naming is `semantic_conventions`, AASL0012 warns on
 `[LoggerMessage]`. `LoggerMessage.Define` / `DefineScope` bind by position and
 are not reported. Destructure (`@`) and
-exception-placement rules are not applied there; use the .NET SDK `CA*` /
-`SYSLIB10xx` recommendations in
-[microsoft-recommendations.md](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/microsoft-recommendations.md).
+exception-placement rules are not applied there; use the recommended
+.NET SDK `CA*` / `SYSLIB10xx` rules in
+[Recommended Microsoft analyzers](#recommended-microsoft-analyzers).
 
 See [compatibility notes](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/compatibility.md)
-for trigger, span, and intentional-difference details, and
-[Microsoft shipped logging rules](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/microsoft-recommendations.md)
-for CA/SYSLIB rules to enable alongside this package.
+for trigger, span, and intentional-difference details.

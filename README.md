@@ -20,6 +20,29 @@ Package ID: `Alexaka1.Analyzers.StructuredLogging` (diagnostic prefix `AASL`).
 </ItemGroup>
 ```
 
+## Recommended Microsoft analyzers
+
+This package complements the .NET SDK logging rules. After installing,
+enable these `CA*` diagnostics if they are not already on. Several are
+disabled or only suggestions by default.
+
+```editorconfig
+[*.cs]
+dotnet_diagnostic.CA1727.severity = warning
+dotnet_diagnostic.CA1848.severity = suggestion
+dotnet_diagnostic.CA2017.severity = warning
+dotnet_diagnostic.CA2023.severity = warning
+dotnet_diagnostic.CA2253.severity = warning
+dotnet_diagnostic.CA2254.severity = warning
+```
+
+Projects targeting .NET Standard or .NET Framework also need
+`<EnableNETAnalyzers>true</EnableNETAnalyzers>`. Overlap with AASL rules
+and `SYSLIB10xx` notes:
+[docs/microsoft-recommendations.md](docs/microsoft-recommendations.md).
+
+## Configuration
+
 ```editorconfig
 [*.cs]
 dotnet_diagnostic.AASL0001.severity = warning
@@ -64,5 +87,5 @@ The production assemblies target `netstandard2.0` and analyze projects targeting
 `[LoggerMessage]` declarations and `LoggerMessage.Define` / `DefineScope` are
 included. When template naming is `semantic_conventions`, AASL0012 (generated
 logging cannot use Semantic Conventions property names) warns on `[LoggerMessage]`.
-See [docs/microsoft-recommendations.md](docs/microsoft-recommendations.md)
-for .NET SDK `CA*` / `SYSLIB10xx` rules to enable alongside this package.
+SDK `CA*` / `SYSLIB10xx` rules are recommended alongside this package;
+see [Recommended Microsoft analyzers](#recommended-microsoft-analyzers).

@@ -206,8 +206,9 @@ declared on the same type and referenced only by the logging method.
 Shared constants still produce diagnostics; the rename and trailing-period
 fixes are withheld.
 
-.NET SDK `CA*` / `SYSLIB10xx` rules are recommendations on top of this
-package; see `docs/microsoft-recommendations.md`.
+This package recommends enabling the .NET SDK `CA*` / `SYSLIB10xx`
+logging rules if they are not already on; see
+`docs/microsoft-recommendations.md`.
 
 ## Diagnostic catalog
 
