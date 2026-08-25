@@ -46,6 +46,8 @@
     '**/vendor/**',
     '**/examples/**',
     '**/samples/**',
+    // Frozen InspectCode vs Roslyn parity harness; not a consumption project.
+    '**/test/comparison/**',
     '**/__tests__/**',
     '**/tests/**',
     '**/__fixtures__/**',
