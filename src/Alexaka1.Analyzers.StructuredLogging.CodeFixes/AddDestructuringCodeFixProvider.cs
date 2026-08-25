@@ -1,10 +1,8 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using Alexaka1.Analyzers.StructuredLogging;
 using Alexaka1.Analyzers.StructuredLogging.Mapping;
 
 namespace Alexaka1.Analyzers.StructuredLogging.CodeFixes;

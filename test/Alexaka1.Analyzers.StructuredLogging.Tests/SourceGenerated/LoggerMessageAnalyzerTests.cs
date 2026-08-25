@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis.CSharp;
-using Alexaka1.Analyzers.StructuredLogging;
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 using Xunit;
 

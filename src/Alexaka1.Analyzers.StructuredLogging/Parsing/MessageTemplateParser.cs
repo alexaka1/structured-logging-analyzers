@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Alexaka1.Analyzers.StructuredLogging.Parsing;
 
 /// <summary>

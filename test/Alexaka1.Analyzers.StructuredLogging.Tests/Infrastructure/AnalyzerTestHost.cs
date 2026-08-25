@@ -6,7 +6,6 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
-using Alexaka1.Analyzers.StructuredLogging;
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
@@ -92,7 +91,7 @@ internal static class AnalyzerTestHost
         var actions = new List<CodeAction>();
         var context = new CodeFixContext(
             document,
-            matching!,
+            matching,
             (action, _) => actions.Add(action),
             CancellationToken.None);
         await provider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
@@ -106,7 +105,7 @@ internal static class AnalyzerTestHost
         Assert.Equal(Normalize(expectedSource), Normalize(text.ToString()));
 
         var secondPass = await GetDiagnosticsAsync(text.ToString(), editorConfig).ConfigureAwait(false);
-        Assert.DoesNotContain(secondPass, d => d.Id == diagnosticId && d.Location.SourceSpan == matching!.Location.SourceSpan);
+        Assert.DoesNotContain(secondPass, d => d.Id == diagnosticId && d.Location.SourceSpan == matching.Location.SourceSpan);
     }
 
     internal static (Compilation Compilation, SyntaxTree Tree, AnalyzerOptions Options) CreateCompilation(
