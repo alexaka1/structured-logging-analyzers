@@ -1,5 +1,3 @@
-// Copyright (c) 2026 alexaka1
-
 using System.Xml.Linq;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Comparison;

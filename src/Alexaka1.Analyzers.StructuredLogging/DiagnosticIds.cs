@@ -1,5 +1,3 @@
-// Copyright (c) 2026 alexaka1
-
 namespace Alexaka1.Analyzers.StructuredLogging;
 
 internal static class DiagnosticIds

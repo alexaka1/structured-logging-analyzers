@@ -1,5 +1,3 @@
-// Copyright (c) 2026 alexaka1
-
 namespace Alexaka1.Analyzers.StructuredLogging.Parsing;
 
 internal sealed class ParsedTemplate

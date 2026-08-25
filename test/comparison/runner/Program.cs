@@ -1,5 +1,3 @@
-// Copyright (c) 2026 alexaka1
-
 using System.Collections.Immutable;
 using System.Text;
 using System.Text.Json;

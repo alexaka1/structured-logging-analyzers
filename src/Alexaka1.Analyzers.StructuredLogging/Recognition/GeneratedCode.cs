@@ -1,5 +1,3 @@
-// Copyright (c) 2026 alexaka1
-
 using System.IO;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
