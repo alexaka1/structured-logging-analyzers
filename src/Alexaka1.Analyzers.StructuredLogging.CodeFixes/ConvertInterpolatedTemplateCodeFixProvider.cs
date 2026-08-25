@@ -267,11 +267,21 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                 CollectNameParts(member.Expression, parts);
                 parts.Add(member.Name.Identifier.ValueText);
                 break;
+            case ConditionalAccessExpressionSyntax conditionalAccess:
+                CollectNameParts(conditionalAccess.Expression, parts);
+                CollectNameParts(conditionalAccess.WhenNotNull, parts);
+                break;
+            case MemberBindingExpressionSyntax memberBinding:
+                parts.Add(memberBinding.Name.Identifier.ValueText);
+                break;
             case InvocationExpressionSyntax invocation:
                 CollectNameParts(invocation.Expression, parts);
                 break;
             case ElementAccessExpressionSyntax element:
                 CollectNameParts(element.Expression, parts);
+                parts.Add("Item");
+                break;
+            case ElementBindingExpressionSyntax:
                 parts.Add("Item");
                 break;
             case ConditionalExpressionSyntax conditional:

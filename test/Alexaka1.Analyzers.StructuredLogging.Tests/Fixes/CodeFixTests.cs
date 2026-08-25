@@ -354,6 +354,69 @@ public sealed class CodeFixTests
     }
 
     [Fact]
+    public Task Convert_interpolation_conditional_access()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation({|AASL0007:$"Processed {order?.Id}"|});
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation("Processed {Id}", order?.Id);
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 2);
+    }
+
+    [Fact]
+    public Task Convert_interpolation_conditional_access_qualified_names()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation({|AASL0007:$"Processed {order?.Id}"|});
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation("Processed {OrderId}", order?.Id);
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            codeActionIndex: 1,
+            expectedActionCount: 2);
+    }
+
+    [Fact]
     public Task Convert_interpolation_identifier_has_single_action()
     {
         return AnalyzerTestHost.VerifyFixAsync(
