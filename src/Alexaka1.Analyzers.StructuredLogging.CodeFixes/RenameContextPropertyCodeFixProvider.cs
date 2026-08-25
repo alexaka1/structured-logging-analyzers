@@ -35,7 +35,7 @@ public sealed class RenameContextPropertyCodeFixProvider : CodeFixProvider
                 CodeAction.Create(
                     $"Rename property to '{suggested}'",
                     ct => ApplyAsync(context.Document, root, diagnostic, suggested!, ct),
-                    nameof(RenameContextPropertyCodeFixProvider) + suggested),
+                    nameof(RenameContextPropertyCodeFixProvider)),
                 diagnostic);
         }
     }

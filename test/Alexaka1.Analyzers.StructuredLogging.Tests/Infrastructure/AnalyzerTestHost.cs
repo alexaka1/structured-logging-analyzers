@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
@@ -72,13 +73,24 @@ internal static class AnalyzerTestHost
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
     }
 
+    private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(Document document)
+    {
+        var compilation = await document.Project.GetCompilationAsync().ConfigureAwait(false);
+        Assert.NotNull(compilation);
+        var compilationWithAnalyzers = compilation.WithAnalyzers(
+            ImmutableArray.Create(Analyzer),
+            document.Project.AnalyzerOptions);
+        return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
+    }
+
     public static async Task VerifyFixAsync(
         string markedSource,
         string expectedSource,
         string diagnosticId,
         Type codeFixType,
         string? editorConfig = null,
-        int codeActionIndex = 0)
+        int codeActionIndex = 0,
+        int? expectedActionCount = null)
     {
         var (source, expected) = Markup.Parse(markedSource);
         var diagnostics = await GetDiagnosticsAsync(source, editorConfig).ConfigureAwait(false);
@@ -87,25 +99,234 @@ internal static class AnalyzerTestHost
         Assert.NotNull(matching);
 
         var document = CreateDocument(source, editorConfig);
+        var beforeErrors = await GetCompilerErrorKeysAsync(document).ConfigureAwait(false);
+        var beforeCount = diagnostics.Count(d => d.Id == diagnosticId);
         var provider = (CodeFixProvider)Activator.CreateInstance(codeFixType)!;
+        var updated = await ApplyCodeActionAsync(document, matching, provider, codeActionIndex, expectedActionCount)
+            .ConfigureAwait(false);
+        var text = await updated.GetTextAsync().ConfigureAwait(false);
+        Assert.Equal(Normalize(expectedSource), Normalize(text.ToString()));
+
+        await AssertFixContractAsync(
+                updated,
+                editorConfig,
+                diagnosticId,
+                beforeCount,
+                remainingCount: beforeCount - 1,
+                beforeErrors)
+            .ConfigureAwait(false);
+    }
+
+    public static async Task VerifyFixAllAsync(
+        string markedSource,
+        string expectedSource,
+        string diagnosticId,
+        Type codeFixType,
+        string? editorConfig = null,
+        int codeActionIndex = 0)
+    {
+        var (source, _) = Markup.Parse(markedSource);
+        var document = CreateDocument(source, editorConfig);
+        var diagnostics = await GetAnalyzerDiagnosticsAsync(document).ConfigureAwait(false);
+        var matching = diagnostics.Where(d => d.Id == diagnosticId).ToArray();
+        Assert.True(matching.Length >= 2, "FixAll tests require at least two diagnostics of the target id.");
+
+        var beforeErrors = await GetCompilerErrorKeysAsync(document).ConfigureAwait(false);
+        var provider = (CodeFixProvider)Activator.CreateInstance(codeFixType)!;
+        var fixAllProvider = provider.GetFixAllProvider();
+        Assert.NotNull(fixAllProvider);
+
         var actions = new List<CodeAction>();
         var context = new CodeFixContext(
             document,
-            matching,
+            matching[0],
             (action, _) => actions.Add(action),
             CancellationToken.None);
         await provider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
-        Assert.NotEmpty(actions);
+        Assert.True(actions.Count > codeActionIndex, $"Expected at least {codeActionIndex + 1} code action(s).");
+        var equivalenceKey = actions[codeActionIndex].EquivalenceKey;
 
-        var action = actions[Math.Min(codeActionIndex, actions.Count - 1)];
-        var operations = await action.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
+        var fixAllContext = new FixAllContext(
+            document,
+            provider,
+            FixAllScope.Document,
+            equivalenceKey,
+            provider.FixableDiagnosticIds,
+            new TestDiagnosticProvider(diagnostics),
+            CancellationToken.None);
+        var fixAllAction = await fixAllProvider.GetFixAsync(fixAllContext).ConfigureAwait(false);
+        Assert.NotNull(fixAllAction);
+
+        var operations = await fixAllAction.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
         var change = operations.OfType<ApplyChangesOperation>().Single();
         var updated = change.ChangedSolution.GetDocument(document.Id)!;
         var text = await updated.GetTextAsync().ConfigureAwait(false);
         Assert.Equal(Normalize(expectedSource), Normalize(text.ToString()));
 
+        await AssertFixContractAsync(
+                updated,
+                editorConfig,
+                diagnosticId,
+                matching.Length,
+                remainingCount: 0,
+                beforeErrors)
+            .ConfigureAwait(false);
+
+        var remainingDiagnostics = await GetAnalyzerDiagnosticsAsync(updated).ConfigureAwait(false);
+        Assert.DoesNotContain(remainingDiagnostics, d => d.Id == diagnosticId);
+        var secondFixAll = await fixAllProvider.GetFixAsync(
+            new FixAllContext(
+                updated,
+                provider,
+                FixAllScope.Document,
+                equivalenceKey,
+                provider.FixableDiagnosticIds,
+                new TestDiagnosticProvider(remainingDiagnostics),
+                CancellationToken.None)).ConfigureAwait(false);
+        if (secondFixAll is not null)
+        {
+            var secondOperations = await secondFixAll.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
+            var secondChange = secondOperations.OfType<ApplyChangesOperation>().SingleOrDefault();
+            if (secondChange is not null)
+            {
+                var secondDocument = secondChange.ChangedSolution.GetDocument(document.Id)!;
+                var secondText = await secondDocument.GetTextAsync().ConfigureAwait(false);
+                Assert.Equal(Normalize(expectedSource), Normalize(secondText.ToString()));
+            }
+        }
+    }
+
+    private static async Task<Document> ApplyCodeActionAsync(
+        Document document,
+        Diagnostic diagnostic,
+        CodeFixProvider provider,
+        int codeActionIndex,
+        int? expectedActionCount)
+    {
+        var actions = new List<CodeAction>();
+        var context = new CodeFixContext(
+            document,
+            diagnostic,
+            (action, _) => actions.Add(action),
+            CancellationToken.None);
+        await provider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+        Assert.NotEmpty(actions);
+        if (expectedActionCount is { } count)
+        {
+            Assert.Equal(count, actions.Count);
+        }
+
+        Assert.True(actions.Count > codeActionIndex, $"Expected a code action at index {codeActionIndex}.");
+        var action = actions[codeActionIndex];
+        var operations = await action.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
+        var change = operations.OfType<ApplyChangesOperation>().Single();
+        return change.ChangedSolution.GetDocument(document.Id)!;
+    }
+
+    private static async Task AssertFixContractAsync(
+        Document updated,
+        string? editorConfig,
+        string diagnosticId,
+        int beforeCount,
+        int remainingCount,
+        IReadOnlyCollection<string> beforeErrors)
+    {
+        var text = await updated.GetTextAsync().ConfigureAwait(false);
         var secondPass = await GetDiagnosticsAsync(text.ToString(), editorConfig).ConfigureAwait(false);
-        Assert.DoesNotContain(secondPass, d => d.Id == diagnosticId && d.Location.SourceSpan == matching.Location.SourceSpan);
+        var remaining = secondPass.Count(d => d.Id == diagnosticId);
+        Assert.Equal(remainingCount, remaining);
+        Assert.True(remaining < beforeCount);
+
+        var afterErrors = await GetCompilerErrorKeysAsync(updated).ConfigureAwait(false);
+        var newErrors = afterErrors.Where(error => !beforeErrors.Contains(error)).ToList();
+        Assert.True(newErrors.Count == 0, "Fix introduced compiler errors: " + string.Join("; ", newErrors));
+        AssertLoggingInvocationsBind(await updated.GetSemanticModelAsync().ConfigureAwait(false));
+    }
+
+    private static async Task<HashSet<string>> GetCompilerErrorKeysAsync(Document document)
+    {
+        var compilation = await document.Project.GetCompilationAsync().ConfigureAwait(false);
+        Assert.NotNull(compilation);
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var diagnostic in compilation.GetDiagnostics())
+        {
+            if (diagnostic.Severity != DiagnosticSeverity.Error)
+            {
+                continue;
+            }
+
+            if (diagnostic.Id is "CS8795" or "CS0759")
+            {
+                continue;
+            }
+
+            keys.Add(diagnostic.Id + ":" + diagnostic.GetMessage());
+        }
+
+        return keys;
+    }
+
+    private static void AssertLoggingInvocationsBind(SemanticModel? model)
+    {
+        Assert.NotNull(model);
+        foreach (var invocation in model.SyntaxTree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            var name = invocation.Expression switch
+            {
+                MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
+                IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+                _ => null
+            };
+            if (name is null || !IsLoggingMethodName(name))
+            {
+                continue;
+            }
+
+            var symbol = model.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+            Assert.NotNull(symbol);
+            Assert.True(symbol.MethodKind is MethodKind.Ordinary or MethodKind.ReducedExtension);
+        }
+    }
+
+    private static bool IsLoggingMethodName(string name)
+    {
+        return name is "Information" or "Debug" or "Warning" or "Error" or "Fatal" or "Verbose" or "Write" or
+            "Log" or "LogDebug" or "LogInformation" or "LogWarning" or "LogError" or "LogCritical" or "LogTrace" or
+            "Info" or "Trace" or "PushProperty" or "ZLogInformation" or "ZLogDebug" or "ZLogError" or "ZLogWarning";
+    }
+
+    private sealed class TestDiagnosticProvider : FixAllContext.DiagnosticProvider
+    {
+        private readonly ImmutableArray<Diagnostic> _diagnostics;
+
+        public TestDiagnosticProvider(ImmutableArray<Diagnostic> diagnostics)
+        {
+            _diagnostics = diagnostics;
+        }
+
+        public override Task<IEnumerable<Diagnostic>> GetDocumentDiagnosticsAsync(
+            Document document,
+            CancellationToken cancellationToken)
+        {
+            _ = document;
+            return Task.FromResult<IEnumerable<Diagnostic>>(_diagnostics);
+        }
+
+        public override Task<IEnumerable<Diagnostic>> GetProjectDiagnosticsAsync(
+            Project project,
+            CancellationToken cancellationToken)
+        {
+            _ = project;
+            return Task.FromResult(Enumerable.Empty<Diagnostic>());
+        }
+
+        public override Task<IEnumerable<Diagnostic>> GetAllDiagnosticsAsync(
+            Project project,
+            CancellationToken cancellationToken)
+        {
+            _ = project;
+            return Task.FromResult<IEnumerable<Diagnostic>>(_diagnostics);
+        }
     }
 
     internal static (Compilation Compilation, SyntaxTree Tree, AnalyzerOptions Options) CreateCompilation(
@@ -158,9 +379,21 @@ internal static class AnalyzerTestHost
             .WithProjectCompilationOptions(projectId, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .WithProjectParseOptions(projectId, new CSharpParseOptions(LanguageVersion.Latest))
             .AddMetadataReferences(projectId, References)
-            .AddDocument(documentId, "Test.cs", source);
+            .AddDocument(documentId, "Test.cs", source, filePath: "/0/Test.cs");
 
-        _ = editorConfig;
+        if (!string.IsNullOrEmpty(editorConfig))
+        {
+            var configId = DocumentId.CreateNewId(projectId);
+            var configText = editorConfig.IndexOf('[') >= 0
+                ? editorConfig
+                : "[*.cs]" + Environment.NewLine + editorConfig;
+            solution = solution.AddAnalyzerConfigDocument(
+                configId,
+                ".editorconfig",
+                SourceText.From(configText, Encoding.UTF8),
+                filePath: "/0/.editorconfig");
+        }
+
         return solution.GetDocument(documentId)!;
     }
 

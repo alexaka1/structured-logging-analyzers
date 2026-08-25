@@ -155,7 +155,7 @@ Code fixes map logical template offsets through:
 | AASL0009 | Rename hole to suggested name | Full; also `[LoggerMessage]` attribute strings |
 | AASL0010 | Replace `PushProperty` name | Full |
 | AASL0011 | Remove trailing `.` | Full; span is the period |
-| AASL0007 | Convert interpolation | Partial: deterministic names, no hotspots |
+| AASL0007 | Convert interpolation | Partial: deterministic leaf names; extra action uses qualified names when they differ. No hotspots |
 
 No first-milestone fixes for AASL0003, AASL0004, AASL0005, AASL0006, or AASL0012.
 
