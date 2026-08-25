@@ -4,7 +4,7 @@
 - `src/Alexaka1.Analyzers.StructuredLogging`: `netstandard2.0` diagnostic analyzers (`AASL0001`–`AASL0012`).
 - `src/Alexaka1.Analyzers.StructuredLogging.CodeFixes`: Roslyn code fixes for the analyzers that have safe transformations.
 - `pack/Alexaka1.Analyzers.StructuredLogging`: Analyzer-only NuGet pack project (`Alexaka1.Analyzers.StructuredLogging`). No `lib/` assets.
-- `test/Alexaka1.Analyzers.StructuredLogging.Tests`: xUnit tests hosted on .NET 10.
+- `test/Alexaka1.Analyzers.StructuredLogging.Tests`: xUnit.net v3 tests hosted on .NET 10.
 - `test/comparison`: Optional InspectCode comparison against the published ReSharper marketplace plugin.
 - `samples/`: Consuming projects targeting `net10.0`, `netstandard2.0`, and SDK-style `net472`.
 - `docs/`: Rule pages, compatibility notes, and the NuGet package readme. Root solution: `Alexaka1.Analyzers.StructuredLogging.slnx`.
@@ -12,7 +12,7 @@
 - `build/`: Release helper scripts (`version.sh`, `extract-changelog.sh`, `detect-duplicate-release.sh`).
 
 ## Build, Test, and Development
-- Test: `dotnet test Alexaka1.Analyzers.StructuredLogging.slnx -c Release`
+- Test (native xUnit.net v3 runner): `dotnet run --project test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj -c Release --no-launch-profile`
 - Pack: `dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj -c Release`
 - Samples: `dotnet build samples/Net10Example/Net10Example.csproj -c Release`
 - Comparison (optional): `./test/comparison/run-comparison.sh`
@@ -26,7 +26,8 @@ Keep analyzer assemblies free of Workspaces references. Do not add runtime or `l
 - Diagnostic IDs stay in the `AASL` prefix. Preserve documented compatibility unless `docs/compatibility.md` is updated.
 
 ## Testing Guidelines
-- Framework: xUnit with `Microsoft.CodeAnalysis.CSharp.Workspaces` test hosts.
+- Framework: xUnit.net v3 (`xunit.v3`) with `Microsoft.CodeAnalysis.CSharp.Workspaces` test hosts.
+- CI runs the stand-alone test executable via `dotnet run` (native in-process runner). `xunit.runner.visualstudio` remains for IDE Test Explorer / optional VSTest.
 - Group analyzer cases under `Parity/`, `Fixes/`, `Frameworks/`, and `SourceGenerated/`.
 - Add tests for new diagnostics, invocation shapes, and code fixes.
 - After analyzer behavior changes, run `./test/comparison/run-comparison.sh` when InspectCode is available.

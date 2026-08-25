@@ -53,7 +53,11 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Test
-        run: dotnet test Alexaka1.Analyzers.StructuredLogging.slnx -c Release
+        run: >
+          dotnet run
+          --project test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj
+          -c Release
+          --no-launch-profile
 
       - name: Pack
         run: dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj -c Release -o artifacts
