@@ -1,6 +1,5 @@
 // Copyright (c) 2026 alexaka1
 
-using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Configuration;

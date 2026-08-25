@@ -1,7 +1,5 @@
 // Copyright (c) 2026 alexaka1
 
-using System.Globalization;
-
 namespace Alexaka1.Analyzers.StructuredLogging.Parsing;
 
 /// <summary>
