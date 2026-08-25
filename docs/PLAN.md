@@ -500,7 +500,6 @@ Completion criterion: project identity, ownership, licensing, and provenance are
 For each rule, define:
 
 - New diagnostic ID.
-- Original ReSharper ID.
 - Default severity.
 - Message.
 - Trigger and exclusions.

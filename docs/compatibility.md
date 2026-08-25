@@ -1,8 +1,7 @@
 # Compatibility specification
 
-This document is the behavioral contract for the Roslyn analyzers. It maps
-each ReSharper inspection to a diagnostic, records preserved quirks, and
-lists intentional corrections.
+This document is the behavioral contract for the Roslyn analyzers. It records
+preserved quirks and intentional corrections.
 
 Diagnostic prefix: `AASL` (`Alexaka1.Analyzers.StructuredLogging`).
 Package ID: `Alexaka1.Analyzers.StructuredLogging`.
@@ -212,20 +211,20 @@ package; see `docs/microsoft-recommendations.md`.
 
 ## Diagnostic catalog
 
-| ID | ReSharper ID | Default | Message |
-|---|---|---|---|
-| AASL0001 | AnonymousObjectDestructuringProblem | Warning | Anonymous objects must be destructured |
-| AASL0002 | ComplexObjectDestructuringProblem | Warning | Complex objects with default ToString() implementation probably need to be destructured |
-| AASL0003 | ComplexObjectInContextDestructuringProblem | Warning | Complex objects with default ToString() implementation probably need to be destructured |
-| AASL0004 | ContextualLoggerProblem | Warning | Incorrect type is used for contextual logger |
-| AASL0005 | ExceptionPassedAsTemplateArgumentProblem | Warning | Exception should be passed to the exception argument |
-| AASL0006 | TemplateDuplicatePropertyProblem | Warning | Duplicate properties in message template |
-| AASL0007 | TemplateIsNotCompileTimeConstantProblem | Warning | Message template should be compile time constant |
-| AASL0008 | PositionalPropertyUsedProblem | Warning | Prefer named properties instead of positional ones |
-| AASL0009 | InconsistentLogPropertyNaming | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
-| AASL0010 | InconsistentContextLogPropertyNaming | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
-| AASL0011 | LogMessageIsSentenceProblem | Warning | Log event messages should be fragments, not sentences. Avoid a trailing period/full stop. |
-| AASL0012 | none | Warning | Generated logging cannot use Semantic Conventions property names. LoggerMessage methods bind template holes to C# parameter names, which cannot contain '.'. |
+| ID | Default | Message |
+|---|---|---|
+| AASL0001 | Warning | Anonymous objects must be destructured |
+| AASL0002 | Warning | Complex objects with default ToString() implementation probably need to be destructured |
+| AASL0003 | Warning | Complex objects with default ToString() implementation probably need to be destructured |
+| AASL0004 | Warning | Incorrect type is used for contextual logger |
+| AASL0005 | Warning | Exception should be passed to the exception argument |
+| AASL0006 | Warning | Duplicate properties in message template |
+| AASL0007 | Warning | Message template should be compile time constant |
+| AASL0008 | Warning | Prefer named properties over positional ones |
+| AASL0009 | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
+| AASL0010 | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
+| AASL0011 | Warning | Log event messages should be fragments, not sentences. Avoid a trailing period/full stop. |
+| AASL0012 | Warning | Generated logging cannot use Semantic Conventions property names. LoggerMessage methods bind template holes to C# parameter names, which cannot contain '.'. |
 
 ### AASL0001 Anonymous object must be destructured
 

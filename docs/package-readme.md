@@ -78,6 +78,6 @@ exception-placement rules are not applied there; use the .NET SDK `CA*` /
 [microsoft-recommendations.md](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/microsoft-recommendations.md).
 
 See [compatibility notes](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/compatibility.md)
-for ReSharper ID mapping and intentional differences, and
+for trigger, span, and intentional-difference details, and
 [Microsoft shipped logging rules](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/microsoft-recommendations.md)
 for CA/SYSLIB rules to enable alongside this package.
