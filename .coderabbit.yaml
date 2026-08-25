@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+inheritance: true
+reviews:
+  collapse_walkthrough: false
+  poem: true
+  auto_review:
+    ignore_usernames:
+      - copilot
+      - Copilot
+      - dependabot[bot]
+      - renovate[bot]
+      - mend[bot]
+      - step-security-bot
+      - github-actions[bot]
