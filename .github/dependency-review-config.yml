@@ -1,0 +1,20 @@
+warn-only: false
+fail-on-severity: high
+
+vulnerability-check: true
+
+license-check: true
+
+allow-licenses:
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - MIT
+  - Unlicense
+# Retry packs LICENSE.PLATFORMTOOLS.txt and clears the default MIT SPDX expression.
+# nuget.org has no licenseExpression, so GitHub reports LicenseRef-scancode-unknown.
+allow-dependencies-licenses:
+  - pkg:nuget/Microsoft.Testing.Extensions.Retry
+
+comment-summary-in-pr: always
