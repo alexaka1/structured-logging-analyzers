@@ -77,7 +77,7 @@ internal static class AnalyzerTestHost
     {
         var compilation = await document.Project.GetCompilationAsync().ConfigureAwait(false);
         Assert.NotNull(compilation);
-        var compilationWithAnalyzers = compilation!.WithAnalyzers(
+        var compilationWithAnalyzers = compilation.WithAnalyzers(
             ImmutableArray.Create(Analyzer),
             document.Project.AnalyzerOptions);
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
@@ -154,10 +154,10 @@ internal static class AnalyzerTestHost
             provider.FixableDiagnosticIds,
             new TestDiagnosticProvider(diagnostics),
             CancellationToken.None);
-        var fixAllAction = await fixAllProvider!.GetFixAsync(fixAllContext).ConfigureAwait(false);
+        var fixAllAction = await fixAllProvider.GetFixAsync(fixAllContext).ConfigureAwait(false);
         Assert.NotNull(fixAllAction);
 
-        var operations = await fixAllAction!.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
+        var operations = await fixAllAction.GetOperationsAsync(CancellationToken.None).ConfigureAwait(false);
         var change = operations.OfType<ApplyChangesOperation>().Single();
         var updated = change.ChangedSolution.GetDocument(document.Id)!;
         var text = await updated.GetTextAsync().ConfigureAwait(false);
@@ -210,7 +210,7 @@ internal static class AnalyzerTestHost
             CancellationToken.None);
         await provider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
         Assert.NotEmpty(actions);
-        if (expectedActionCount is int count)
+        if (expectedActionCount is { } count)
         {
             Assert.Equal(count, actions.Count);
         }
