@@ -25,14 +25,17 @@ dotnet_diagnostic.CA2254.severity = warning
 | [CA2253](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2253) | Numeric MEL placeholders | `AASL0008` still runs across frameworks. For `[LoggerMessage]` it adds a rename fix when an unambiguous parameter exists. |
 | [CA1727](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1727) | PascalCase MEL placeholders | `AASL0009` adds camel/snake/Elastic/Semantic Conventions naming, an ignore regex, and a rename fix, and applies to Serilog/NLog/ZLogger as well. Disable CA1727 if templates use Semantic Conventions names such as `{service.name}`. |
 | [CA2023](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2023) | Malformed braces in MEL templates | Not reimplemented. Malformed holes are treated as text. |
-| [CA1848](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848) | Prefer `LoggerMessage` delegates / source generation | Not reimplemented. Performance guidance only. |
+| [CA1848](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848) | Prefer `LoggerMessage` delegates / source generation | Not reimplemented. Performance guidance only. If template naming is `semantic_conventions`, `AASL0012` warns that generated logging cannot use those dotted names. |
 
 ## `LoggerMessage` generator diagnostics (`SYSLIB10xx`)
 
 The generator already validates method shape, missing/unused parameters,
 the first exception/logger/level parameters, duplicate event IDs, and
 template names that differ only by case ([SYSLIB1021](https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/source-generator-overview)).
-This package does not duplicate those diagnostics.
+This package does not duplicate those diagnostics. `AASL0012` is the extra:
+it warns when `semantic_conventions` naming is configured and the code uses
+`[LoggerMessage]` or `LoggerMessage.Define` / `DefineScope`, which cannot bind
+dotted names to C# parameters.
 
 See the [source-generator diagnostic index](https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/source-generator-overview).
 

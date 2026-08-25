@@ -68,10 +68,13 @@ apply to both and win when set.
 | AASL0009 | Template property naming |
 | AASL0010 | Context property naming |
 | AASL0011 | Log messages should not end with a period |
+| AASL0012 | Generated logging cannot use Semantic Conventions property names |
 
 `[LoggerMessage]` declarations and `LoggerMessage.Define` / `DefineScope` are
-included. Destructure (`@`) and exception-placement rules are not applied
-there; use the .NET SDK `CA*` / `SYSLIB10xx` recommendations in
+included. When template naming is `semantic_conventions`, AASL0012 warns that
+generated logging cannot use those names. Destructure (`@`) and
+exception-placement rules are not applied there; use the .NET SDK `CA*` /
+`SYSLIB10xx` recommendations in
 [microsoft-recommendations.md](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/microsoft-recommendations.md).
 
 See [compatibility notes](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/compatibility.md)

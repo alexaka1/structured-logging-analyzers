@@ -36,14 +36,14 @@ public sealed class LoggerMessageAnalyzerTests
     }
 
     [Fact]
-    public Task SemanticConventions_name_is_valid()
+    public Task SemanticConventions_name_is_valid_for_template_naming_and_warns_on_generated_logging()
     {
         return AnalyzerTestHost.VerifyAsync(
             """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Call {http.request.method}")]
+                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Call {http.request.method}")]
                 public static partial void RequestStarted(ILogger logger, string method);
             }
             """,
@@ -58,11 +58,56 @@ public sealed class LoggerMessageAnalyzerTests
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Order {|AASL0009:{OrderId}|} started")]
+                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Order {|AASL0009:{OrderId}|} started")]
                 public static partial void OrderStarted(ILogger logger, string orderId);
             }
             """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_warns_on_logger_message_even_without_holes()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Microsoft.Extensions.Logging;
+            public static partial class Log
+            {
+                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Started")]
+                public static partial void Started(ILogger logger);
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_scoped_to_context_rule_does_not_warn_on_logger_message()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Microsoft.Extensions.Logging;
+            public static partial class Log
+            {
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Call {Method}")]
+                public static partial void RequestStarted(ILogger logger, string method);
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL0010.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_scoped_to_template_naming_warns_on_logger_message()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Microsoft.Extensions.Logging;
+            public static partial class Log
+            {
+                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Call {http.request.method}")]
+                public static partial void RequestStarted(ILogger logger, string method);
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL0009.property_naming = semantic_conventions");
     }
 
     [Fact]
@@ -509,6 +554,54 @@ public sealed class LoggerMessageDefineTests
                     LoggerMessage.Define<Order>(LogLevel.Information, new EventId(1), "Order {|AASL0009:{order}|}{|AASL0011:.|}");
             }
             """);
+    }
+
+    [Fact]
+    public Task SemanticConventions_warns_on_define()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Microsoft.Extensions.Logging;
+            public static class C
+            {
+                private static readonly System.Action<ILogger, string, System.Exception?> s_log =
+                    {|AASL0012:LoggerMessage.Define<string>|}(LogLevel.Information, new EventId(1), "Call {http.request.method}");
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_warns_on_define_scope()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Microsoft.Extensions.Logging;
+            public static class C
+            {
+                private static readonly System.Func<ILogger, string, System.IDisposable?> s_scope =
+                    {|AASL0012:LoggerMessage.DefineScope<string>|}("Starting {http.request.method}");
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_warns_on_define_when_template_is_not_constant()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Microsoft.Extensions.Logging;
+            public static class C
+            {
+                static string Format() => "Hi {Name}";
+                static void M()
+                {
+                    _ = {|AASL0012:LoggerMessage.Define|}(LogLevel.Information, new EventId(1), {|AASL0007:Format()|});
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
     [Fact]

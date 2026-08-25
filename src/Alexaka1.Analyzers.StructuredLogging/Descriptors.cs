@@ -61,6 +61,11 @@ internal static class Descriptors
         "Log event messages should be fragments, not sentences",
         "Log event messages should be fragments, not sentences. Avoid a trailing period/full stop.");
 
+    public static readonly DiagnosticDescriptor GeneratedLoggingCannotUseSemanticConventions = Create(
+        DiagnosticIds.GeneratedLoggingCannotUseSemanticConventions,
+        "Generated logging cannot use Semantic Conventions property names",
+        "Generated logging cannot use Semantic Conventions property names. LoggerMessage methods bind template holes to C# parameter names, which cannot contain '.'.");
+
     public static readonly ImmutableArray<DiagnosticDescriptor> All = ImmutableArray.Create(
         AnonymousObjectMustBeDestructured,
         ComplexObjectShouldBeDestructured,
@@ -72,7 +77,8 @@ internal static class Descriptors
         PositionalPropertyUsed,
         InconsistentTemplatePropertyNaming,
         InconsistentContextPropertyNaming,
-        LogMessageIsSentence);
+        LogMessageIsSentence,
+        GeneratedLoggingCannotUseSemanticConventions);
 
     private static DiagnosticDescriptor Create(string id, string title, string message)
     {

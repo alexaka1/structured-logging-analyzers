@@ -261,6 +261,23 @@ public sealed class NamingAnalyzerTests
     }
 
     [Fact]
+    public Task SemanticConventions_does_not_warn_on_mel_log_extensions()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            """
+            using Microsoft.Extensions.Logging;
+            public static class Program
+            {
+                public static void Main(ILogger logger)
+                {
+                    logger.LogInformation("Call {http.request.method}", "GET");
+                }
+            }
+            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
     public Task SemanticConventions_alias_semconv()
     {
         return AnalyzerTestHost.VerifyAsync(

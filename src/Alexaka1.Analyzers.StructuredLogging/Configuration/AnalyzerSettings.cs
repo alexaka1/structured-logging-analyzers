@@ -64,6 +64,9 @@ internal readonly struct AnalyzerSettings
         return _templateNaming ?? PropertyNamingStyle.PascalCase;
     }
 
+    public bool TemplateNamingIsSemanticConventions =>
+        GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming) == PropertyNamingStyle.SemanticConventions;
+
     public bool IsIgnored(string propertyName, RegexCache cache, string diagnosticId)
     {
         var pattern = _prefixIgnored;

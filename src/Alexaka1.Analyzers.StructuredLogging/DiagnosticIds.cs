@@ -17,6 +17,7 @@ internal static class DiagnosticIds
     public const string InconsistentTemplatePropertyNaming = "AASL0009";
     public const string InconsistentContextPropertyNaming = "AASL0010";
     public const string LogMessageIsSentence = "AASL0011";
+    public const string GeneratedLoggingCannotUseSemanticConventions = "AASL0012";
 
     public const string Category = "StructuredLogging";
     public const string HelpBase = "https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/rules/";
