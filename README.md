@@ -22,9 +22,10 @@ Package ID: `Alexaka1.Analyzers.StructuredLogging` (diagnostic prefix `AASL`).
 
 ## Recommended Microsoft analyzers
 
-This package complements the .NET SDK logging rules. After installing,
-enable these `CA*` diagnostics if they are not already on. Several are
-disabled or only suggestions by default.
+> [!TIP]
+> This package complements the .NET SDK logging rules. After installing,
+> enable these `CA*` diagnostics if they are not already on. Several are
+> disabled or only suggestions by default.
 
 ```editorconfig
 [*.cs]
