@@ -30,6 +30,15 @@
       matchFileNames: ["pnpm-workspace.yaml"],
       enabled: false,
     },
+    {
+      description: [
+        "Use NuGet versioning for ReSharper global tool four-part versions",
+      ],
+      matchFileNames: ["dotnet-tools.json"],
+      matchManagers: ["nuget"],
+      matchPackageNames: ["jetbrains.resharper.globaltools"],
+      versioning: "nuget",
+    },
   ],
   ignorePaths: [
     '**/node_modules/**',

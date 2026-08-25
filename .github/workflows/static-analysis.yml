@@ -1,0 +1,205 @@
+name: Static Analysis
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  MSBUILDDISABLENODEREUSE: '1'
+
+jobs:
+  inspect:
+    name: Static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            10.0.x
+
+      - name: Restore ReSharper cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/resharper-caches
+          key: >-
+            resharper-${{ runner.os }}-${{
+              hashFiles('dotnet-tools.json', '**/*.csproj', '**/*.props', '**/*.targets', '*.slnx')
+            }}-${{ github.sha }}
+          restore-keys: |
+            resharper-${{ runner.os }}-${{
+              hashFiles('dotnet-tools.json', '**/*.csproj', '**/*.props', '**/*.targets', '*.slnx')
+            }}-
+
+      - name: Restore analysis tools
+        run: dotnet tool restore
+
+      - name: Build solution
+        run: >
+          dotnet build
+          Alexaka1.Analyzers.StructuredLogging.slnx
+          -c Release
+          --nologo
+
+      - name: Run ReSharper InspectCode
+        id: resharper
+        run: |
+          mkdir -p artifacts/resharper
+          dotnet jb inspectcode Alexaka1.Analyzers.StructuredLogging.slnx \
+            --no-build \
+            --properties:Configuration=Release \
+            --exclude="samples/**" \
+            --severity=WARNING \
+            --format=Sarif \
+            --output=artifacts/resharper/inspectcode.sarif \
+            --caches-home="${RUNNER_TEMP}/resharper-caches" \
+            --no-updates
+
+          jq '
+            (.runs[].results) |= map(
+              select((.suppressions | not) or ((.suppressions | length) == 0))
+              | select((.locations // []) | length > 0)
+            )
+            | (.runs[].originalUriBaseIds) = {}
+            | (.runs[].artifacts[]?.location | select(.uriBaseId == "solutionDir")) |=
+                del(.uriBaseId)
+            | (.runs[].results[]?.locations[]?.physicalLocation.artifactLocation
+                | select(.uriBaseId == "solutionDir")) |=
+                del(.uriBaseId)
+          ' artifacts/resharper/inspectcode.sarif \
+            > artifacts/resharper/inspectcode-normalized.sarif
+
+      - name: Upload ReSharper SARIF
+        if: ${{ !cancelled() && steps.resharper.outcome == 'success' }}
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        with:
+          sarif_file: artifacts/resharper/inspectcode-normalized.sarif
+          category: resharper-inspectcode
+
+      - name: Run slopwatch
+        id: slopwatch
+        if: ${{ !cancelled() }}
+        run: |
+          mkdir -p artifacts/slopwatch
+          set +e
+          dotnet slopwatch analyze \
+            -d . \
+            --exclude "samples/**" \
+            --no-baseline \
+            --output json \
+            > artifacts/slopwatch/report.json
+          exit_code=$?
+          set -e
+          echo "exit-code=${exit_code}" >> "$GITHUB_OUTPUT"
+
+      - name: Convert slopwatch report to SARIF
+        id: slopwatch-sarif
+        if: ${{ !cancelled() && steps.slopwatch.outcome == 'success' }}
+        env:
+          WORKSPACE: ${{ github.workspace }}
+        run: |
+          jq --arg workspace "$WORKSPACE" '
+            {
+              "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+              version: "2.1.0",
+              runs: [
+                {
+                  tool: {
+                    driver: {
+                      name: "slopwatch",
+                      informationUri: "https://github.com/Aaronontheweb/dotnet-slopwatch",
+                      rules: (
+                        (.results // [])
+                        | map({
+                            id: .ruleId,
+                            name: .ruleName,
+                            shortDescription: { text: .ruleName }
+                          })
+                        | unique_by(.id)
+                      )
+                    }
+                  },
+                  results: (
+                    (.results // [])
+                    | map({
+                        ruleId: .ruleId,
+                        message: { text: .message },
+                        level: (
+                          if .severity == "error" then "error"
+                          elif .severity == "warning" then "warning"
+                          else "note"
+                          end
+                        ),
+                        partialFingerprints: {
+                          unique: (
+                            (
+                              (.filePath // "")
+                              + ":"
+                              + ((.lineNumber // 1) | tostring)
+                              + ":"
+                              + (.ruleId // "")
+                              + ":"
+                              + (.message // "")
+                            )
+                            | @base64
+                          )
+                        },
+                        locations: [
+                          {
+                            physicalLocation: {
+                              artifactLocation: {
+                                uri: (
+                                  (.filePath // "")
+                                  | ltrimstr($workspace + "/")
+                                  | ltrimstr("./")
+                                )
+                              },
+                              region: {
+                                startLine: (.lineNumber // 1),
+                                startColumn: (.column // 1)
+                              }
+                            }
+                          }
+                        ]
+                      })
+                  )
+                }
+              ]
+            }
+          ' artifacts/slopwatch/report.json > artifacts/slopwatch/report.sarif
+
+      - name: Upload slopwatch SARIF
+        if: ${{ !cancelled() && steps.slopwatch-sarif.outcome == 'success' }}
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+        with:
+          sarif_file: artifacts/slopwatch/report.sarif
+          category: slopwatch
+
+      - name: Enforce slopwatch result
+        if: ${{ !cancelled() && steps.slopwatch.outcome == 'success' }}
+        env:
+          SLOPWATCH_EXIT_CODE: ${{ steps.slopwatch.outputs.exit-code }}
+        run: exit "$SLOPWATCH_EXIT_CODE"
