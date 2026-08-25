@@ -39,7 +39,7 @@ public sealed class LoggerMessageAnalyzerTests
     public Task SemanticConventions_name_is_valid_for_template_naming_and_warns_on_generated_logging()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -54,7 +54,7 @@ public sealed class LoggerMessageAnalyzerTests
     public Task SemanticConventions_pascal_name_is_flagged()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -69,7 +69,7 @@ public sealed class LoggerMessageAnalyzerTests
     public Task SemanticConventions_warns_on_logger_message_even_without_holes()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -84,7 +84,7 @@ public sealed class LoggerMessageAnalyzerTests
     public Task SemanticConventions_scoped_to_context_rule_does_not_warn_on_logger_message()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -99,7 +99,7 @@ public sealed class LoggerMessageAnalyzerTests
     public Task SemanticConventions_scoped_to_template_naming_warns_on_logger_message()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -560,7 +560,7 @@ public sealed class LoggerMessageDefineTests
     public Task SemanticConventions_does_not_warn_on_define()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static class C
             {
@@ -575,7 +575,7 @@ public sealed class LoggerMessageDefineTests
     public Task SemanticConventions_does_not_warn_on_define_scope()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static class C
             {
@@ -590,7 +590,7 @@ public sealed class LoggerMessageDefineTests
     public Task SemanticConventions_does_not_warn_on_define_when_template_is_not_constant()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static class C
             {

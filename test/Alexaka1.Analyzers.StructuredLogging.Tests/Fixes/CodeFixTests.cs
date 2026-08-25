@@ -210,7 +210,7 @@ public sealed class CodeFixTests
     public Task Rename_context_property_semantic_conventions()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog.Context;
             public static class Program
             {
@@ -220,7 +220,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Serilog.Context;
             public static class Program
             {
@@ -239,7 +239,7 @@ public sealed class CodeFixTests
     public Task Rename_template_property_semantic_conventions()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -249,7 +249,7 @@ public sealed class CodeFixTests
                 }
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
