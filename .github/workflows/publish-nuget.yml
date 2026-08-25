@@ -53,7 +53,6 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Test
-        # Native xUnit.net v3 in-process runner (not VSTest).
         run: >
           dotnet run
           --project test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj

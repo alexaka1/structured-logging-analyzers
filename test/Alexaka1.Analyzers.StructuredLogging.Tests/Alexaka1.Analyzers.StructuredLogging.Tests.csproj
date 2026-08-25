@@ -2,8 +2,6 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <!-- CI uses the native xUnit in-process runner (dotnet run). Keep VSTest
-         packages so IDE Test Explorer / optional `dotnet test` still work. -->
     <IsTestingPlatformApplication>false</IsTestingPlatformApplication>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
