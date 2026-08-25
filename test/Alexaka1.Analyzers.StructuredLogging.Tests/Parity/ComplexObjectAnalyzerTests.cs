@@ -10,7 +10,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Class_without_tostring()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program
@@ -26,7 +26,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Stringify_suppresses()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program
@@ -42,7 +42,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Numeric_stringify()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -57,7 +57,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Non_generic_enumerable_does_not_warn()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System.Collections;
             using System.Collections.Generic;
             using Serilog;
@@ -75,7 +75,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Nullable_numeric_stringify()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -91,7 +91,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Dictionary_stringify()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System.Collections.Generic;
             using Serilog;
             public static class Program
@@ -107,7 +107,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Inherited_tostring_does_not_warn()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -127,7 +127,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Exception_before_template_still_destructures_argument()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog;
             public static class Program
@@ -144,7 +144,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Context_without_destructure()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog.Context;
             public static class Program
@@ -160,7 +160,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Context_numeric_does_not_warn()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog.Context;
             public static class Program
             {
@@ -175,7 +175,7 @@ public sealed class ComplexObjectAnalyzerTests
     [Fact]
     public Task Context_explicit_destructure_does_not_warn()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Serilog.Context;
             public static class Program

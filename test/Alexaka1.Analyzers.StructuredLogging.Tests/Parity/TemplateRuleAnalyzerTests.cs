@@ -10,7 +10,7 @@ public sealed class TemplateRuleAnalyzerTests
     [Fact]
     public Task Duplicate_named_properties()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -25,7 +25,7 @@ public sealed class TemplateRuleAnalyzerTests
     [Fact]
     public Task Positional_property()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -40,7 +40,7 @@ public sealed class TemplateRuleAnalyzerTests
     [Fact]
     public Task Mixed_template_does_not_report_positional()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -55,7 +55,7 @@ public sealed class TemplateRuleAnalyzerTests
     [Fact]
     public Task Sentence_period()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -70,7 +70,7 @@ public sealed class TemplateRuleAnalyzerTests
     [Fact]
     public Task Ellipsis_is_not_a_sentence()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {
@@ -85,7 +85,7 @@ public sealed class TemplateRuleAnalyzerTests
     [Fact]
     public Task Invalid_syntax_does_not_throw()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Serilog;
             public static class Program
             {

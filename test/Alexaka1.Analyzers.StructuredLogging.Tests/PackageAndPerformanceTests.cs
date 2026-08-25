@@ -63,7 +63,7 @@ public sealed class PackageAndPerformanceTests
     [Fact]
     public async Task Invalid_editorconfig_does_not_throw()
     {
-        var source = """
+        var source = /*lang=csharp*/ """
             using Serilog;
             public static class Program
             {

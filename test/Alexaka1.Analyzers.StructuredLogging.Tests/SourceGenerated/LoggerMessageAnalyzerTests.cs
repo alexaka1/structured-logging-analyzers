@@ -12,7 +12,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Static_partial_named_message_trailing_period()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -25,7 +25,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Extension_method()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -113,7 +113,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Instance_logger_field()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public partial class Worker
             {
@@ -129,7 +129,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Primary_constructor_logger()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public partial class Worker(ILogger logger)
             {
@@ -142,7 +142,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Dynamic_log_level_parameter()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -155,7 +155,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Constructor_arguments()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -168,7 +168,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Omitted_message_is_not_flagged()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -181,7 +181,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Reordered_parameters_match_by_name()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -194,7 +194,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Case_insensitive_placeholder_is_not_a_missing_parameter()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -207,7 +207,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Format_specifier_is_preserved_and_not_destructured()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -220,7 +220,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task First_exception_placeholder_is_left_to_syslib()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Microsoft.Extensions.Logging;
             public static partial class Log
@@ -234,7 +234,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Subsequent_exception_is_an_ordinary_template_parameter()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using System;
             using Microsoft.Extensions.Logging;
             public static partial class Log
@@ -248,7 +248,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Generic_method()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -261,7 +261,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Invalid_non_partial_method_does_not_emit_exception_or_constant_rules()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static class Log
             {
@@ -274,7 +274,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Complex_object_is_not_flagged_for_logger_message()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public sealed class Order { }
             public static partial class Log
@@ -288,7 +288,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Anonymous_object_is_not_flagged_for_logger_message()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -301,7 +301,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Positional_placeholder_with_unambiguous_parameter()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -314,7 +314,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Constant_message_exclusive_to_method()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -329,7 +329,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public async Task Shared_constant_reports_but_is_not_rewritten()
     {
-        const string source = """
+        const string source = /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -355,7 +355,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task String_constructor_argument()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -369,7 +369,7 @@ public sealed class LoggerMessageAnalyzerTests
     public Task CSharp10_constructor_message()
     {
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -383,7 +383,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Contextual_logger_still_applies_on_containing_type()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public partial class Worker
             {
@@ -399,7 +399,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Generated_implementation_does_not_suppress_or_duplicate_attribute_diagnostics()
     {
-        const string generated = """
+        const string generated = /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
 
             // <auto-generated/>
@@ -419,7 +419,7 @@ public sealed class LoggerMessageAnalyzerTests
             """;
 
         return AnalyzerTestHost.VerifyAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -436,7 +436,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Same_file_generated_implementation_is_not_double_reported()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -452,7 +452,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Unused_parameter_is_left_to_syslib()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -465,7 +465,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Case_only_duplicate_is_left_to_syslib()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -478,7 +478,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public Task Level_and_message_constructor()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -491,7 +491,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public async Task Shared_constant_trailing_period_is_not_rewritten()
     {
-        const string source = """
+        const string source = /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -517,7 +517,7 @@ public sealed class LoggerMessageAnalyzerTests
     [Fact]
     public async Task Net6_through_current_logging_abstractions_recognize_classic_constructor()
     {
-        const string source = """
+        const string source = /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -545,7 +545,7 @@ public sealed class LoggerMessageDefineTests
     [Fact]
     public Task Define_applies_style_rules_without_destructuring()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public sealed class Order { }
             public static class C
@@ -607,7 +607,7 @@ public sealed class LoggerMessageDefineTests
     [Fact]
     public Task DefineScope_applies_naming()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static class C
             {
@@ -620,7 +620,7 @@ public sealed class LoggerMessageDefineTests
     [Fact]
     public Task Define_non_constant_template()
     {
-        return AnalyzerTestHost.VerifyAsync("""
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static class C
             {

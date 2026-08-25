@@ -12,7 +12,7 @@ public sealed class LoggerMessageFixTests
     public Task Rename_in_regular_attribute_string()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -20,7 +20,7 @@ public sealed class LoggerMessageFixTests
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -36,7 +36,7 @@ public sealed class LoggerMessageFixTests
     public Task Rename_in_verbatim_attribute_string()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -44,7 +44,7 @@ public sealed class LoggerMessageFixTests
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -60,7 +60,7 @@ public sealed class LoggerMessageFixTests
     public Task Rename_in_raw_attribute_string()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """"
+            /*lang=csharp*/ """"
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -68,7 +68,7 @@ public sealed class LoggerMessageFixTests
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """",
-            """"
+            /*lang=csharp*/ """"
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -84,7 +84,7 @@ public sealed class LoggerMessageFixTests
     public Task Remove_trailing_period_in_attribute()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -92,7 +92,7 @@ public sealed class LoggerMessageFixTests
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -108,7 +108,7 @@ public sealed class LoggerMessageFixTests
     public Task Rename_positional_placeholder()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -116,7 +116,7 @@ public sealed class LoggerMessageFixTests
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -132,7 +132,7 @@ public sealed class LoggerMessageFixTests
     public Task Exclusive_const_is_rewritten()
     {
         return AnalyzerTestHost.VerifyFixAsync(
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
@@ -142,7 +142,7 @@ public sealed class LoggerMessageFixTests
                 public static partial void ProcessingOrder(ILogger logger, int orderId);
             }
             """,
-            """
+            /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
             public static partial class Log
             {
