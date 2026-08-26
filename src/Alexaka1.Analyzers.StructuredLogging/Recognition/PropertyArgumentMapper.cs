@@ -11,7 +11,7 @@ internal static class PropertyArgumentMapper
         int holeIndex)
     {
         var later = CollectLaterArguments(arguments, template);
-        return ArgumentAt(later, holeIndex, requireMappedValueExpression: false);
+        return ArgumentAt(later, holeIndex);
     }
 
     public static ExpressionSyntax?[] ArgumentsForPositionalNames(
@@ -21,9 +21,30 @@ internal static class PropertyArgumentMapper
     {
         var later = CollectLaterArguments(arguments, template);
         var result = new ExpressionSyntax?[holeCount];
-        for (var i = 0; i < holeCount; i++)
+        if (later.Count == 1 && later[0].Parameter.IsParams)
         {
-            result[i] = ArgumentAt(later, i, requireMappedValueExpression: true);
+            var elements = GetArrayElements(later[0].Expression);
+            if (elements.Count > 0)
+            {
+                for (var i = 0; i < holeCount && i < elements.Count; i++)
+                {
+                    result[i] = elements[i];
+                }
+
+                return result;
+            }
+
+            if (holeCount == 1)
+            {
+                result[0] = later[0].Expression;
+            }
+
+            return result;
+        }
+
+        for (var i = 0; i < holeCount && i < later.Count; i++)
+        {
+            result[i] = later[i].Expression;
         }
 
         return result;
@@ -71,10 +92,7 @@ internal static class PropertyArgumentMapper
         return later;
     }
 
-    private static ExpressionSyntax? ArgumentAt(
-        List<BoundTemplateArgument> later,
-        int holeIndex,
-        bool requireMappedValueExpression)
+    private static ExpressionSyntax? ArgumentAt(List<BoundTemplateArgument> later, int holeIndex)
     {
         if (later.Count == 1 && later[0].Parameter.IsParams)
         {
@@ -82,11 +100,6 @@ internal static class PropertyArgumentMapper
             if (elements.Count > 0)
             {
                 return holeIndex >= 0 && holeIndex < elements.Count ? elements[holeIndex] : null;
-            }
-
-            if (requireMappedValueExpression)
-            {
-                return null;
             }
         }
 

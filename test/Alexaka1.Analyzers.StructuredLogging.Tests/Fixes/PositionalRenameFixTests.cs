@@ -277,6 +277,37 @@ public sealed class PositionalRenameFixTests
     }
 
     [Fact]
+    public Task Rename_zlogger()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            using ZLogger;
+            class A
+            {
+                public A(ILogger<A> log, string orderId)
+                {
+                    log.ZLogInformation("{|AASL0008:{0}|}", orderId);
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            using ZLogger;
+            class A
+            {
+                public A(ILogger<A> log, string orderId)
+                {
+                    log.ZLogInformation("{OrderId}", orderId);
+                }
+            }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider),
+            expectedActionCount: 1);
+    }
+
+    [Fact]
     public Task Rename_uses_configured_camel_case()
     {
         return AnalyzerTestHost.VerifyFixAsync(

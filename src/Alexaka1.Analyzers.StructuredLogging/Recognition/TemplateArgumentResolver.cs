@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Recognition;
 
@@ -61,12 +62,18 @@ internal static class TemplateArgumentResolver
     {
         var results = new List<BoundTemplateArgument>(invocation.ArgumentList.Arguments.Count);
         var operation = model.GetOperation(invocation, cancellationToken);
-        if (operation is Microsoft.CodeAnalysis.Operations.IInvocationOperation invocationOp)
+        if (operation is IInvocationOperation invocationOp)
         {
             foreach (var argumentOp in invocationOp.Arguments)
             {
-                if (argumentOp.Parameter is null || argumentOp.IsImplicit)
+                if (argumentOp.Parameter is null)
                 {
+                    continue;
+                }
+
+                if (argumentOp.IsImplicit)
+                {
+                    AddImplicitParamsElements(results, argumentOp);
                     continue;
                 }
 
@@ -135,6 +142,59 @@ internal static class TemplateArgumentResolver
         }
 
         return results;
+    }
+
+    private static void AddImplicitParamsElements(
+        List<BoundTemplateArgument> results,
+        IArgumentOperation argumentOp)
+    {
+        if (argumentOp.Parameter is not { IsParams: true })
+        {
+            return;
+        }
+
+        var value = argumentOp.Value;
+        if (value is IConversionOperation conversion)
+        {
+            value = conversion.Operand;
+        }
+
+        if (value is not IArrayCreationOperation { Initializer: { } initializer })
+        {
+            return;
+        }
+
+        foreach (var element in initializer.ElementValues)
+        {
+            var expression = UnwrapExpression(element);
+            if (expression is null)
+            {
+                continue;
+            }
+
+            var argumentSyntax = expression.Parent as ArgumentSyntax;
+            if (argumentSyntax is null)
+            {
+                continue;
+            }
+
+            results.Add(new BoundTemplateArgument(
+                argumentOp.Parameter,
+                argumentSyntax,
+                argumentSyntax.Expression,
+                argumentOp.Parameter.Ordinal));
+        }
+    }
+
+    private static ExpressionSyntax? UnwrapExpression(IOperation element)
+    {
+        var current = element;
+        while (current is IConversionOperation conversion)
+        {
+            current = conversion.Operand;
+        }
+
+        return current.Syntax as ExpressionSyntax ?? (current.Syntax as ArgumentSyntax)?.Expression;
     }
 
     private static IParameterSymbol? FindParameter(IMethodSymbol method, string name)

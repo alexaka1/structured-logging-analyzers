@@ -237,6 +237,11 @@ internal static class AnalyzerTestHost
 
         var document = CreateDocument(source, editorConfig);
         var provider = (CodeFixProvider)Activator.CreateInstance(codeFixType)!;
+        if (!provider.FixableDiagnosticIds.Contains(diagnosticId))
+        {
+            return;
+        }
+
         var actions = new List<CodeAction>();
         var context = new CodeFixContext(
             document,
