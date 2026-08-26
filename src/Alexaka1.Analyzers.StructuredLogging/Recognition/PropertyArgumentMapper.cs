@@ -21,30 +21,18 @@ internal static class PropertyArgumentMapper
     {
         var later = CollectLaterArguments(arguments, template);
         var result = new ExpressionSyntax?[holeCount];
-        if (later.Count == 1 && later[0].Parameter.IsParams)
+        if (later.Count == 1 &&
+            later[0].Parameter.IsParams &&
+            !later[0].ExpandedParamsElement &&
+            GetArrayElements(later[0].Expression).Count == 0)
         {
-            var elements = GetArrayElements(later[0].Expression);
-            if (elements.Count > 0)
-            {
-                for (var i = 0; i < holeCount && i < elements.Count; i++)
-                {
-                    result[i] = elements[i];
-                }
-
-                return result;
-            }
-
-            if (holeCount == 1)
-            {
-                result[0] = later[0].Expression;
-            }
-
+            // Params array passed as a single variable: holes bind to elements, not the array.
             return result;
         }
 
-        for (var i = 0; i < holeCount && i < later.Count; i++)
+        for (var i = 0; i < holeCount; i++)
         {
-            result[i] = later[i].Expression;
+            result[i] = ArgumentAt(later, i);
         }
 
         return result;

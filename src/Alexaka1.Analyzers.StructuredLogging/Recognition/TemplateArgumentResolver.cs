@@ -10,12 +10,14 @@ internal readonly struct BoundTemplateArgument
         IParameterSymbol parameter,
         ArgumentSyntax argument,
         ExpressionSyntax expression,
-        int ordinal)
+        int ordinal,
+        bool expandedParamsElement = false)
     {
         Parameter = parameter;
         Argument = argument;
         Expression = expression;
         Ordinal = ordinal;
+        ExpandedParamsElement = expandedParamsElement;
     }
 
     public IParameterSymbol Parameter { get; }
@@ -25,6 +27,12 @@ internal readonly struct BoundTemplateArgument
     public ExpressionSyntax Expression { get; }
 
     public int Ordinal { get; }
+
+    /// <summary>
+    /// True when this argument was unpacked from a compiler-synthesized params array
+    /// (MEL-style <c>LogInformation("{0}", orderId)</c>), not passed as the params array itself.
+    /// </summary>
+    public bool ExpandedParamsElement { get; }
 }
 
 internal static class TemplateArgumentResolver
@@ -182,7 +190,8 @@ internal static class TemplateArgumentResolver
                 argumentOp.Parameter,
                 argumentSyntax,
                 argumentSyntax.Expression,
-                argumentOp.Parameter.Ordinal));
+                argumentOp.Parameter.Ordinal,
+                expandedParamsElement: true));
         }
     }
 

@@ -119,13 +119,35 @@ internal sealed class LoggingInvocationClassifier
             return "formatString";
         }
 
-        if (containing == ZLoggerExtensions ||
-            (containing != null && containing.StartsWith("ZLogger.", StringComparison.Ordinal) &&
-             method.Name.StartsWith("ZLog", StringComparison.Ordinal)))
+        if (IsZLogger(method))
         {
             return "format";
         }
 
         return null;
+    }
+
+    public static bool SupportsDestructuringOperator(IMethodSymbol method)
+    {
+        if (IsMicrosoftLoggerExtensions(method) || IsZLogger(method))
+        {
+            return false;
+        }
+
+        var containing = method.ContainingType?.ToDisplayString();
+        return containing != "Microsoft.Extensions.Logging.LoggerMessage";
+    }
+
+    private static bool IsMicrosoftLoggerExtensions(IMethodSymbol method)
+    {
+        return method.ContainingType?.ToDisplayString() == MelExtensions;
+    }
+
+    private static bool IsZLogger(IMethodSymbol method)
+    {
+        var containing = method.ContainingType?.ToDisplayString();
+        return containing == ZLoggerExtensions ||
+            (containing != null && containing.StartsWith("ZLogger.", StringComparison.Ordinal) &&
+             method.Name.StartsWith("ZLog", StringComparison.Ordinal));
     }
 }

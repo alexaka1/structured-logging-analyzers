@@ -392,6 +392,24 @@ public sealed class PositionalRenameFixTests
     }
 
     [Fact]
+    public Task Single_hole_params_array_variable_has_no_rename()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(object[] values)
+                {
+                    Log.Logger.Information("{|AASL0008:{0}|}", values);
+                }
+            }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Fact]
     public Task Logger_message_define_has_no_rename()
     {
         return AnalyzerTestHost.VerifyNoFixAsync(

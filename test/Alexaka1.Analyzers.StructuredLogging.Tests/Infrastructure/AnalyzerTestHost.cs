@@ -237,6 +237,8 @@ internal static class AnalyzerTestHost
 
         var document = CreateDocument(source, editorConfig);
         var provider = (CodeFixProvider)Activator.CreateInstance(codeFixType)!;
+        // Hosts only invoke a provider for IDs it advertises. Providers that do not
+        // filter internally would still register actions if called directly.
         if (!provider.FixableDiagnosticIds.Contains(diagnosticId))
         {
             return;

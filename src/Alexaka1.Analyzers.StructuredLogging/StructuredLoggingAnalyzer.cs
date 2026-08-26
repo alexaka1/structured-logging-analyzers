@@ -215,7 +215,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         }
 
         var parsed = MessageTemplateParser.Parse(map.Value);
-        var allowDestructuring = !LoggerMessageParameterMapper.IsLoggerMessageDefine(method, known);
+        var allowDestructuring = LoggingInvocationClassifier.SupportsDestructuringOperator(method);
         AnalyzeTemplateRules(context, invocation, template, arguments, parsed, map, settings, regexCache, allowDestructuring);
         TemplateStyleRules.AnalyzeTrailingPeriod(
             context,
