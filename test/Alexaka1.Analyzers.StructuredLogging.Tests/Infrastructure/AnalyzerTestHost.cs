@@ -105,6 +105,8 @@ internal static class AnalyzerTestHost
 
     internal static void AssertCompilationSucceeded(Compilation compilation, string context)
     {
+        // Test compilations do not run source generators, so unimplemented
+        // [LoggerMessage] / [ZLoggerMessage] partials are expected (CS8795, CS0759).
         var errors = compilation.GetDiagnostics()
             .Where(diagnostic =>
                 diagnostic.Severity == DiagnosticSeverity.Error &&

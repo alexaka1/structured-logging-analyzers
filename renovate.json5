@@ -61,7 +61,6 @@
       matchPackageNames: [
         "Microsoft.CodeAnalysis.CSharp",
         "Microsoft.CodeAnalysis.CSharp.Workspaces",
-        "Microsoft.CodeAnalysis.Analyzers",
       ],
       enabled: false,
     },

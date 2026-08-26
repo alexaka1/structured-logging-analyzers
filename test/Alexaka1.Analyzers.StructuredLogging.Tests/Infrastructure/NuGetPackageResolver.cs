@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.CodeAnalysis;
@@ -17,19 +18,23 @@ internal static class NuGetPackageResolver
         AddTrustedPlatformAssemblies(paths);
         AddAssembly(paths, typeof(object));
 
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var path in paths)
+        {
+            var existingName = Path.GetFileNameWithoutExtension(path);
+            if (existingName is not null)
+            {
+                seenNames.Add(existingName);
+            }
+        }
+
+        // First simple name wins. Call sites pass one package today; BCL names stay preferred.
         foreach (var (id, version) in packages)
         {
             foreach (var path in GetCompileAssemblies(id, version))
             {
                 var name = Path.GetFileNameWithoutExtension(path);
-                if (name is null)
-                {
-                    continue;
-                }
-
-                var alreadyPresent = paths.Any(existing =>
-                    string.Equals(Path.GetFileNameWithoutExtension(existing), name, StringComparison.OrdinalIgnoreCase));
-                if (alreadyPresent)
+                if (name is null || !seenNames.Add(name))
                 {
                     continue;
                 }
@@ -97,7 +102,7 @@ internal static class NuGetPackageResolver
 
     private static ImmutableArray<string> RestoreAndReadCompileAssemblies(string packageId, string version)
     {
-        var stubDir = Path.Combine(FindRepoRoot(), "artifacts", "package-refs", Sanitize(packageId), version);
+        var stubDir = Path.Combine(FindRepoRoot(), "artifacts", "package-refs", Sanitize(packageId), Sanitize(version));
         Directory.CreateDirectory(stubDir);
         var gate = RestoreLocks.GetOrAdd(stubDir, static _ => new object());
         lock (gate)
@@ -158,8 +163,8 @@ internal static class NuGetPackageResolver
         psi.Environment["MSBUILDDISABLENODEREUSE"] = "1";
         psi.Environment["DOTNET_NOLOGO"] = "1";
         using var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet restore.");
-        var stdout = process.StandardOutput.ReadToEnd();
-        var stderr = process.StandardError.ReadToEnd();
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
         if (!process.WaitForExit(120_000))
         {
             try
@@ -169,10 +174,16 @@ internal static class NuGetPackageResolver
             catch (InvalidOperationException)
             {
             }
+            catch (Win32Exception)
+            {
+            }
 
             throw new TimeoutException($"Timed out restoring {packageId} {version}.");
         }
 
+        process.WaitForExit();
+        var stdout = stdoutTask.GetAwaiter().GetResult();
+        var stderr = stderrTask.GetAwaiter().GetResult();
         if (process.ExitCode != 0)
         {
             throw new InvalidOperationException(

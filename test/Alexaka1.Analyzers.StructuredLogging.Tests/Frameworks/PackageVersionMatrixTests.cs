@@ -5,13 +5,15 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Frameworks;
 
 public sealed class PackageVersionMatrixTests
 {
-    public static IEnumerable<object[]> SerilogVersions() => Rows(PackageVersionMatrix.Serilog);
+    public static TheoryData<string> SerilogVersions() => Theory(PackageVersionMatrix.Serilog);
 
-    public static IEnumerable<object[]> NLogVersions() => Rows(PackageVersionMatrix.NLog);
+    public static TheoryData<string> NLogVersions() => Theory(PackageVersionMatrix.NLog);
 
-    public static IEnumerable<object[]> MelVersions() => Rows(PackageVersionMatrix.MicrosoftExtensionsLogging);
+    public static TheoryData<string> MelVersions() => Theory(PackageVersionMatrix.MicrosoftExtensionsLogging);
 
-    public static IEnumerable<object[]> ZLoggerFormatStringVersions() => Rows(PackageVersionMatrix.ZLoggerFormatString);
+    public static TheoryData<string> ZLoggerFormatStringVersions() => Theory(PackageVersionMatrix.ZLoggerFormatString);
+
+    public static TheoryData<string> ZLoggerInterpolatedVersions() => Theory(PackageVersionMatrix.ZLoggerInterpolated);
 
     [Theory]
     [MemberData(nameof(SerilogVersions))]
@@ -126,8 +128,9 @@ public sealed class PackageVersionMatrixTests
             version);
     }
 
-    [Fact]
-    public async Task ZLogger_2_interpolated_call_compiles_without_template_rules()
+    [Theory]
+    [MemberData(nameof(ZLoggerInterpolatedVersions))]
+    public async Task ZLogger_interpolated_call_compiles_without_template_rules(string version)
     {
         var source = /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
@@ -141,8 +144,7 @@ public sealed class PackageVersionMatrixTests
                 }
             }
             """;
-        var references = NuGetPackageResolver.GetReferences(
-            (PackageVersionMatrix.ZLoggerId, PackageVersionMatrix.ZLoggerLatest));
+        var references = NuGetPackageResolver.GetReferences((PackageVersionMatrix.ZLoggerId, version));
         var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(
             source,
             references: references,
@@ -150,8 +152,9 @@ public sealed class PackageVersionMatrixTests
         Assert.DoesNotContain(diagnostics, d => d.Id.StartsWith("AASL", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public async Task ZLogger_2_message_attribute_is_not_treated_as_logger_message()
+    [Theory]
+    [MemberData(nameof(ZLoggerInterpolatedVersions))]
+    public async Task ZLogger_message_attribute_is_not_treated_as_logger_message(string version)
     {
         var source = /*lang=csharp*/ """
             using Microsoft.Extensions.Logging;
@@ -162,8 +165,7 @@ public sealed class PackageVersionMatrixTests
                 public static partial void Hello(ILogger logger, string name);
             }
             """;
-        var references = NuGetPackageResolver.GetReferences(
-            (PackageVersionMatrix.ZLoggerId, PackageVersionMatrix.ZLoggerLatest));
+        var references = NuGetPackageResolver.GetReferences((PackageVersionMatrix.ZLoggerId, version));
         var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(
             source,
             references: references,
@@ -172,29 +174,40 @@ public sealed class PackageVersionMatrixTests
     }
 
     [Fact]
-    public void Test_project_package_pins_are_in_the_matrix()
+    public void Matrix_includes_test_project_pins()
     {
-        var csproj = File.ReadAllText(
-            Path.Combine(NuGetPackageResolver.FindRepoRoot(),
-                "test",
-                "Alexaka1.Analyzers.StructuredLogging.Tests",
-                "Alexaka1.Analyzers.StructuredLogging.Tests.csproj"));
-        Assert.Contains($"Version=\"{PackageVersionMatrix.SerilogCurrent}\"", csproj, StringComparison.Ordinal);
-        Assert.Contains($"Version=\"{PackageVersionMatrix.NLog5}\"", csproj, StringComparison.Ordinal);
-        Assert.Contains($"Version=\"{PackageVersionMatrix.MelCurrent}\"", csproj, StringComparison.Ordinal);
-        Assert.Contains($"Version=\"{PackageVersionMatrix.ZLogger1}\"", csproj, StringComparison.Ordinal);
+        Assert.Contains(
+            PackageVersionMatrix.TestProjectVersion(PackageVersionMatrix.SerilogId),
+            PackageVersionMatrix.Serilog);
+        Assert.Contains(
+            PackageVersionMatrix.TestProjectVersion(PackageVersionMatrix.NLogId),
+            PackageVersionMatrix.NLog);
+        Assert.Contains(
+            PackageVersionMatrix.TestProjectVersion(PackageVersionMatrix.MelId),
+            PackageVersionMatrix.MicrosoftExtensionsLogging);
+        Assert.Contains(
+            PackageVersionMatrix.TestProjectVersion(PackageVersionMatrix.ZLoggerId),
+            PackageVersionMatrix.ZLoggerFormatString);
     }
 
     [Fact]
-    public void Resolver_loads_compile_asset_for_pinned_serilog()
+    public void Resolver_loads_compile_asset_for_test_project_serilog()
     {
         var assemblies = NuGetPackageResolver.GetCompileAssemblies(
             PackageVersionMatrix.SerilogId,
-            PackageVersionMatrix.SerilogCurrent);
+            PackageVersionMatrix.TestProjectVersion(PackageVersionMatrix.SerilogId));
         Assert.Contains(assemblies, path =>
             path.EndsWith("Serilog.dll", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static IEnumerable<object[]> Rows(IEnumerable<string> versions) =>
-        versions.Select(version => new object[] { version });
+    private static TheoryData<string> Theory(IEnumerable<string> versions)
+    {
+        var data = new TheoryData<string>();
+        foreach (var version in versions)
+        {
+            data.Add(version);
+        }
+
+        return data;
+    }
 }
