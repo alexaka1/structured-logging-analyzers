@@ -1,5 +1,13 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.5
+
+### Minor Changes
+
+- [#33](https://github.com/alexaka1/structured-logging-analyzers/pull/33) [`be21792`](https://github.com/alexaka1/structured-logging-analyzers/commit/be2179282ed9b334dd32b358bff5f34b6cbe0119) Thanks [@alexaka1](https://github.com/alexaka1)! - Add a guarded AASL0008 rename for positional template holes on logging invocations, using names derived from argument expressions when an identifier can be derived. Keep AASL0003, AASL0004, AASL0005, AASL0006, and AASL0012 without code fixes.
+  
+  Argument mapping now expands compiler-synthesized params arrays so MEL-style `LogInformation("{0}", orderId)` can be renamed. Expansion is withheld if any params element cannot be mapped, so later holes are not renamed from the wrong argument. AASL0001/AASL0002 stay Serilog-like and still do not report on MEL, ZLogger, or `LoggerMessage.Define` / `DefineScope` (`@` is not valid there).
+
 ## 0.1.0-preview.4
 
 ### Patch Changes
