@@ -51,6 +51,12 @@ internal static class PackageVersionMatrix
 
     public static string[] ZLoggerInterpolated => Unique(ZLogger2, ZLoggerLatest);
 
+    /// <summary>
+    /// Gets the version pinned for a package in the test project.
+    /// </summary>
+    /// <param name="packageId">The package identifier.</param>
+    /// <returns>The package version specified by the test project.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the test project has no reference for the specified package.</exception>
     public static string TestProjectVersion(string packageId)
     {
         if (!TestProjectPins.Value.TryGetValue(packageId, out var version))
@@ -63,6 +69,10 @@ internal static class PackageVersionMatrix
 
     private static readonly Lazy<Dictionary<string, string>> TestProjectPins = new(ReadTestProjectPins);
 
+    /// <summary>
+    /// Loads pinned versions for supported packages from the test project file.
+    /// </summary>
+    /// <returns>A case-insensitive mapping of package IDs to their pinned versions.</returns>
     private static Dictionary<string, string> ReadTestProjectPins()
     {
         var path = Path.Combine(
@@ -85,6 +95,11 @@ internal static class PackageVersionMatrix
         return pins;
     }
 
+    /// <summary>
+    /// Removes duplicate version values while preserving their first-occurrence order.
+    /// </summary>
+    /// <param name="versions">The version values to deduplicate.</param>
+    /// <returns>The version values with case-insensitive duplicates removed.</returns>
     private static string[] Unique(params string[] versions)
     {
         var unique = new List<string>();

@@ -16,6 +16,16 @@ internal static class AnalyzerTestHost
     private static readonly DiagnosticAnalyzer Analyzer = new StructuredLoggingAnalyzer();
     private static readonly ImmutableArray<MetadataReference> References = CreateReferences();
 
+    /// <summary>
+    /// Verifies analyzer diagnostics specified by markup in the source text.
+    /// </summary>
+    /// <param name="markedSource">Source text containing diagnostic markup.</param>
+    /// <param name="editorConfig">Optional editor configuration text.</param>
+    /// <param name="languageVersion">The C# language version used to parse the source.</param>
+    /// <param name="additionalSources">Optional additional source files included in the compilation.</param>
+    /// <param name="references">Optional metadata references used to create the compilation.</param>
+    /// <param name="requireSuccessfulCompilation">Whether compilation must succeed before diagnostics are verified.</param>
+    /// <returns>A task representing the verification.</returns>
     public static Task VerifyAsync(
         string markedSource,
         string? editorConfig = null,
@@ -28,6 +38,16 @@ internal static class AnalyzerTestHost
         return VerifyAsync(source, expected, editorConfig, languageVersion, additionalSources, references, requireSuccessfulCompilation);
     }
 
+    /// <summary>
+    /// Verifies that the analyzer reports the expected diagnostics for the supplied source.
+    /// </summary>
+    /// <param name="source">The C# source code to analyze.</param>
+    /// <param name="expected">The diagnostics expected in the source, including their IDs, spans, and optional message substrings.</param>
+    /// <param name="editorConfig">Optional editor configuration text used during analysis.</param>
+    /// <param name="languageVersion">The C# language version used to parse the source.</param>
+    /// <param name="additionalSources">Optional additional source files included in the compilation.</param>
+    /// <param name="references">Optional metadata references used to create the compilation.</param>
+    /// <param name="requireSuccessfulCompilation">A value indicating whether compilation must succeed before diagnostics are verified.</param>
     public static async Task VerifyAsync(
         string source,
         IReadOnlyList<ExpectedDiagnostic> expected,
@@ -69,6 +89,16 @@ internal static class AnalyzerTestHost
         }
     }
 
+    /// <summary>
+    /// Runs the structured-logging analyzer against the specified C# source.
+    /// </summary>
+    /// <param name="source">The primary C# source to analyze.</param>
+    /// <param name="editorConfig">Optional editor configuration content.</param>
+    /// <param name="languageVersion">The C# language version used to parse the source.</param>
+    /// <param name="additionalSources">Optional additional source files included in the compilation.</param>
+    /// <param name="references">Optional metadata references used by the compilation.</param>
+    /// <param name="requireSuccessfulCompilation">Whether to require the compilation to contain no unexpected errors before analysis.</param>
+    /// <returns>The diagnostics reported by the analyzer.</returns>
     public static async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync(
         string source,
         string? editorConfig = null,
@@ -89,6 +119,14 @@ internal static class AnalyzerTestHost
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Verifies analyzer diagnostics using references from a specified NuGet package version.
+    /// </summary>
+    /// <param name="markedSource">The source code containing diagnostic markup.</param>
+    /// <param name="packageId">The NuGet package identifier.</param>
+    /// <param name="version">The NuGet package version.</param>
+    /// <param name="editorConfig">Optional editor configuration content.</param>
+    /// <returns>A task representing the verification operation.</returns>
     public static Task VerifyPackageVersionAsync(
         string markedSource,
         string packageId,
@@ -103,6 +141,11 @@ internal static class AnalyzerTestHost
             requireSuccessfulCompilation: true);
     }
 
+    /// <summary>
+    /// Asserts that a compilation contains no unexpected errors.
+    /// </summary>
+    /// <param name="compilation">The compilation to validate.</param>
+    /// <param name="context">The context to include in the failure message.</param>
     internal static void AssertCompilationSucceeded(Compilation compilation, string context)
     {
         // Test compilations do not run source generators, so unimplemented
@@ -440,6 +483,10 @@ internal static class AnalyzerTestHost
         return solution.GetDocument(documentId)!;
     }
 
+    /// <summary>
+    /// Creates metadata references for platform and supported logging assemblies.
+    /// </summary>
+    /// <returns>The metadata references used to compile analyzer test sources.</returns>
     private static ImmutableArray<MetadataReference> CreateReferences()
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -456,7 +503,12 @@ internal static class AnalyzerTestHost
         return paths.Select(p => (MetadataReference)MetadataReference.CreateFromFile(p)).ToImmutableArray();
     }
 
-    private static string Normalize(string text) => text.Replace("\r\n", "\n");
+    /// <summary>
+/// Normalizes Windows line endings to newline characters.
+/// </summary>
+/// <param name="text">The text whose line endings are normalized.</param>
+/// <returns>The text with Windows line endings replaced by newline characters.</returns>
+private static string Normalize(string text) => text.Replace("\r\n", "\n");
 
     private sealed class EditorConfigText : AdditionalText
     {

@@ -12,6 +12,11 @@ internal static class NuGetPackageResolver
     private static readonly ConcurrentDictionary<string, object> RestoreLocks = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, ImmutableArray<string>> AssemblyCache = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Builds Roslyn metadata references from trusted platform assemblies and the specified NuGet packages.
+    /// </summary>
+    /// <param name="packages">The package identifiers and versions whose compile assemblies should be included.</param>
+    /// <returns>The selected metadata references, with duplicate assembly names retained only once.</returns>
     public static ImmutableArray<MetadataReference> GetReferences(params (string Id, string Version)[] packages)
     {
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -42,12 +47,22 @@ internal static class NuGetPackageResolver
         return paths.Select(p => (MetadataReference)MetadataReference.CreateFromFile(p)).ToImmutableArray();
     }
 
+    /// <summary>
+    /// Retrieves the compile assemblies for a NuGet package and caches them by package identity and version.
+    /// </summary>
+    /// <param name="packageId">The NuGet package identifier.</param>
+    /// <param name="version">The package version.</param>
+    /// <returns>The package's compile assembly paths.</returns>
     internal static ImmutableArray<string> GetCompileAssemblies(string packageId, string version)
     {
         var key = packageId + "/" + version;
         return AssemblyCache.GetOrAdd(key, _ => RestoreAndReadCompileAssemblies(packageId, version));
     }
 
+    /// <summary>
+    /// Adds selected trusted platform assembly paths to a set.
+    /// </summary>
+    /// <param name="paths">The set to receive the trusted platform assembly paths.</param>
     internal static void AddTrustedPlatformAssemblies(HashSet<string> paths)
     {
         var trusted = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES");
@@ -88,6 +103,11 @@ internal static class NuGetPackageResolver
         }
     }
 
+    /// <summary>
+    /// Adds the assembly location for the specified type to the path set.
+    /// </summary>
+    /// <param name="paths">The set of assembly paths to update.</param>
+    /// <param name="type">The type whose assembly location is added.</param>
     internal static void AddAssembly(HashSet<string> paths, Type type)
     {
         if (!string.IsNullOrEmpty(type.Assembly.Location))
@@ -96,6 +116,12 @@ internal static class NuGetPackageResolver
         }
     }
 
+    /// <summary>
+    /// Restores a NuGet package when necessary and reads its compile assembly paths from the generated assets file.
+    /// </summary>
+    /// <param name="packageId">The NuGet package identifier.</param>
+    /// <param name="version">The NuGet package version.</param>
+    /// <returns>The package's resolved compile assembly paths.</returns>
     private static ImmutableArray<string> RestoreAndReadCompileAssemblies(string packageId, string version)
     {
         var stubDir = Path.Combine(FindRepoRoot(), "artifacts", "package-refs", Sanitize(packageId), Sanitize(version));
@@ -119,6 +145,14 @@ internal static class NuGetPackageResolver
         }
     }
 
+    /// <summary>
+    /// Restores a NuGet package using a generated project file.
+    /// </summary>
+    /// <param name="stubDir">The directory in which to create the project and run the restore.</param>
+    /// <param name="packageId">The NuGet package identifier.</param>
+    /// <param name="version">The package version to restore.</param>
+    /// <exception cref="TimeoutException">Thrown when the restore exceeds the allowed time.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the restore process cannot start or exits with a failure code.</exception>
     private static void RestoreStub(string stubDir, string packageId, string version)
     {
         var csproj = Path.Combine(stubDir, "PackageRef.csproj");
@@ -186,6 +220,11 @@ internal static class NuGetPackageResolver
         }
     }
 
+    /// <summary>
+    /// Reads compile assembly paths from a NuGet assets file.
+    /// </summary>
+    /// <param name="assetsPath">The path to the project assets file.</param>
+    /// <returns>The existing compile assembly paths listed in the assets file.</returns>
     private static ImmutableArray<string> ReadCompileAssemblies(string assetsPath)
     {
         using var stream = File.OpenRead(assetsPath);
@@ -269,6 +308,11 @@ internal static class NuGetPackageResolver
         return paths.ToImmutable();
     }
 
+    /// <summary>
+    /// Locates the repository root by searching upward from the application base directory.
+    /// </summary>
+    /// <returns>The path of the repository root.</returns>
+    /// <exception cref="DirectoryNotFoundException">Thrown when no repository root is found.</exception>
     internal static string FindRepoRoot()
     {
         string? dir = AppContext.BaseDirectory;
@@ -286,6 +330,11 @@ internal static class NuGetPackageResolver
         throw new DirectoryNotFoundException("Could not locate repository root.");
     }
 
+    /// <summary>
+    /// Replaces characters that are unsafe for directory names with underscores.
+    /// </summary>
+    /// <param name="value">The value to sanitize.</param>
+    /// <returns>The value with all characters except letters, digits, periods, and hyphens replaced by underscores.</returns>
     private static string Sanitize(string value)
     {
         var chars = value.ToCharArray();
