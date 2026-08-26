@@ -30,6 +30,7 @@ Keep analyzer assemblies free of Workspaces references. Do not add runtime or `l
 - CI runs the stand-alone test executable via `dotnet run` (native in-process runner). `xunit.runner.visualstudio` remains for IDE Test Explorer / optional VSTest.
 - Group analyzer cases under `Parity/`, `Fixes/`, `Frameworks/`, and `SourceGenerated/`.
 - Add tests for new diagnostics, invocation shapes, and code fixes.
+- Logging-library version coverage lives in `Frameworks/PackageVersionMatrixTests.cs` (floors / current pins) and `Frameworks/LatestStablePackageTests.cs` (`*Latest` constants, including majors). Restored NuGet compile assets are metadata references. Do not add a test project per Serilog/NLog/MEL/ZLogger version. See `docs/package-version-testing.md`.
 - After analyzer behavior changes, run `./test/comparison/run-comparison.sh` when InspectCode is available.
 
 ## Commit & Pull Requests

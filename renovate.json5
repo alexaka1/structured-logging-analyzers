@@ -20,6 +20,20 @@
     '$default',
     '/^beta$/',
   ],
+  customManagers: [
+    {
+      customType: 'regex',
+      description: 'Latest-stable logging-library versions in PackageVersionMatrix.cs, including majors',
+      managerFilePatterns: [
+        '/(^|/)PackageVersionMatrix\\.cs$/',
+      ],
+      matchStrings: [
+        'datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+public const string \\w+ = "(?<currentValue>[^"]+)"',
+      ],
+      datasourceTemplate: 'nuget',
+      versioningTemplate: 'nuget',
+    },
+  ],
   packageRules: [
     {
       description: [
@@ -38,6 +52,58 @@
       matchManagers: ["nuget"],
       matchPackageNames: ["jetbrains.resharper.globaltools"],
       versioning: "nuget",
+    },
+    {
+      description: [
+        "Keep the analyzer compile-time Roslyn API at the VS 2022 17.8 floor",
+      ],
+      matchManagers: ["nuget"],
+      matchPackageNames: [
+        "Microsoft.CodeAnalysis.CSharp",
+        "Microsoft.CodeAnalysis.CSharp.Workspaces",
+      ],
+      enabled: false,
+    },
+    {
+      description: [
+        "Do not major-bump logging libraries in the default test host; majors are restored from PackageVersionMatrix.cs",
+      ],
+      matchManagers: ["nuget"],
+      matchPackageNames: [
+        "Serilog",
+        "NLog",
+        "ZLogger",
+        "Microsoft.Extensions.Logging.Abstractions",
+      ],
+      matchUpdateTypes: ["major"],
+      enabled: false,
+    },
+    {
+      description: [
+        "Always track latest-stable logging versions in PackageVersionMatrix.cs, including majors",
+      ],
+      matchFileNames: ["**/PackageVersionMatrix.cs"],
+      matchPackageNames: [
+        "Serilog",
+        "NLog",
+        "ZLogger",
+        "Microsoft.Extensions.Logging.Abstractions",
+      ],
+      enabled: true,
+    },
+    {
+      description: [
+        "Do not automerge major bumps of latest-stable logging versions; APIs can change",
+      ],
+      matchFileNames: ["**/PackageVersionMatrix.cs"],
+      matchPackageNames: [
+        "Serilog",
+        "NLog",
+        "ZLogger",
+        "Microsoft.Extensions.Logging.Abstractions",
+      ],
+      matchUpdateTypes: ["major"],
+      automerge: false,
     },
   ],
   ignorePaths: [

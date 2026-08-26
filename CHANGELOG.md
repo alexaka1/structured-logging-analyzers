@@ -1,5 +1,13 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.4
+
+### Patch Changes
+
+- [#27](https://github.com/alexaka1/structured-logging-analyzers/pull/27) [`de137ca`](https://github.com/alexaka1/structured-logging-analyzers/commit/de137ca5ae5ff4925c6f97311583590ca8579ca7) Thanks [@alexaka1](https://github.com/alexaka1)! - Offer a qualified-name alternative for the AASL0007 interpolation conversion (including `?.` member access), share FixAll equivalence keys for rename fixes, and assert the code-fix contract (compiler errors, overload binding, idempotent FixAll).
+
+- [#23](https://github.com/alexaka1/structured-logging-analyzers/pull/23) [`36975b8`](https://github.com/alexaka1/structured-logging-analyzers/commit/36975b86bc5b79c082ba8635faac36582e30862a) Thanks [@alexaka1](https://github.com/alexaka1)! - Recommend enabling the .NET SDK logging `CA*` rules when installing this package, if they are not already on.
+
 ## 0.1.0-preview.3
 
 ### Minor Changes

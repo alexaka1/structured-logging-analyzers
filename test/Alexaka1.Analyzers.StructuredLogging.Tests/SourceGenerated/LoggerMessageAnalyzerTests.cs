@@ -510,31 +510,6 @@ public sealed class LoggerMessageAnalyzerTests
             Assert.Equal("false", allow);
         });
     }
-
-    [Fact]
-    public async Task Net6_through_current_logging_abstractions_recognize_classic_constructor()
-    {
-        const string source = /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(1, LogLevel.Information, "Processing {orderId}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """;
-
-        var assemblies = AnalyzerTestHost.FindLoggingAbstractionsAssemblies();
-        Assert.NotEmpty(assemblies);
-
-        foreach (var (version, path) in assemblies)
-        {
-            var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(
-                source,
-                references: AnalyzerTestHost.CreateReferencesWithLoggingAbstractions(path));
-            var naming = diagnostics.Where(d => d.Id == "AASL0009").ToList();
-            Assert.True(naming.Count == 1, $"Expected AASL0009 against Microsoft.Extensions.Logging.Abstractions {version} at {path}.");
-        }
-    }
 }
 
 public sealed class LoggerMessageDefineTests
