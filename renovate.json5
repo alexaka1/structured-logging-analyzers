@@ -86,13 +86,23 @@
     },
     {
       description: [
-        "Do not major-bump Microsoft.CodeAnalysis.* ; 5.x is Roslyn 5 / VS 2026 and groups as dotnet-monorepo",
-        "CSharp and Workspaces stay fully frozen above; Analyzers 3.x minors may still ship",
+        "Keep Microsoft.CodeAnalysis.Analyzers on the 3.x line used with the 4.8 API floor",
+        "5.x is version-aligned with Roslyn 5 / VS 2026 and groups as dotnet-monorepo",
+      ],
+      matchManagers: ["nuget"],
+      matchPackageNames: [
+        "Microsoft.CodeAnalysis.Analyzers",
+      ],
+      allowedVersions: "<4",
+    },
+    {
+      description: [
+        "Do not major-bump other Microsoft.CodeAnalysis.* packages; 5.x is Roslyn 5 / VS 2026",
       ],
       matchManagers: ["nuget"],
       matchPackageNames: [
         "Microsoft.CodeAnalysis",
-        "Microsoft.CodeAnalysis.**",
+        "Microsoft.CodeAnalysis.*",
       ],
       matchUpdateTypes: ["major"],
       enabled: false,

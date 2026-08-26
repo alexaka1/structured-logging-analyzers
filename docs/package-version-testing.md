@@ -75,10 +75,10 @@ are the host smoke test. Do not put Roslyn into the logging-library matrix.
 ## Renovate
 
 `Microsoft.CodeAnalysis.CSharp` and `Microsoft.CodeAnalysis.CSharp.Workspaces`
-are frozen at 4.8.0. Major bumps of `Microsoft.CodeAnalysis.*` (including
-`Microsoft.CodeAnalysis.Analyzers`) are disabled: 5.x is version-aligned with
-Roslyn 5 / VS 2026 and is grouped into the `dotnet-monorepo` update. 3.x
-minors of the Analyzers package may still ship.
+are frozen at 4.8.0. `Microsoft.CodeAnalysis.Analyzers` is limited to the 3.x
+line (`allowedVersions: "<4"`). 5.x is version-aligned with Roslyn 5 / VS 2026
+and is grouped into the `dotnet-monorepo` update, which is how the unblocked
+major reached a PR. 3.x minors of the Analyzers package may still ship.
 
 Major upgrades of logging libraries in the test `.csproj` would change the
 default `typeof` host and drop coverage of the previous API. Majors are
