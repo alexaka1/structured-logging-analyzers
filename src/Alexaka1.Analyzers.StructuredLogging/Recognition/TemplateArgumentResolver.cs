@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Recognition;
 
@@ -9,12 +10,14 @@ internal readonly struct BoundTemplateArgument
         IParameterSymbol parameter,
         ArgumentSyntax argument,
         ExpressionSyntax expression,
-        int ordinal)
+        int ordinal,
+        bool expandedParamsElement = false)
     {
         Parameter = parameter;
         Argument = argument;
         Expression = expression;
         Ordinal = ordinal;
+        ExpandedParamsElement = expandedParamsElement;
     }
 
     public IParameterSymbol Parameter { get; }
@@ -24,6 +27,12 @@ internal readonly struct BoundTemplateArgument
     public ExpressionSyntax Expression { get; }
 
     public int Ordinal { get; }
+
+    /// <summary>
+    /// True when this argument was unpacked from a compiler-synthesized params array
+    /// (MEL-style <c>LogInformation("{0}", orderId)</c>), not passed as the params array itself.
+    /// </summary>
+    public bool ExpandedParamsElement { get; }
 }
 
 internal static class TemplateArgumentResolver
@@ -61,12 +70,18 @@ internal static class TemplateArgumentResolver
     {
         var results = new List<BoundTemplateArgument>(invocation.ArgumentList.Arguments.Count);
         var operation = model.GetOperation(invocation, cancellationToken);
-        if (operation is Microsoft.CodeAnalysis.Operations.IInvocationOperation invocationOp)
+        if (operation is IInvocationOperation invocationOp)
         {
             foreach (var argumentOp in invocationOp.Arguments)
             {
-                if (argumentOp.Parameter is null || argumentOp.IsImplicit)
+                if (argumentOp.Parameter is null)
                 {
+                    continue;
+                }
+
+                if (argumentOp.IsImplicit)
+                {
+                    AddImplicitParamsElements(results, argumentOp);
                     continue;
                 }
 
@@ -135,6 +150,59 @@ internal static class TemplateArgumentResolver
         }
 
         return results;
+    }
+
+    private static void AddImplicitParamsElements(
+        List<BoundTemplateArgument> results,
+        IArgumentOperation argumentOp)
+    {
+        if (argumentOp.Parameter is not { IsParams: true })
+        {
+            return;
+        }
+
+        var value = argumentOp.Value;
+        if (value is IConversionOperation conversion)
+        {
+            value = conversion.Operand;
+        }
+
+        if (value is not IArrayCreationOperation { Initializer: { } initializer })
+        {
+            return;
+        }
+
+        var expanded = new List<BoundTemplateArgument>(initializer.ElementValues.Length);
+        foreach (var element in initializer.ElementValues)
+        {
+            var expression = UnwrapExpression(element);
+            var argumentSyntax = expression?.FirstAncestorOrSelf<ArgumentSyntax>();
+            if (argumentSyntax is null)
+            {
+                // Skipping a hole would shift later indexes onto the wrong arguments.
+                return;
+            }
+
+            expanded.Add(new BoundTemplateArgument(
+                argumentOp.Parameter,
+                argumentSyntax,
+                argumentSyntax.Expression,
+                argumentOp.Parameter.Ordinal,
+                expandedParamsElement: true));
+        }
+
+        results.AddRange(expanded);
+    }
+
+    private static ExpressionSyntax? UnwrapExpression(IOperation element)
+    {
+        var current = element;
+        while (current is IConversionOperation conversion)
+        {
+            current = conversion.Operand;
+        }
+
+        return current.Syntax as ExpressionSyntax ?? (current.Syntax as ArgumentSyntax)?.Expression;
     }
 
     private static IParameterSymbol? FindParameter(IMethodSymbol method, string name)

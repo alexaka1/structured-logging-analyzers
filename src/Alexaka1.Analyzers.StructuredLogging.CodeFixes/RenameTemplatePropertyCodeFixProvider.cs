@@ -9,6 +9,9 @@ namespace Alexaka1.Analyzers.StructuredLogging.CodeFixes;
 [Shared]
 public sealed class RenameTemplatePropertyCodeFixProvider : CodeFixProvider
 {
+    internal const string LeafEquivalenceKey = nameof(RenameTemplatePropertyCodeFixProvider) + ".Leaf";
+    internal const string QualifiedEquivalenceKey = nameof(RenameTemplatePropertyCodeFixProvider) + ".Qualified";
+
     public override ImmutableArray<string> FixableDiagnosticIds =>
         ImmutableArray.Create(
             DiagnosticIds.InconsistentTemplatePropertyNaming,
@@ -20,14 +23,14 @@ public sealed class RenameTemplatePropertyCodeFixProvider : CodeFixProvider
     {
         foreach (var diagnostic in context.Diagnostics)
         {
-            if (!diagnostic.Properties.TryGetValue(FixProperties.SuggestedName, out var suggested) ||
-                string.IsNullOrEmpty(suggested))
+            if (diagnostic.Properties.TryGetValue(FixProperties.AllowRewrite, out var allow) &&
+                string.Equals(allow, "false", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
-            if (diagnostic.Properties.TryGetValue(FixProperties.AllowRewrite, out var allow) &&
-                string.Equals(allow, "false", StringComparison.OrdinalIgnoreCase))
+            if (!diagnostic.Properties.TryGetValue(FixProperties.SuggestedName, out var suggested) ||
+                string.IsNullOrEmpty(suggested))
             {
                 continue;
             }
@@ -36,8 +39,20 @@ public sealed class RenameTemplatePropertyCodeFixProvider : CodeFixProvider
                 CodeAction.Create(
                     $"Rename property to '{suggested}'",
                     ct => ApplyAsync(context.Document, diagnostic, suggested!, ct),
-                    nameof(RenameTemplatePropertyCodeFixProvider)),
+                    LeafEquivalenceKey),
                 diagnostic);
+
+            if (diagnostic.Properties.TryGetValue(FixProperties.QualifiedSuggestedName, out var qualified) &&
+                !string.IsNullOrEmpty(qualified) &&
+                !string.Equals(qualified, suggested, StringComparison.Ordinal))
+            {
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        $"Rename property to '{qualified}'",
+                        ct => ApplyAsync(context.Document, diagnostic, qualified!, ct),
+                        QualifiedEquivalenceKey),
+                    diagnostic);
+            }
         }
 
         await Task.CompletedTask.ConfigureAwait(false);

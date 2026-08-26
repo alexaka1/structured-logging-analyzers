@@ -574,6 +574,18 @@ Completion criterion: each fix compiles, is idempotent, preserves source, and re
 
 Evaluate guarded fixes for rules that previously had none. Keep them outside the parity milestone.
 
+Shipped outside original-plugin parity:
+
+- AASL0008: rename positional holes from argument expressions when an identifier can be derived. Qualified names are a second action when they differ.
+
+Kept out of the first milestone (no code fix):
+
+- AASL0003 context-object destructuring (`destructureObjects: true`)
+- AASL0004 contextual logger type replacement
+- AASL0005 move exception to an exception overload
+- AASL0006 unique names for duplicate properties
+- AASL0012 generated logging vs Semantic Conventions (API choice, not a template rewrite)
+
 Completion criterion: fixes are offered only where semantic validity can be demonstrated.
 
 ## Phase 9: Package and performance validation

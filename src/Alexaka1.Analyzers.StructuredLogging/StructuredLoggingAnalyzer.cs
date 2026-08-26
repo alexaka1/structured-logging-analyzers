@@ -215,7 +215,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         }
 
         var parsed = MessageTemplateParser.Parse(map.Value);
-        var allowDestructuring = !LoggerMessageParameterMapper.IsLoggerMessageDefine(method, known);
+        var allowDestructuring = LoggingInvocationClassifier.SupportsDestructuringOperator(method);
         AnalyzeTemplateRules(context, invocation, template, arguments, parsed, map, settings, regexCache, allowDestructuring);
         TemplateStyleRules.AnalyzeTrailingPeriod(
             context,
@@ -244,6 +244,10 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                 map,
                 parsed.PositionalProperties,
                 templateParameters: null,
+                PropertyArgumentMapper.ArgumentsForPositionalNames(
+                    arguments,
+                    template,
+                    parsed.PositionalProperties.Length),
                 settings,
                 allowRewrite: true);
         }
@@ -328,6 +332,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                 source.Map,
                 parsed.PositionalProperties,
                 parameters.TemplateParameters,
+                argumentExpressions: null,
                 settings,
                 source.AllowRewrite);
         }
@@ -754,4 +759,5 @@ internal static class FixProperties
     public const string NameLogicalStart = nameof(NameLogicalStart);
     public const string NameLogicalLength = nameof(NameLogicalLength);
     public const string AllowRewrite = nameof(AllowRewrite);
+    public const string QualifiedSuggestedName = nameof(QualifiedSuggestedName);
 }

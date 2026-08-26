@@ -29,33 +29,96 @@ internal static class TemplateStyleRules
         TemplateSourceMap map,
         PropertyHole[] positional,
         IReadOnlyList<IParameterSymbol>? templateParameters,
+        IReadOnlyList<ExpressionSyntax?>? argumentExpressions,
         AnalyzerSettings settings,
         bool allowRewrite)
     {
-        var canRename = allowRewrite &&
-                        templateParameters is not null &&
-                        templateParameters.Count == positional.Length;
+        var style = settings.GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
+        string?[]? leafNames = null;
+        string?[]? qualifiedNames = null;
+        if (allowRewrite && templateParameters is not null && templateParameters.Count == positional.Length)
+        {
+            leafNames = SuggestFromParameters(positional.Length, templateParameters, style);
+        }
+        else if (allowRewrite && argumentExpressions is not null)
+        {
+            SuggestFromArguments(positional.Length, argumentExpressions, style, out leafNames, out qualifiedNames);
+        }
+
         for (var i = 0; i < positional.Length; i++)
         {
             var hole = positional[i];
             ImmutableDictionary<string, string?>? properties = null;
-            if (canRename)
+            var leaf = leafNames?[i];
+            if (!string.IsNullOrEmpty(leaf))
             {
-                var suggested = PropertyNaming.Suggest(
-                    templateParameters![i].Name,
-                    settings.GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming));
-                if (!string.IsNullOrEmpty(suggested))
+                properties = ImmutableDictionary<string, string?>.Empty
+                    .Add(FixProperties.SuggestedName, leaf)
+                    .Add(FixProperties.PropertyName, hole.PropertyName)
+                    .Add(FixProperties.NameLogicalStart, hole.NameStartIndex.ToString(CultureInfo.InvariantCulture))
+                    .Add(FixProperties.NameLogicalLength, hole.NameLength.ToString(CultureInfo.InvariantCulture))
+                    .Add(FixProperties.AllowRewrite, "true");
+                var qualified = qualifiedNames?[i];
+                if (!string.IsNullOrEmpty(qualified) &&
+                    !string.Equals(qualified, leaf, StringComparison.Ordinal))
                 {
-                    properties = ImmutableDictionary<string, string?>.Empty
-                        .Add(FixProperties.SuggestedName, suggested)
-                        .Add(FixProperties.PropertyName, hole.PropertyName)
-                        .Add(FixProperties.NameLogicalStart, hole.NameStartIndex.ToString(CultureInfo.InvariantCulture))
-                        .Add(FixProperties.NameLogicalLength, hole.NameLength.ToString(CultureInfo.InvariantCulture))
-                        .Add(FixProperties.AllowRewrite, "true");
+                    properties = properties.Add(FixProperties.QualifiedSuggestedName, qualified);
                 }
             }
 
             ReportHole(context, map, hole, Descriptors.PositionalPropertyUsed, properties);
+        }
+    }
+
+    private static string?[] SuggestFromParameters(
+        int count,
+        IReadOnlyList<IParameterSymbol> templateParameters,
+        PropertyNamingStyle style)
+    {
+        var names = new string?[count];
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < count; i++)
+        {
+            var suggested = PropertyNaming.Suggest(templateParameters[i].Name, style);
+            if (!string.IsNullOrEmpty(suggested) && !ExpressionPropertyName.IsPositionalName(suggested))
+            {
+                names[i] = ExpressionPropertyName.Uniquify(suggested, used);
+            }
+        }
+
+        return names;
+    }
+
+    private static void SuggestFromArguments(
+        int count,
+        IReadOnlyList<ExpressionSyntax?> argumentExpressions,
+        PropertyNamingStyle style,
+        out string?[] leafNames,
+        out string?[] qualifiedNames)
+    {
+        leafNames = new string?[count];
+        qualifiedNames = new string?[count];
+        var usedLeaf = new HashSet<string>(StringComparer.Ordinal);
+        var usedQualified = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < count; i++)
+        {
+            var expression = i < argumentExpressions.Count ? argumentExpressions[i] : null;
+            if (expression is null)
+            {
+                continue;
+            }
+
+            var leaf = ExpressionPropertyName.TrySuggest(expression, style, ExpressionPropertyName.Kind.Leaf);
+            if (!string.IsNullOrEmpty(leaf))
+            {
+                leafNames[i] = ExpressionPropertyName.Uniquify(leaf!, usedLeaf);
+            }
+
+            var qualified = ExpressionPropertyName.TrySuggest(expression, style, ExpressionPropertyName.Kind.Qualified);
+            if (!string.IsNullOrEmpty(qualified))
+            {
+                qualifiedNames[i] = ExpressionPropertyName.Uniquify(qualified!, usedQualified);
+            }
         }
     }
 

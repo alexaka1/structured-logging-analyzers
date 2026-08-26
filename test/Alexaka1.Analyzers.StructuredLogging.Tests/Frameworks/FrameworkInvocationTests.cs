@@ -93,6 +93,39 @@ public sealed class FrameworkInvocationTests
     }
 
     [Fact]
+    public Task Microsoft_extensions_logging_does_not_report_destructuring()
+    {
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
+            using System;
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger)
+                {
+                    logger.LogInformation("{MyProperty}", new Random());
+                }
+            }
+            """);
+    }
+
+    [Fact]
+    public Task ZLogger_does_not_report_destructuring()
+    {
+        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
+            using System;
+            using Microsoft.Extensions.Logging;
+            using ZLogger;
+            class A
+            {
+                public A(ILogger<A> log)
+                {
+                    log.ZLogInformation("{MyProperty}", new Random());
+                }
+            }
+            """);
+    }
+
+    [Fact]
     public Task Unrelated_invocation_is_ignored()
     {
         return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
