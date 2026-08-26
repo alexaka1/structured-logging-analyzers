@@ -188,7 +188,7 @@ public sealed class PackageAndPerformanceTests
         var output = Path.Combine(repo, relativeOutput.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(Directory.Exists(output), "Sample build did not produce output directory: " + output);
         var files = Directory.GetFiles(output, "*.dll")
-            .Select(path => Path.GetFileName(path)!)
+            .Select(path => Path.GetFileName(path) ?? path)
             .ToArray();
         Assert.Contains(outputAssembly, files, StringComparer.OrdinalIgnoreCase);
         Assert.DoesNotContain("Alexaka1.Analyzers.StructuredLogging.dll", files, StringComparer.OrdinalIgnoreCase);
