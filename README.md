@@ -66,7 +66,8 @@ dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj
 ```
 
 The production assemblies target `netstandard2.0` and analyze projects targeting
-`net10.0`, `netstandard2.0`, and SDK-style `net472`.
+`net10.0`, `netstandard2.0`, and SDK-style `net472`. Logging-library version
+coverage is documented in [docs/package-version-testing.md](docs/package-version-testing.md).
 
 ## Diagnostics
 
