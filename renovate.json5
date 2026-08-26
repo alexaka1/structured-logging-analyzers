@@ -55,6 +55,26 @@
     },
     {
       description: [
+        "Ignore sample consumer projects",
+        "Top-level ignorePaths does not apply to nuget when :ignoreModulesAndTests is in the preset chain",
+      ],
+      matchFileNames: [
+        "**/samples/**",
+      ],
+      enabled: false,
+    },
+    {
+      description: [
+        "Ignore the frozen InspectCode vs Roslyn parity harness",
+        "Top-level ignorePaths does not apply to nuget when :ignoreModulesAndTests is in the preset chain",
+      ],
+      matchFileNames: [
+        "**/test/comparison/**",
+      ],
+      enabled: false,
+    },
+    {
+      description: [
         "Keep the analyzer compile-time Roslyn API at the VS 2022 17.8 floor",
       ],
       matchManagers: ["nuget"],
@@ -62,6 +82,19 @@
         "Microsoft.CodeAnalysis.CSharp",
         "Microsoft.CodeAnalysis.CSharp.Workspaces",
       ],
+      enabled: false,
+    },
+    {
+      description: [
+        "Do not major-bump Microsoft.CodeAnalysis.* ; 5.x is Roslyn 5 / VS 2026 and groups as dotnet-monorepo",
+        "CSharp and Workspaces stay fully frozen above; Analyzers 3.x minors may still ship",
+      ],
+      matchManagers: ["nuget"],
+      matchPackageNames: [
+        "Microsoft.CodeAnalysis",
+        "Microsoft.CodeAnalysis.**",
+      ],
+      matchUpdateTypes: ["major"],
       enabled: false,
     },
     {
@@ -121,6 +154,18 @@
   nuget: {
     managerFilePatterns: [
       '/(^|/)build\\/.*\\.cs$/',
+    ],
+    // :ignoreModulesAndTests (via config:best-practices) sets nuget.ignorePaths
+    // without samples/ or test/. Top-level ignorePaths does not merge into that
+    // manager list, so these paths must be repeated here.
+    ignorePaths: [
+      '**/node_modules/**',
+      '**/bower_components/**',
+      '**/vendor/**',
+      '**/examples/**',
+      '**/samples/**',
+      '**/test/comparison/**',
+      '**/__fixtures__/**',
     ],
   },
 }
