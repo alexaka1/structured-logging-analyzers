@@ -151,7 +151,7 @@ Code fixes map logical template offsets through:
 | Diagnostic | Fix | Notes |
 |---|---|---|
 | AASL0001, AASL0002 | Insert `@` after `{` | Full; Serilog-like invocations only |
-| AASL0008 | Rename positional hole | `[LoggerMessage]` when the remaining parameters match the holes |
+| AASL0008 | Rename positional hole | `[LoggerMessage]` when the remaining parameters match the holes. Invocations when the aligned argument has a derivable identifier (`order.Id` → `{Id}`). Qualified names as a second action when they differ. Not offered for literals, anonymous objects, `LoggerMessage.Define` / `DefineScope`, or a params array passed as a single variable. |
 | AASL0009 | Rename hole to suggested name | Full; also `[LoggerMessage]` attribute strings |
 | AASL0010 | Replace `PushProperty` name | Full |
 | AASL0011 | Remove trailing `.` | Full; span is the period |

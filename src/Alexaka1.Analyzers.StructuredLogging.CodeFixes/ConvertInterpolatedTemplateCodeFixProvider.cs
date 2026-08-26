@@ -43,7 +43,7 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                 context.Document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider,
                 interpolated.SyntaxTree).GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
 
-            if (!TryBuild(interpolated, style, InterpolationNameKind.Leaf, out var leafTemplate, out _))
+            if (!TryBuild(interpolated, style, ExpressionPropertyName.Kind.Leaf, out var leafTemplate, out _))
             {
                 continue;
             }
@@ -51,17 +51,17 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
             context.RegisterCodeFix(
                 CodeAction.Create(
                     "Convert to compile-time constant message template",
-                    ct => ApplyAsync(context.Document, diagnostic, InterpolationNameKind.Leaf, ct),
+                    ct => ApplyAsync(context.Document, diagnostic, ExpressionPropertyName.Kind.Leaf, ct),
                     LeafEquivalenceKey),
                 diagnostic);
 
-            if (TryBuild(interpolated, style, InterpolationNameKind.Qualified, out var qualifiedTemplate, out _) &&
+            if (TryBuild(interpolated, style, ExpressionPropertyName.Kind.Qualified, out var qualifiedTemplate, out _) &&
                 !string.Equals(qualifiedTemplate, leafTemplate, StringComparison.Ordinal))
             {
                 context.RegisterCodeFix(
                     CodeAction.Create(
                         "Convert to compile-time constant message template using qualified names",
-                        ct => ApplyAsync(context.Document, diagnostic, InterpolationNameKind.Qualified, ct),
+                        ct => ApplyAsync(context.Document, diagnostic, ExpressionPropertyName.Kind.Qualified, ct),
                         QualifiedEquivalenceKey),
                     diagnostic);
             }
@@ -71,7 +71,7 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
     private static async Task<Document> ApplyAsync(
         Document document,
         Diagnostic diagnostic,
-        InterpolationNameKind nameKind,
+        ExpressionPropertyName.Kind nameKind,
         CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
@@ -140,7 +140,7 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
     private static bool TryBuild(
         InterpolatedStringExpressionSyntax interpolated,
         PropertyNamingStyle style,
-        InterpolationNameKind nameKind,
+        ExpressionPropertyName.Kind nameKind,
         out string template,
         out List<ExpressionSyntax> values)
     {
@@ -157,7 +157,10 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                     AppendEscaped(builder, text.TextToken.ValueText);
                     break;
                 case InterpolationSyntax interpolation:
-                    var name = UniqueName(SuggestName(interpolation.Expression, style, nameKind), used);
+                    var name = ExpressionPropertyName.Uniquify(
+                        ExpressionPropertyName.TrySuggest(interpolation.Expression, style, nameKind)
+                        ?? ExpressionPropertyName.Fallback(style),
+                        used);
                     builder.Append('{');
                     builder.Append(name);
                     if (interpolation.AlignmentClause != null)
@@ -196,172 +199,5 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
 
             builder.Append(c);
         }
-    }
-
-    private static string SuggestName(
-        ExpressionSyntax expression,
-        PropertyNamingStyle style,
-        InterpolationNameKind nameKind)
-    {
-        var parts = CollectNameParts(expression);
-        if (parts.Count == 0)
-        {
-            return FallbackName(style);
-        }
-
-        string raw;
-        if (nameKind == InterpolationNameKind.Qualified && parts.Count > 1)
-        {
-            raw = ConcatenateParts(parts);
-        }
-        else
-        {
-            raw = parts[parts.Count - 1];
-        }
-
-        var suggested = PropertyNaming.SuggestFromExpression(raw, style);
-        return string.IsNullOrEmpty(suggested) ? FallbackName(style) : suggested;
-    }
-
-    private static string ConcatenateParts(List<string> parts)
-    {
-        var builder = new StringBuilder();
-        for (var i = 0; i < parts.Count; i++)
-        {
-            var part = parts[i];
-            if (i == parts.Count - 1 &&
-                part.StartsWith("Get", StringComparison.Ordinal) &&
-                part.Length > 3 &&
-                char.IsUpper(part[3]))
-            {
-                part = part.Substring(3);
-            }
-
-            builder.Append(part);
-        }
-
-        return builder.ToString();
-    }
-
-    private static string FallbackName(PropertyNamingStyle style)
-    {
-        var suggested = PropertyNaming.SuggestFromExpression("Value", style);
-        return string.IsNullOrEmpty(suggested) ? "Value" : suggested;
-    }
-
-    private static List<string> CollectNameParts(ExpressionSyntax expression)
-    {
-        var parts = new List<string>();
-        CollectNameParts(expression, parts);
-        return parts;
-    }
-
-    private static void CollectNameParts(ExpressionSyntax expression, List<string> parts)
-    {
-        switch (expression)
-        {
-            case IdentifierNameSyntax identifier:
-                parts.Add(identifier.Identifier.ValueText);
-                break;
-            case MemberAccessExpressionSyntax member:
-                CollectNameParts(member.Expression, parts);
-                parts.Add(member.Name.Identifier.ValueText);
-                break;
-            case ConditionalAccessExpressionSyntax conditionalAccess:
-                CollectNameParts(conditionalAccess.Expression, parts);
-                CollectNameParts(conditionalAccess.WhenNotNull, parts);
-                break;
-            case MemberBindingExpressionSyntax memberBinding:
-                parts.Add(memberBinding.Name.Identifier.ValueText);
-                break;
-            case InvocationExpressionSyntax invocation:
-                CollectNameParts(invocation.Expression, parts);
-                break;
-            case ElementAccessExpressionSyntax element:
-                CollectNameParts(element.Expression, parts);
-                parts.Add("Item");
-                break;
-            case ElementBindingExpressionSyntax:
-                parts.Add("Item");
-                break;
-            case ConditionalExpressionSyntax conditional:
-                CollectNameParts(conditional.WhenTrue, parts);
-                if (parts.Count == 0)
-                {
-                    CollectNameParts(conditional.WhenFalse, parts);
-                }
-
-                break;
-            case ParenthesizedExpressionSyntax parenthesized:
-                CollectNameParts(parenthesized.Expression, parts);
-                break;
-            case CastExpressionSyntax cast:
-                CollectNameParts(cast.Expression, parts);
-                break;
-            case AwaitExpressionSyntax awaitExpression:
-                CollectNameParts(awaitExpression.Expression, parts);
-                break;
-            case ObjectCreationExpressionSyntax creation:
-                AddTypeName(creation.Type, parts);
-                break;
-            case ThisExpressionSyntax:
-            case BaseExpressionSyntax:
-                break;
-        }
-    }
-
-    private static void AddTypeName(TypeSyntax type, List<string> parts)
-    {
-        switch (type)
-        {
-            case IdentifierNameSyntax identifier:
-                parts.Add(identifier.Identifier.ValueText);
-                break;
-            case QualifiedNameSyntax qualified:
-                AddTypeName(qualified.Right, parts);
-                break;
-            case GenericNameSyntax generic:
-                parts.Add(generic.Identifier.ValueText);
-                break;
-            case AliasQualifiedNameSyntax alias:
-                AddTypeName(alias.Name, parts);
-                break;
-            case NullableTypeSyntax nullable:
-                AddTypeName(nullable.ElementType, parts);
-                break;
-            default:
-                var text = type.ToString();
-                if (!string.IsNullOrEmpty(text))
-                {
-                    parts.Add(text);
-                }
-
-                break;
-        }
-    }
-
-    private static string UniqueName(string name, HashSet<string> used)
-    {
-        if (used.Add(name))
-        {
-            return name;
-        }
-
-        for (var i = 2; i < 1000; i++)
-        {
-            var candidate = name + i.ToString(CultureInfo.InvariantCulture);
-            if (used.Add(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        return name + Guid.NewGuid().ToString("N");
-    }
-
-    private enum InterpolationNameKind
-    {
-        Leaf,
-        Qualified
     }
 }

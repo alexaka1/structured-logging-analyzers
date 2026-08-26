@@ -10,32 +10,23 @@ internal static class PropertyArgumentMapper
         BoundTemplateArgument template,
         int holeIndex)
     {
-        var later = new List<BoundTemplateArgument>();
-        for (var i = 0; i < arguments.Count; i++)
+        var later = CollectLaterArguments(arguments, template);
+        return ArgumentAt(later, holeIndex, requireMappedValueExpression: false);
+    }
+
+    public static ExpressionSyntax?[] ArgumentsForPositionalNames(
+        IReadOnlyList<BoundTemplateArgument> arguments,
+        BoundTemplateArgument template,
+        int holeCount)
+    {
+        var later = CollectLaterArguments(arguments, template);
+        var result = new ExpressionSyntax?[holeCount];
+        for (var i = 0; i < holeCount; i++)
         {
-            var argument = arguments[i];
-            if (argument.Ordinal > template.Ordinal)
-            {
-                later.Add(argument);
-            }
+            result[i] = ArgumentAt(later, i, requireMappedValueExpression: true);
         }
 
-        later.Sort((a, b) => a.Ordinal.CompareTo(b.Ordinal));
-        if (later.Count == 1 && later[0].Parameter.IsParams)
-        {
-            var elements = GetArrayElements(later[0].Expression);
-            if (elements.Count > 0)
-            {
-                return holeIndex >= 0 && holeIndex < elements.Count ? elements[holeIndex] : null;
-            }
-        }
-
-        if (holeIndex < 0 || holeIndex >= later.Count)
-        {
-            return null;
-        }
-
-        return later[holeIndex].Expression;
+        return result;
     }
 
     public static ExpressionSyntax? ArgumentForNamedHole(
@@ -56,6 +47,55 @@ internal static class PropertyArgumentMapper
         }
 
         return index < 0 ? null : ArgumentForHole(arguments, template, index);
+    }
+
+    private static List<BoundTemplateArgument> CollectLaterArguments(
+        IReadOnlyList<BoundTemplateArgument> arguments,
+        BoundTemplateArgument template)
+    {
+        var later = new List<BoundTemplateArgument>();
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            var argument = arguments[i];
+            if (argument.Ordinal > template.Ordinal)
+            {
+                later.Add(argument);
+            }
+        }
+
+        later.Sort(static (a, b) =>
+        {
+            var ordinal = a.Ordinal.CompareTo(b.Ordinal);
+            return ordinal != 0 ? ordinal : a.Argument.SpanStart.CompareTo(b.Argument.SpanStart);
+        });
+        return later;
+    }
+
+    private static ExpressionSyntax? ArgumentAt(
+        List<BoundTemplateArgument> later,
+        int holeIndex,
+        bool requireMappedValueExpression)
+    {
+        if (later.Count == 1 && later[0].Parameter.IsParams)
+        {
+            var elements = GetArrayElements(later[0].Expression);
+            if (elements.Count > 0)
+            {
+                return holeIndex >= 0 && holeIndex < elements.Count ? elements[holeIndex] : null;
+            }
+
+            if (requireMappedValueExpression)
+            {
+                return null;
+            }
+        }
+
+        if (holeIndex < 0 || holeIndex >= later.Count)
+        {
+            return null;
+        }
+
+        return later[holeIndex].Expression;
     }
 
     private static List<ExpressionSyntax> GetArrayElements(ExpressionSyntax expression)

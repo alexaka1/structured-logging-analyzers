@@ -535,4 +535,35 @@ public sealed class CodeFixTests
             typeof(ConvertInterpolatedTemplateCodeFixProvider),
             expectedActionCount: 1);
     }
+
+    [Fact]
+    public Task Convert_interpolation_nameof()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation({|AASL0007:$"Processed {nameof(order.Id)}"|});
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Order order)
+                {
+                    logger.LogInformation("Processed {Id}", nameof(order.Id));
+                }
+            }
+            class Order { public int Id { get; set; } }
+            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 2);
+    }
 }

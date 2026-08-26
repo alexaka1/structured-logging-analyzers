@@ -195,7 +195,8 @@ internal static class AnalyzerTestHost
         Type codeFixType,
         string? editorConfig = null,
         int codeActionIndex = 0,
-        int? expectedActionCount = null)
+        int? expectedActionCount = null,
+        int? remainingCount = null)
     {
         var (source, expected) = Markup.Parse(markedSource);
         var diagnostics = await GetDiagnosticsAsync(source, editorConfig).ConfigureAwait(false);
@@ -217,9 +218,33 @@ internal static class AnalyzerTestHost
                 editorConfig,
                 diagnosticId,
                 beforeCount,
-                remainingCount: beforeCount - 1,
+                remainingCount: remainingCount ?? beforeCount - 1,
                 beforeErrors)
             .ConfigureAwait(false);
+    }
+
+    public static async Task VerifyNoFixAsync(
+        string markedSource,
+        string diagnosticId,
+        Type codeFixType,
+        string? editorConfig = null)
+    {
+        var (source, expected) = Markup.Parse(markedSource);
+        var diagnostics = await GetDiagnosticsAsync(source, editorConfig).ConfigureAwait(false);
+        var matching = diagnostics.FirstOrDefault(d => d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan))
+                       ?? diagnostics.FirstOrDefault(d => d.Id == diagnosticId);
+        Assert.NotNull(matching);
+
+        var document = CreateDocument(source, editorConfig);
+        var provider = (CodeFixProvider)Activator.CreateInstance(codeFixType)!;
+        var actions = new List<CodeAction>();
+        var context = new CodeFixContext(
+            document,
+            matching,
+            (action, _) => actions.Add(action),
+            CancellationToken.None);
+        await provider.RegisterCodeFixesAsync(context).ConfigureAwait(false);
+        Assert.Empty(actions);
     }
 
     public static async Task VerifyFixAllAsync(

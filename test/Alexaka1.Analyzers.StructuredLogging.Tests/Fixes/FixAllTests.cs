@@ -188,4 +188,121 @@ public sealed class FixAllTests
             typeof(ConvertInterpolatedTemplateCodeFixProvider),
             codeActionIndex: 1);
     }
+
+    [Fact]
+    public Task Rename_positional_holes_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(string orderId, string name)
+                {
+                    Log.Logger.Information("{|AASL0008:{0}|} {|AASL0008:{1}|}", orderId, name);
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(string orderId, string name)
+                {
+                    Log.Logger.Information("{OrderId} {Name}", orderId, name);
+                }
+            }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Rename_positional_holes_qualified_names_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Order order)
+                {
+                    Log.Logger.Information("{|AASL0008:{0}|}", order.Id);
+                    Log.Logger.Information("{|AASL0008:{0}|}", order.Total);
+                }
+            }
+            public sealed class Order { public int Id { get; set; } public int Total { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Order order)
+                {
+                    Log.Logger.Information("{OrderId}", order.Id);
+                    Log.Logger.Information("{OrderTotal}", order.Total);
+                }
+            }
+            public sealed class Order { public int Id { get; set; } public int Total { get; set; } }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider),
+            codeActionIndex: 1);
+    }
+
+    [Fact]
+    public Task Rename_duplicate_derived_positional_names()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Order order, User user)
+                {
+                    Log.Logger.Information("{|AASL0008:{0}|} {|AASL0008:{1}|}", order.Id, user.Id);
+                }
+            }
+            public sealed class Order { public int Id { get; set; } }
+            public sealed class User { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Order order, User user)
+                {
+                    Log.Logger.Information("{Id} {Id2}", order.Id, user.Id);
+                }
+            }
+            public sealed class Order { public int Id { get; set; } }
+            public sealed class User { public int Id { get; set; } }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Rename_logger_message_positional_holes_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            public static partial class Log
+            {
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{|AASL0008:{0}|} {|AASL0008:{1}|}")]
+                public static partial void ProcessingOrder(ILogger logger, int orderId, string name);
+            }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            public static partial class Log
+            {
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{OrderId} {Name}")]
+                public static partial void ProcessingOrder(ILogger logger, int orderId, string name);
+            }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
 }
