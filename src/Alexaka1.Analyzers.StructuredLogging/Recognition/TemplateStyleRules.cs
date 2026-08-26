@@ -2,7 +2,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
 using Alexaka1.Analyzers.StructuredLogging.Classification;
 using Alexaka1.Analyzers.StructuredLogging.Configuration;
 using Alexaka1.Analyzers.StructuredLogging.Mapping;
@@ -198,7 +197,7 @@ internal static class TemplateStyleRules
     internal static Location HoleLocation(TemplateSourceMap map, PropertyHole hole)
     {
         var tree = map.Expression.SyntaxTree;
-        var span = map.Map.Length == 0 ? (TextSpan?)null : map.TryGetSpan(hole.StartIndex, hole.Length);
+        var span = map.TryGetSpan(hole.StartIndex, hole.Length);
         if (span is null)
         {
             return Location.Create(tree, map.Expression.Span);
