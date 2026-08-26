@@ -57,6 +57,8 @@ jobs:
           dotnet build samples/Net472Example/Net472Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/Net472Example-build.log
 
       - name: Assert sample build diagnostics
+        # Complements PackageAndPerformanceTests so CI fails even if the test
+        # host is skipped, using the logs from the Sample TFM matrix step.
         run: |
           set -euo pipefail
           grep -E 'warning AASL0009' artifacts/Net10Example-build.log

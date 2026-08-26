@@ -18,6 +18,8 @@ public sealed class PackageAndPerformanceCollection;
 [Collection("PackageAndPerformance")]
 public sealed class PackageAndPerformanceTests
 {
+    // These ceilings cover analyzer work plus Roslyn compilation-with-analyzers
+    // allocations on a warmed process. Retune after SDK or Roslyn upgrades.
     private static readonly TimeSpan MaxWallClock = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan MaxAnalyzerExecution = TimeSpan.FromSeconds(5);
     private const long UnrelatedAllocationLimitBytes = 48 * 1024 * 1024;
@@ -45,14 +47,22 @@ public sealed class PackageAndPerformanceTests
     [Fact]
     public async Task Analyzer_handles_large_unrelated_compilation()
     {
-        var outcome = await RunPerformanceGateAsync(CreateUnrelatedSource(4000), UnrelatedAllocationLimitBytes, TestContext.Current.CancellationToken);
+        var outcome = await RunPerformanceGateAsync(
+            "unrelated compilation",
+            CreateUnrelatedSource(4000),
+            UnrelatedAllocationLimitBytes,
+            TestContext.Current.CancellationToken);
         Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
     }
 
     [Fact]
     public async Task Analyzer_handles_many_logging_calls()
     {
-        var outcome = await RunPerformanceGateAsync(CreateLoggingSource(500), LoggingAllocationLimitBytes, TestContext.Current.CancellationToken);
+        var outcome = await RunPerformanceGateAsync(
+            "logging compilation",
+            CreateLoggingSource(500),
+            LoggingAllocationLimitBytes,
+            TestContext.Current.CancellationToken);
         Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
     }
 
@@ -186,6 +196,7 @@ public sealed class PackageAndPerformanceTests
     }
 
     private async Task<AnalysisOutcome> RunPerformanceGateAsync(
+        string label,
         string source,
         long maxAllocatedBytes,
         CancellationToken cancellationToken)
@@ -202,14 +213,14 @@ public sealed class PackageAndPerformanceTests
 
         AssertTelemetryShape(outcome.Telemetry);
         _output.WriteLine(
-            $"wall={outcome.WallClock.TotalMilliseconds:F0}ms exec={outcome.Telemetry.ExecutionTime.TotalMilliseconds:F0}ms alloc={outcome.AllocatedBytes} concurrent={outcome.Telemetry.Concurrent}");
-        Assert.True(outcome.WallClock < MaxWallClock, $"Unrelated or logging compilation took {outcome.WallClock}");
+            $"{label} wall={outcome.WallClock.TotalMilliseconds:F0}ms exec={outcome.Telemetry.ExecutionTime.TotalMilliseconds:F0}ms alloc={outcome.AllocatedBytes} concurrent={outcome.Telemetry.Concurrent}");
+        Assert.True(outcome.WallClock < MaxWallClock, $"{label} took {outcome.WallClock}");
         Assert.True(
             outcome.Telemetry.ExecutionTime < MaxAnalyzerExecution,
-            $"Analyzer execution took {outcome.Telemetry.ExecutionTime}");
+            $"{label} analyzer execution took {outcome.Telemetry.ExecutionTime}");
         Assert.True(
             outcome.AllocatedBytes < maxAllocatedBytes,
-            $"Analyzer allocated {outcome.AllocatedBytes} bytes (limit {maxAllocatedBytes})");
+            $"{label} allocated {outcome.AllocatedBytes} bytes (limit {maxAllocatedBytes})");
         return outcome;
     }
 
