@@ -52,9 +52,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts
-          dotnet build samples/Net10Example/Net10Example.csproj -c Release 2>&1 | tee artifacts/Net10Example-build.log
-          dotnet build samples/NetStandard20Example/NetStandard20Example.csproj -c Release 2>&1 | tee artifacts/NetStandard20Example-build.log
-          dotnet build samples/Net472Example/Net472Example.csproj -c Release 2>&1 | tee artifacts/Net472Example-build.log
+          dotnet build samples/Net10Example/Net10Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/Net10Example-build.log
+          dotnet build samples/NetStandard20Example/NetStandard20Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/NetStandard20Example-build.log
+          dotnet build samples/Net472Example/Net472Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/Net472Example-build.log
 
       - name: Assert sample build diagnostics
         run: |

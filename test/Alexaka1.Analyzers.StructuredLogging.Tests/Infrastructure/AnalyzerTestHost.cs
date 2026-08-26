@@ -118,7 +118,7 @@ internal static class AnalyzerTestHost
 
         if (exceptions.Count > 0)
         {
-            Assert.True(false, "Analyzer threw: " + string.Join("; ", exceptions.Select(e => e.ToString())));
+            Assert.Fail("Analyzer threw: " + string.Join("; ", exceptions.Select(e => e.ToString())));
         }
 
         if (!result.AnalyzerTelemetryInfo.TryGetValue(analyzer, out var telemetry))

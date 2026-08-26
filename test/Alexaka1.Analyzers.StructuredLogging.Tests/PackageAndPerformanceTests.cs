@@ -19,10 +19,16 @@ public sealed class PackageAndPerformanceCollection;
 public sealed class PackageAndPerformanceTests
 {
     private static readonly TimeSpan MaxWallClock = TimeSpan.FromSeconds(20);
-    private static readonly TimeSpan MaxAnalyzerExecution = TimeSpan.FromSeconds(10);
-    private const long UnrelatedAllocationLimitBytes = 96 * 1024 * 1024;
-    private const long LoggingAllocationLimitBytes = 128 * 1024 * 1024;
+    private static readonly TimeSpan MaxAnalyzerExecution = TimeSpan.FromSeconds(5);
+    private const long UnrelatedAllocationLimitBytes = 48 * 1024 * 1024;
+    private const long LoggingAllocationLimitBytes = 32 * 1024 * 1024;
     private static readonly Regex AaslId = new(@"\b(AASL\d{4})\b", RegexOptions.CultureInvariant);
+    private readonly ITestOutputHelper _output;
+
+    public PackageAndPerformanceTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
 
     [Fact]
     public void Packed_nupkg_has_analyzers_and_no_lib()
@@ -39,25 +45,28 @@ public sealed class PackageAndPerformanceTests
     [Fact]
     public async Task Analyzer_handles_large_unrelated_compilation()
     {
-        var outcome = await RunPerformanceGateAsync(CreateUnrelatedSource(4000), UnrelatedAllocationLimitBytes);
+        var outcome = await RunPerformanceGateAsync(CreateUnrelatedSource(4000), UnrelatedAllocationLimitBytes, TestContext.Current.CancellationToken);
         Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
     }
 
     [Fact]
     public async Task Analyzer_handles_many_logging_calls()
     {
-        var outcome = await RunPerformanceGateAsync(CreateLoggingSource(500), LoggingAllocationLimitBytes);
+        var outcome = await RunPerformanceGateAsync(CreateLoggingSource(500), LoggingAllocationLimitBytes, TestContext.Current.CancellationToken);
         Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
     }
 
     [Fact]
     public async Task Analyzer_reports_concurrent_execution_and_action_telemetry()
     {
-        var cold = await AnalyzerTestHost.AnalyzeAsync(CreateLoggingSource(200));
-        var warm = await AnalyzerTestHost.AnalyzeAsync(CreateLoggingSource(200));
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var cold = await AnalyzerTestHost.AnalyzeAsync(CreateLoggingSource(200), cancellationToken: cancellationToken);
+        var warm = await AnalyzerTestHost.AnalyzeAsync(CreateLoggingSource(200), cancellationToken: cancellationToken);
 
         AssertTelemetryShape(cold.Telemetry);
         AssertTelemetryShape(warm.Telemetry);
+        _output.WriteLine(
+            $"cold wall={cold.WallClock.TotalMilliseconds:F0}ms exec={cold.Telemetry.ExecutionTime.TotalMilliseconds:F0}ms; warm wall={warm.WallClock.TotalMilliseconds:F0}ms exec={warm.Telemetry.ExecutionTime.TotalMilliseconds:F0}ms");
         Assert.True(
             cold.Telemetry.ExecutionTime < MaxAnalyzerExecution,
             $"Cold analyzer execution took {cold.Telemetry.ExecutionTime}");
@@ -100,14 +109,19 @@ public sealed class PackageAndPerformanceTests
                 """))
             .ToArray();
 
+        var cancellationToken = TestContext.Current.CancellationToken;
         var sequential = await AnalyzerTestHost.AnalyzeAsync(
             source,
             additionalSources: additional,
-            concurrentAnalysis: false);
+            concurrentAnalysis: false,
+            cancellationToken: cancellationToken);
         AssertTelemetryShape(sequential.Telemetry);
 
         var concurrentTasks = Enumerable.Range(0, 8)
-            .Select(_ => AnalyzerTestHost.AnalyzeAsync(source, additionalSources: additional))
+            .Select(_ => AnalyzerTestHost.AnalyzeAsync(
+                source,
+                additionalSources: additional,
+                cancellationToken: cancellationToken))
             .ToArray();
         var concurrent = await Task.WhenAll(concurrentTasks);
 
@@ -140,11 +154,12 @@ public sealed class PackageAndPerformanceTests
     }
 
     [Theory]
-    [InlineData("samples/Net10Example/Net10Example.csproj", "Net10Example.dll", "AASL0009", "AASL0011")]
-    [InlineData("samples/NetStandard20Example/NetStandard20Example.csproj", "NetStandard20Example.dll", "AASL0009")]
-    [InlineData("samples/Net472Example/Net472Example.csproj", "Net472Example.dll", "AASL0009")]
+    [InlineData("samples/Net10Example/Net10Example.csproj", "samples/Net10Example/bin/Release/net10.0", "Net10Example.dll", "AASL0009", "AASL0011")]
+    [InlineData("samples/NetStandard20Example/NetStandard20Example.csproj", "samples/NetStandard20Example/bin/Release/netstandard2.0", "NetStandard20Example.dll", "AASL0009")]
+    [InlineData("samples/Net472Example/Net472Example.csproj", "samples/Net472Example/bin/Release/net472", "Net472Example.dll", "AASL0009")]
     public void Sample_build_reports_aasl_diagnostics_and_does_not_copy_analyzer_assemblies(
         string relativeProject,
+        string relativeOutput,
         string outputAssembly,
         params string[] expectedIds)
     {
@@ -152,9 +167,7 @@ public sealed class PackageAndPerformanceTests
         var project = Path.Combine(repo, relativeProject.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(File.Exists(project), "Sample project missing: " + project);
 
-        var output = Path.Combine(Path.GetTempPath(), "sla-sample-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(output);
-        var log = RunDotNet($"build \"{project}\" -c Release -o \"{output}\" --nologo");
+        var log = RunDotNet($"build \"{project}\" -c Release --no-incremental --nologo");
 
         var ids = ParseAaslIds(log);
         foreach (var expected in expectedIds)
@@ -162,8 +175,9 @@ public sealed class PackageAndPerformanceTests
             Assert.True(ids.Contains(expected), $"Expected {expected} in build output. Reported: {string.Join(", ", ids)}\n{log}");
         }
 
+        var output = Path.Combine(repo, relativeOutput.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(Directory.Exists(output), "Sample build did not produce output directory: " + output);
-        var files = Directory.GetFiles(output, "*", SearchOption.AllDirectories)
+        var files = Directory.GetFiles(output, "*.dll")
             .Select(path => Path.GetFileName(path)!)
             .ToArray();
         Assert.Contains(outputAssembly, files, StringComparer.OrdinalIgnoreCase);
@@ -171,15 +185,24 @@ public sealed class PackageAndPerformanceTests
         Assert.DoesNotContain("Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll", files, StringComparer.OrdinalIgnoreCase);
     }
 
-    private static async Task<AnalysisOutcome> RunPerformanceGateAsync(string source, long maxAllocatedBytes)
+    private async Task<AnalysisOutcome> RunPerformanceGateAsync(
+        string source,
+        long maxAllocatedBytes,
+        CancellationToken cancellationToken)
     {
-        _ = await AnalyzerTestHost.AnalyzeAsync(source, concurrentAnalysis: false);
+        _ = await AnalyzerTestHost.AnalyzeAsync(
+            source,
+            concurrentAnalysis: false,
+            cancellationToken: cancellationToken);
         var outcome = await AnalyzerTestHost.AnalyzeAsync(
             source,
             concurrentAnalysis: false,
-            measureAllocations: true);
+            measureAllocations: true,
+            cancellationToken: cancellationToken);
 
         AssertTelemetryShape(outcome.Telemetry);
+        _output.WriteLine(
+            $"wall={outcome.WallClock.TotalMilliseconds:F0}ms exec={outcome.Telemetry.ExecutionTime.TotalMilliseconds:F0}ms alloc={outcome.AllocatedBytes} concurrent={outcome.Telemetry.Concurrent}");
         Assert.True(outcome.WallClock < MaxWallClock, $"Unrelated or logging compilation took {outcome.WallClock}");
         Assert.True(
             outcome.Telemetry.ExecutionTime < MaxAnalyzerExecution,
