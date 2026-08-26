@@ -180,7 +180,7 @@ internal static class TemplateArgumentResolver
                 continue;
             }
 
-            var argumentSyntax = expression.Parent as ArgumentSyntax;
+            var argumentSyntax = expression.FirstAncestorOrSelf<ArgumentSyntax>();
             if (argumentSyntax is null)
             {
                 continue;

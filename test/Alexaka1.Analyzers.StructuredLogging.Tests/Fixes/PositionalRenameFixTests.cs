@@ -248,6 +248,35 @@ public sealed class PositionalRenameFixTests
     }
 
     [Fact]
+    public Task Rename_microsoft_extensions_logging_cast_argument()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, string orderId)
+                {
+                    logger.LogInformation("{|AASL0008:{0}|}", (object)orderId);
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, string orderId)
+                {
+                    logger.LogInformation("{OrderId}", (object)orderId);
+                }
+            }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider),
+            expectedActionCount: 1);
+    }
+
+    [Fact]
     public Task Rename_nlog()
     {
         return AnalyzerTestHost.VerifyFixAsync(
@@ -420,6 +449,24 @@ public sealed class PositionalRenameFixTests
                 void M()
                 {
                     _ = LoggerMessage.Define<int>(LogLevel.Information, new EventId(1), "{|AASL0008:{0}|}");
+                }
+            }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Logger_message_define_scope_has_no_rename()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M()
+                {
+                    _ = LoggerMessage.DefineScope<int>("{|AASL0008:{0}|}");
                 }
             }
             """,

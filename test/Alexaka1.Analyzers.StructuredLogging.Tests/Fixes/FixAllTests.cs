@@ -218,6 +218,34 @@ public sealed class FixAllTests
     }
 
     [Fact]
+    public Task Rename_microsoft_extensions_logging_positional_holes_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, string orderId, string name)
+                {
+                    logger.LogInformation("{|AASL0008:{0}|} {|AASL0008:{1}|}", orderId, name);
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, string orderId, string name)
+                {
+                    logger.LogInformation("{OrderId} {Name}", orderId, name);
+                }
+            }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Fact]
     public Task Rename_positional_holes_qualified_names_document()
     {
         return AnalyzerTestHost.VerifyFixAllAsync(
