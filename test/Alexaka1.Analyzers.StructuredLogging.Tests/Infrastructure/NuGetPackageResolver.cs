@@ -21,7 +21,7 @@ internal static class NuGetPackageResolver
         var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var path in paths)
         {
-            seenNames.Add(Path.GetFileNameWithoutExtension(path)!);
+            seenNames.Add(Path.GetFileNameWithoutExtension(path));
         }
 
         // First simple name wins. Call sites pass one package today; BCL names stay preferred.
@@ -29,7 +29,7 @@ internal static class NuGetPackageResolver
         {
             foreach (var path in GetCompileAssemblies(id, version))
             {
-                var name = Path.GetFileNameWithoutExtension(path)!;
+                var name = Path.GetFileNameWithoutExtension(path);
                 if (!seenNames.Add(name))
                 {
                     continue;
