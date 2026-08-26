@@ -172,27 +172,26 @@ internal static class TemplateArgumentResolver
             return;
         }
 
+        var expanded = new List<BoundTemplateArgument>(initializer.ElementValues.Length);
         foreach (var element in initializer.ElementValues)
         {
             var expression = UnwrapExpression(element);
-            if (expression is null)
-            {
-                continue;
-            }
-
-            var argumentSyntax = expression.FirstAncestorOrSelf<ArgumentSyntax>();
+            var argumentSyntax = expression?.FirstAncestorOrSelf<ArgumentSyntax>();
             if (argumentSyntax is null)
             {
-                continue;
+                // Skipping a hole would shift later indexes onto the wrong arguments.
+                return;
             }
 
-            results.Add(new BoundTemplateArgument(
+            expanded.Add(new BoundTemplateArgument(
                 argumentOp.Parameter,
                 argumentSyntax,
                 argumentSyntax.Expression,
                 argumentOp.Parameter.Ordinal,
                 expandedParamsElement: true));
         }
+
+        results.AddRange(expanded);
     }
 
     private static ExpressionSyntax? UnwrapExpression(IOperation element)

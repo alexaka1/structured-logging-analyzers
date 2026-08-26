@@ -277,6 +277,35 @@ public sealed class PositionalRenameFixTests
     }
 
     [Fact]
+    public Task Rename_microsoft_extensions_logging_keeps_hole_order_with_cast()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, string orderId, string name)
+                {
+                    logger.LogInformation("{|AASL0008:{0}|} {|AASL0008:{1}|}", (object)orderId, name);
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, string orderId, string name)
+                {
+                    logger.LogInformation("{OrderId} {1}", (object)orderId, name);
+                }
+            }
+            """,
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider),
+            remainingCount: 0);
+    }
+
+    [Fact]
     public Task Rename_nlog()
     {
         return AnalyzerTestHost.VerifyFixAsync(
