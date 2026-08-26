@@ -4,6 +4,7 @@ reviews:
   collapse_walkthrough: false
   poem: true
   auto_review:
+    enabled: false
     ignore_usernames:
       - copilot
       - Copilot
