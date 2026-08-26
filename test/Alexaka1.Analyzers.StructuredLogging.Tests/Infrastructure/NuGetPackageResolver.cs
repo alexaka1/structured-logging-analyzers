@@ -21,11 +21,7 @@ internal static class NuGetPackageResolver
         var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var path in paths)
         {
-            var existingName = Path.GetFileNameWithoutExtension(path);
-            if (existingName is not null)
-            {
-                seenNames.Add(existingName);
-            }
+            seenNames.Add(Path.GetFileNameWithoutExtension(path) ?? string.Empty);
         }
 
         // First simple name wins. Call sites pass one package today; BCL names stay preferred.
@@ -33,8 +29,8 @@ internal static class NuGetPackageResolver
         {
             foreach (var path in GetCompileAssemblies(id, version))
             {
-                var name = Path.GetFileNameWithoutExtension(path);
-                if (name is null || !seenNames.Add(name))
+                var name = Path.GetFileNameWithoutExtension(path) ?? string.Empty;
+                if (!seenNames.Add(name))
                 {
                     continue;
                 }
@@ -167,18 +163,17 @@ internal static class NuGetPackageResolver
         var stderrTask = process.StandardError.ReadToEndAsync();
         if (!process.WaitForExit(120_000))
         {
+            Exception? killFailure = null;
             try
             {
                 process.Kill(entireProcessTree: true);
             }
-            catch (InvalidOperationException)
+            catch (Exception ex) when (ex is InvalidOperationException or Win32Exception)
             {
-            }
-            catch (Win32Exception)
-            {
+                killFailure = ex;
             }
 
-            throw new TimeoutException($"Timed out restoring {packageId} {version}.");
+            throw new TimeoutException($"Timed out restoring {packageId} {version}.", killFailure);
         }
 
         process.WaitForExit();
@@ -276,7 +271,7 @@ internal static class NuGetPackageResolver
 
     internal static string FindRepoRoot()
     {
-        var dir = AppContext.BaseDirectory;
+        string? dir = AppContext.BaseDirectory;
         while (dir != null)
         {
             if (File.Exists(Path.Combine(dir, "Alexaka1.Analyzers.StructuredLogging.slnx")) ||
