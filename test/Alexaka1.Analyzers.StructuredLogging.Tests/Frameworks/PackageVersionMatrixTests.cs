@@ -213,6 +213,15 @@ public sealed class PackageVersionMatrixTests
     }
 
     [Fact]
+    public void Matrix_includes_latest_stable()
+    {
+        Assert.Contains(PackageVersionMatrix.SerilogLatest, PackageVersionMatrix.Serilog);
+        Assert.Contains(PackageVersionMatrix.NLogLatest, PackageVersionMatrix.NLog);
+        Assert.Contains(PackageVersionMatrix.MelLatest, PackageVersionMatrix.MicrosoftExtensionsLogging);
+        Assert.Contains(PackageVersionMatrix.ZLoggerLatest, PackageVersionMatrix.ZLoggerInterpolated);
+    }
+
+    [Fact]
     public void Resolver_loads_compile_asset_for_test_project_serilog()
     {
         var assemblies = NuGetPackageResolver.GetCompileAssemblies(

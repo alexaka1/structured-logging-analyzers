@@ -23,7 +23,7 @@
   customManagers: [
     {
       customType: 'regex',
-      description: 'Latest logging-library canary versions in the analyzer package matrix',
+      description: 'Latest-stable logging-library versions in PackageVersionMatrix.cs, including majors',
       managerFilePatterns: [
         '/(^|/)PackageVersionMatrix\\.cs$/',
       ],
@@ -77,6 +77,33 @@
       ],
       matchUpdateTypes: ["major"],
       enabled: false,
+    },
+    {
+      description: [
+        "Always track latest-stable logging versions in PackageVersionMatrix.cs, including majors",
+      ],
+      matchFileNames: ["**/PackageVersionMatrix.cs"],
+      matchPackageNames: [
+        "Serilog",
+        "NLog",
+        "ZLogger",
+        "Microsoft.Extensions.Logging.Abstractions",
+      ],
+      enabled: true,
+    },
+    {
+      description: [
+        "Do not automerge major bumps of latest-stable logging versions; APIs can change",
+      ],
+      matchFileNames: ["**/PackageVersionMatrix.cs"],
+      matchPackageNames: [
+        "Serilog",
+        "NLog",
+        "ZLogger",
+        "Microsoft.Extensions.Logging.Abstractions",
+      ],
+      matchUpdateTypes: ["major"],
+      automerge: false,
     },
   ],
   ignorePaths: [

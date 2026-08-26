@@ -8,6 +8,8 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 /// <c>typeof</c>-based default hosts; this matrix restores additional versions
 /// without loading them into the test process. The current pin is read from
 /// that test project so minor/patch Renovate bumps stay in the matrix.
+/// <c>*Latest</c> is the always-run latest-stable suite (including majors).
+/// Renovate's regex manager owns those constants. Historical floors stay here.
 /// </summary>
 internal static class PackageVersionMatrix
 {
