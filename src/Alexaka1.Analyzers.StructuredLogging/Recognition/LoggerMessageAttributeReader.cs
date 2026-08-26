@@ -43,7 +43,7 @@ internal static class LoggerMessageAttributeReader
             }
 
             var expression = FindMessageExpression(attribute, syntax);
-            var text = ReadMessageText(model, attribute, expression, cancellationToken) ?? string.Empty;
+            var text = ReadMessageText(model, attribute, expression, cancellationToken);
             template = new LoggerMessageTemplate(syntax, expression, text);
             return true;
         }
@@ -137,7 +137,7 @@ internal static class LoggerMessageAttributeReader
         return last;
     }
 
-    private static string? ReadMessageText(
+    private static string ReadMessageText(
         SemanticModel model,
         AttributeData data,
         ExpressionSyntax? expression,

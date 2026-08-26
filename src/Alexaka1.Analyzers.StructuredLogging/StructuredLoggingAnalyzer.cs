@@ -619,11 +619,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeConstructor(SyntaxNodeAnalysisContext context, LoggingInvocationClassifier classifier)
     {
         var constructor = (ConstructorDeclarationSyntax)context.Node;
-        if (constructor.ParameterList is null)
-        {
-            return;
-        }
-
         var containing = context.SemanticModel.GetDeclaredSymbol(constructor, context.CancellationToken)?.ContainingType;
         AnalyzeLoggerParameters(context, constructor.ParameterList, containing, classifier);
     }
