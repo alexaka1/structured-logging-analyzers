@@ -187,12 +187,10 @@ public sealed class PackageAndPerformanceTests
 
         var output = Path.Combine(repo, relativeOutput.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(Directory.Exists(output), "Sample build did not produce output directory: " + output);
-        var files = Directory.GetFiles(output, "*.dll")
-            .Select(path => Path.GetFileName(path) ?? path)
-            .ToArray();
-        Assert.Contains(outputAssembly, files, StringComparer.OrdinalIgnoreCase);
-        Assert.DoesNotContain("Alexaka1.Analyzers.StructuredLogging.dll", files, StringComparer.OrdinalIgnoreCase);
-        Assert.DoesNotContain("Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll", files, StringComparer.OrdinalIgnoreCase);
+        var dlls = Directory.GetFiles(output, "*.dll");
+        Assert.Contains(dlls, path => string.Equals(Path.GetFileName(path), outputAssembly, StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(dlls, path => string.Equals(Path.GetFileName(path), "Alexaka1.Analyzers.StructuredLogging.dll", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(dlls, path => string.Equals(Path.GetFileName(path), "Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll", StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task<AnalysisOutcome> RunPerformanceGateAsync(
