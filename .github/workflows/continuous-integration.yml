@@ -50,9 +50,21 @@ jobs:
 
       - name: Sample TFM matrix
         run: |
-          dotnet build samples/Net10Example/Net10Example.csproj -c Release
-          dotnet build samples/NetStandard20Example/NetStandard20Example.csproj -c Release
-          dotnet build samples/Net472Example/Net472Example.csproj -c Release
+          set -euo pipefail
+          mkdir -p artifacts
+          dotnet build samples/Net10Example/Net10Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/Net10Example-build.log
+          dotnet build samples/NetStandard20Example/NetStandard20Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/NetStandard20Example-build.log
+          dotnet build samples/Net472Example/Net472Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/Net472Example-build.log
+
+      - name: Assert sample build diagnostics
+        # Complements PackageAndPerformanceTests so CI fails even if the test
+        # host is skipped, using the logs from the Sample TFM matrix step.
+        run: |
+          set -euo pipefail
+          grep -E 'warning AASL0009' artifacts/Net10Example-build.log
+          grep -E 'warning AASL0011' artifacts/Net10Example-build.log
+          grep -E 'warning AASL0009' artifacts/NetStandard20Example-build.log
+          grep -E 'warning AASL0009' artifacts/Net472Example-build.log
 
       - name: Upload nupkg
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
