@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -6,6 +7,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Diagnostics.Telemetry;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 
@@ -71,6 +73,66 @@ internal static class AnalyzerTestHost
             ImmutableArray.Create(Analyzer),
             options);
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
+    }
+
+    public static async Task<AnalysisOutcome> AnalyzeAsync(
+        string source,
+        string? editorConfig = null,
+        LanguageVersion languageVersion = LanguageVersion.Latest,
+        IReadOnlyList<(string Path, string Text)>? additionalSources = null,
+        bool concurrentAnalysis = true,
+        bool measureAllocations = false,
+        CancellationToken cancellationToken = default)
+    {
+        var analyzer = new StructuredLoggingAnalyzer();
+        var (compilation, _, options) = CreateCompilation(source, editorConfig, languageVersion, additionalSources);
+        var exceptions = new List<Exception>();
+        var analysisOptions = new CompilationWithAnalyzersOptions(
+            options,
+            onAnalyzerException: (exception, _, _) =>
+            {
+                lock (exceptions)
+                {
+                    exceptions.Add(exception);
+                }
+            },
+            concurrentAnalysis,
+            logAnalyzerExecutionTime: true);
+        var compilationWithAnalyzers = compilation.WithAnalyzers(
+            ImmutableArray.Create<DiagnosticAnalyzer>(analyzer),
+            analysisOptions);
+
+        long allocatedBefore = 0;
+        if (measureAllocations)
+        {
+            allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+        }
+
+        var wallClock = Stopwatch.StartNew();
+        var result = await compilationWithAnalyzers.GetAnalysisResultAsync(cancellationToken).ConfigureAwait(false);
+        wallClock.Stop();
+
+        var allocatedBytes = measureAllocations
+            ? GC.GetTotalAllocatedBytes(precise: true) - allocatedBefore
+            : 0;
+
+        if (exceptions.Count > 0)
+        {
+            Assert.True(false, "Analyzer threw: " + string.Join("; ", exceptions.Select(e => e.ToString())));
+        }
+
+        if (!result.AnalyzerTelemetryInfo.TryGetValue(analyzer, out var telemetry))
+        {
+            telemetry = await compilationWithAnalyzers
+                .GetAnalyzerTelemetryInfoAsync(analyzer, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return new AnalysisOutcome(
+            result.GetAllDiagnostics(analyzer),
+            telemetry,
+            wallClock.Elapsed,
+            allocatedBytes);
     }
 
     private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(Document document)
@@ -579,6 +641,12 @@ internal static class AnalyzerTestHost
         }
     }
 }
+
+internal readonly record struct AnalysisOutcome(
+    ImmutableArray<Diagnostic> Diagnostics,
+    AnalyzerTelemetryInfo Telemetry,
+    TimeSpan WallClock,
+    long AllocatedBytes);
 
 internal readonly struct ExpectedDiagnostic
 {
