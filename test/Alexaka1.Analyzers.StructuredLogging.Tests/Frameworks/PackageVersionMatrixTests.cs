@@ -64,12 +64,34 @@ public sealed class PackageVersionMatrixTests
             {
                 void M(Logger logger)
                 {
-                    logger.Info("{|AASL0009:{myProperty}|}", 1);
+                    logger.Info("{|AASL0009:{myProperty}|}", System.Guid.NewGuid());
                 }
             }
             """,
             PackageVersionMatrix.NLogId,
             version);
+    }
+
+    [Fact]
+    public async Task NLog_4_primitive_overload_lacks_template_attribute()
+    {
+        var source = /*lang=csharp*/ """
+            using NLog;
+            class C
+            {
+                void M(Logger logger)
+                {
+                    logger.Info("{myProperty}", 1);
+                }
+            }
+            """;
+        var references = NuGetPackageResolver.GetReferences(
+            (PackageVersionMatrix.NLogId, PackageVersionMatrix.NLog4));
+        var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(
+            source,
+            references: references,
+            requireSuccessfulCompilation: true);
+        Assert.DoesNotContain(diagnostics, d => d.Id == "AASL0009");
     }
 
     [Theory]

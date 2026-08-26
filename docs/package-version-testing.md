@@ -44,6 +44,10 @@ Do not add a test project per Serilog/NLog/MEL/ZLogger version.
 2. If the public API still matches the existing source, the `[Theory]` already covers it.
 3. If the API family changed (ZLogger 1 format strings vs ZLogger 2 interpolated handlers / `[ZLoggerMessage]`), add a dedicated test with source that compiles against that family.
 
+NLog 4.x still ships structured templates, but several primitive `Logger.Info(string, int)`-style overloads omit
+`MessageTemplateFormatMethodAttribute`. The matrix covers an attributed generic overload on every NLog row, and
+characterizes the unattributed primitive overload on 4.x.
+
 The `*Latest` constants are Renovate regex-manager targets so newest releases
 can move without rewriting the test project's `PackageReference`s.
 

@@ -291,9 +291,9 @@ internal static class NuGetPackageResolver
         throw new DirectoryNotFoundException("Could not locate repository root.");
     }
 
-    private static string Sanitize(string packageId)
+    private static string Sanitize(string value)
     {
-        var chars = packageId.ToCharArray();
+        var chars = value.ToCharArray();
         for (var i = 0; i < chars.Length; i++)
         {
             if (!char.IsLetterOrDigit(chars[i]) && chars[i] is not '.' and not '-')
