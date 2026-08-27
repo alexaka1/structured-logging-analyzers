@@ -8,7 +8,7 @@ public partial class Counter
     [Inject]
     private ILogger<Counter> Logger { get; set; } = default!;
 
-    private int count;
+    private int count = 1;
 
     protected override void OnInitialized()
     {
