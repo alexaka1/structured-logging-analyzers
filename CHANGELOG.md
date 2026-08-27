@@ -1,5 +1,11 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.7
+
+### Patch Changes
+
+- [#42](https://github.com/alexaka1/structured-logging-analyzers/pull/42) [`99b8a81`](https://github.com/alexaka1/structured-logging-analyzers/commit/99b8a813cca99b2aa2435acdd545482ed53da264) Thanks [@alexaka1](https://github.com/alexaka1)! - Analyze Razor source-generated C# so AASL diagnostics and code fixes apply to Blazor `.razor` `@code` blocks as well as `.razor.cs` code-behind. `LoggerMessage.g.cs` and other non-Razor-generated files remain skipped.
+
 ## 0.1.0-preview.6
 
 ### Patch Changes
