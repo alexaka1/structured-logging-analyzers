@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.Text.Json;
 
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 
@@ -24,7 +24,6 @@ public sealed class PackageAndPerformanceTests
     private static readonly TimeSpan MaxAnalyzerExecution = TimeSpan.FromSeconds(5);
     private const long UnrelatedAllocationLimitBytes = 48 * 1024 * 1024;
     private const long LoggingAllocationLimitBytes = 32 * 1024 * 1024;
-    private static readonly Regex AaslId = new(@"\b(AASL\d{4})\b", RegexOptions.CultureInvariant);
     private readonly ITestOutputHelper _output;
 
     public PackageAndPerformanceTests(ITestOutputHelper output)
@@ -164,25 +163,34 @@ public sealed class PackageAndPerformanceTests
     }
 
     [Theory]
-    [InlineData("samples/Net10Example/Net10Example.csproj", "samples/Net10Example/bin/Release/net10.0", "Net10Example.dll", "AASL0009", "AASL0011")]
-    [InlineData("samples/NetStandard20Example/NetStandard20Example.csproj", "samples/NetStandard20Example/bin/Release/netstandard2.0", "NetStandard20Example.dll", "AASL0009")]
-    [InlineData("samples/Net472Example/Net472Example.csproj", "samples/Net472Example/bin/Release/net472", "Net472Example.dll", "AASL0009")]
+    [InlineData("samples/Net10Example/Net10Example.csproj", "samples/Net10Example/bin/Release/net10.0", "Net10Example.dll")]
+    [InlineData("samples/NetStandard20Example/NetStandard20Example.csproj", "samples/NetStandard20Example/bin/Release/netstandard2.0", "NetStandard20Example.dll")]
+    [InlineData("samples/Net472Example/Net472Example.csproj", "samples/Net472Example/bin/Release/net472", "Net472Example.dll")]
     public void Sample_build_reports_aasl_diagnostics_and_does_not_copy_analyzer_assemblies(
         string relativeProject,
         string relativeOutput,
-        string outputAssembly,
-        params string[] expectedIds)
+        string outputAssembly)
     {
         var repo = FindRepoRoot();
         var project = Path.Combine(repo, relativeProject.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(File.Exists(project), "Sample project missing: " + project);
 
-        var log = RunDotNet($"build \"{project}\" -c Release --no-incremental --nologo");
-
-        var ids = ParseAaslIds(log);
-        foreach (var expected in expectedIds)
+        var projectDir = Path.GetDirectoryName(project)!;
+        var sarif = Path.Combine(projectDir, "dotnet-build-error.sarif");
+        try
         {
-            Assert.True(ids.Contains(expected), $"Expected {expected} in build output. Reported: {string.Join(", ", ids)}\n{log}");
+            RunDotNet($"clean \"{project}\" -c Release --nologo");
+            var log = RunDotNet(
+                $"build \"{project}\" -c Release --no-incremental --nologo -v:minimal -p:ErrorLog=dotnet-build-error.sarif%2cversion=2.1");
+            Assert.True(File.Exists(sarif), $"Expected ErrorLog SARIF at {sarif}. Build output:\n{log}");
+            Assert.Equal(Ordered(ExpectedSampleDiagnostics[relativeProject]), ParseActiveAaslDiagnostics(sarif));
+        }
+        finally
+        {
+            if (File.Exists(sarif))
+            {
+                File.Delete(sarif);
+            }
         }
 
         var output = Path.Combine(repo, relativeOutput.Replace('/', Path.DirectorySeparatorChar));
@@ -272,15 +280,122 @@ public sealed class PackageAndPerformanceTests
             .OrderBy(key => key, StringComparer.Ordinal)
             .ToArray();
 
-    private static HashSet<string> ParseAaslIds(string output)
+    private static readonly Dictionary<string, SarifDiagnostic[]> ExpectedSampleDiagnostics = new(StringComparer.Ordinal)
     {
-        var ids = new HashSet<string>(StringComparer.Ordinal);
-        foreach (Match match in AaslId.Matches(output))
+        ["samples/Net10Example/Net10Example.csproj"] =
+        [
+            new("AASL0009", "LogMessages.cs", 14, 31),
+            new("AASL0011", "LogMessages.cs", 14, 40),
+            new("AASL0009", "LogMessages.cs", 17, 48),
+            new("AASL0009", "LogMessages.cs", 20, 29),
+            new("AASL0009", "LogMessages.cs", 26, 78),
+            new("AASL0009", "LogMessages.cs", 36, 81),
+            new("AASL0009", "LogMessages.cs", 42, 83),
+            new("AASL0009", "LogMessages.cs", 49, 82),
+            new("AASL0011", "LogMessages.cs", 49, 91),
+            new("AASL0009", "LogMessages.cs", 52, 50),
+            new("AASL0009", "Program.cs", 7, 27)
+        ],
+        ["samples/NetStandard20Example/NetStandard20Example.csproj"] =
+        [
+            new("AASL0009", "Sample.cs", 9, 39)
+        ],
+        ["samples/Net472Example/Net472Example.csproj"] =
+        [
+            new("AASL0009", "Sample.cs", 9, 39)
+        ]
+    };
+
+    private readonly record struct SarifDiagnostic(string RuleId, string FileName, int Line, int Column);
+
+    private static SarifDiagnostic[] ParseActiveAaslDiagnostics(string sarifPath)
+    {
+        using var stream = File.OpenRead(sarifPath);
+        using var doc = JsonDocument.Parse(stream);
+        var diagnostics = new List<SarifDiagnostic>();
+        if (!doc.RootElement.TryGetProperty("runs", out var runs))
         {
-            ids.Add(match.Groups[1].Value);
+            return [];
         }
 
-        return ids;
+        foreach (var run in runs.EnumerateArray())
+        {
+            if (!run.TryGetProperty("results", out var results))
+            {
+                continue;
+            }
+
+            foreach (var result in results.EnumerateArray())
+            {
+                if (!IsActiveSarifResult(result))
+                {
+                    continue;
+                }
+
+                if (!result.TryGetProperty("ruleId", out var ruleId) ||
+                    ruleId.GetString() is not { } id ||
+                    !id.StartsWith("AASL", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                Assert.True(
+                    TryReadPrimaryLocation(result, out var fileName, out var line, out var column),
+                    $"Active AASL diagnostic '{id}' has no readable primary location.");
+
+                diagnostics.Add(new SarifDiagnostic(id, fileName, line, column));
+            }
+        }
+
+        return Ordered(diagnostics);
+    }
+
+    private static SarifDiagnostic[] Ordered(IEnumerable<SarifDiagnostic> diagnostics) =>
+        diagnostics
+            .OrderBy(d => d.RuleId, StringComparer.Ordinal)
+            .ThenBy(d => d.FileName, StringComparer.Ordinal)
+            .ThenBy(d => d.Line)
+            .ThenBy(d => d.Column)
+            .ToArray();
+
+    private static bool TryReadPrimaryLocation(
+        JsonElement result,
+        out string fileName,
+        out int line,
+        out int column)
+    {
+        fileName = "";
+        line = 0;
+        column = 0;
+        if (!result.TryGetProperty("locations", out var locations) ||
+            locations.GetArrayLength() == 0)
+        {
+            return false;
+        }
+
+        var physical = locations[0].GetProperty("physicalLocation");
+        var uri = physical.GetProperty("artifactLocation").GetProperty("uri").GetString();
+        if (string.IsNullOrEmpty(uri))
+        {
+            return false;
+        }
+
+        var region = physical.GetProperty("region");
+        fileName = Path.GetFileName(uri.Replace('\\', '/'));
+        line = region.GetProperty("startLine").GetInt32();
+        column = region.GetProperty("startColumn").GetInt32();
+        return true;
+    }
+
+    private static bool IsActiveSarifResult(JsonElement result)
+    {
+        if (!result.TryGetProperty("suppressions", out var suppressions) ||
+            suppressions.ValueKind != JsonValueKind.Array)
+        {
+            return true;
+        }
+
+        return suppressions.GetArrayLength() == 0;
     }
 
     private static string Pack()
