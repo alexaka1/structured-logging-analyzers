@@ -24,8 +24,6 @@ Use the latest version from NuGet. `x.y.z` is a placeholder.
 dotnet package add Alexaka1.Analyzers.StructuredLogging
 ```
 
-Add `--prerelease` when the current version is a preview.
-
 Central package management:
 
 ```xml

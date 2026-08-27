@@ -25,8 +25,6 @@ Use the latest version from [NuGet](https://www.nuget.org/packages/Alexaka1.Anal
 dotnet add package Alexaka1.Analyzers.StructuredLogging
 ```
 
-Add `--prerelease` when the current version is a preview.
-
 ## Recommended Microsoft analyzers
 
 > [!TIP]
