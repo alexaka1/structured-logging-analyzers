@@ -5,24 +5,20 @@ namespace Alexaka1.Analyzers.StructuredLogging.Recognition;
 
 internal readonly struct LoggerMessageTemplate
 {
-    public LoggerMessageTemplate(AttributeSyntax attribute, ExpressionSyntax? expression, string text)
+    public LoggerMessageTemplate(AttributeSyntax attribute, ExpressionSyntax? expression)
     {
         Attribute = attribute;
         Expression = expression;
-        Text = text;
     }
 
     public AttributeSyntax Attribute { get; }
 
     public ExpressionSyntax? Expression { get; }
-
-    public string Text { get; }
 }
 
 internal static class LoggerMessageAttributeReader
 {
     public static bool TryGet(
-        SemanticModel model,
         IMethodSymbol method,
         KnownSymbols known,
         CancellationToken cancellationToken,
@@ -43,8 +39,7 @@ internal static class LoggerMessageAttributeReader
             }
 
             var expression = FindMessageExpression(attribute, syntax);
-            var text = ReadMessageText(model, attribute, expression, cancellationToken);
-            template = new LoggerMessageTemplate(syntax, expression, text);
+            template = new LoggerMessageTemplate(syntax, expression);
             return true;
         }
 
@@ -135,52 +130,5 @@ internal static class LoggerMessageAttributeReader
         }
 
         return last;
-    }
-
-    private static string ReadMessageText(
-        SemanticModel model,
-        AttributeData data,
-        ExpressionSyntax? expression,
-        CancellationToken cancellationToken)
-    {
-        if (expression is not null)
-        {
-            var constant = model.GetConstantValue(expression, cancellationToken);
-            if (constant.HasValue && constant.Value is string fromExpression)
-            {
-                return fromExpression;
-            }
-        }
-
-        foreach (var named in data.NamedArguments)
-        {
-            if (named.Key == "Message" && named.Value.Value is string namedMessage)
-            {
-                return namedMessage;
-            }
-        }
-
-        var ctor = data.AttributeConstructor;
-        if (ctor is not null)
-        {
-            for (var i = 0; i < ctor.Parameters.Length && i < data.ConstructorArguments.Length; i++)
-            {
-                if (string.Equals(ctor.Parameters[i].Name, "message", StringComparison.OrdinalIgnoreCase) &&
-                    data.ConstructorArguments[i].Value is string ctorMessage)
-                {
-                    return ctorMessage;
-                }
-            }
-        }
-
-        for (var i = data.ConstructorArguments.Length - 1; i >= 0; i--)
-        {
-            if (data.ConstructorArguments[i].Value is string fallback)
-            {
-                return fallback;
-            }
-        }
-
-        return string.Empty;
     }
 }

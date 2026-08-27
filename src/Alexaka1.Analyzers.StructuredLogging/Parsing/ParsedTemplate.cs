@@ -3,27 +3,22 @@ namespace Alexaka1.Analyzers.StructuredLogging.Parsing;
 internal sealed class ParsedTemplate
 {
     public static ParsedTemplate Empty { get; } = new(
-        string.Empty,
         Array.Empty<PropertyHole>(),
         namedProperties: null,
         positionalProperties: null,
         isMixed: false);
 
     public ParsedTemplate(
-        string text,
         PropertyHole[] properties,
         PropertyHole[]? namedProperties,
         PropertyHole[]? positionalProperties,
         bool isMixed)
     {
-        Text = text;
         Properties = properties;
         NamedProperties = namedProperties;
         PositionalProperties = positionalProperties;
         IsMixed = isMixed;
     }
-
-    public string Text { get; }
 
     public PropertyHole[] Properties { get; }
 

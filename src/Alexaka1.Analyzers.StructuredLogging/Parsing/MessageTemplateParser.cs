@@ -41,7 +41,7 @@ internal static class MessageTemplateParser
             }
         }
 
-        return Classify(template, holes);
+        return Classify(holes);
     }
 
     private static int FindUnescapedOpenBrace(string template, int start)
@@ -252,11 +252,11 @@ internal static class MessageTemplateParser
         return char.IsLetterOrDigit(c) || char.IsPunctuation(c) || c == ' ' || c == '+';
     }
 
-    private static ParsedTemplate Classify(string text, List<PropertyHole> holes)
+    private static ParsedTemplate Classify(List<PropertyHole> holes)
     {
         if (holes.Count == 0)
         {
-            return new ParsedTemplate(text, Array.Empty<PropertyHole>(), null, null, isMixed: false);
+            return new ParsedTemplate(Array.Empty<PropertyHole>(), null, null, isMixed: false);
         }
 
         var properties = holes.ToArray();
@@ -276,11 +276,10 @@ internal static class MessageTemplateParser
 
         if (allPositional)
         {
-            return new ParsedTemplate(text, properties, namedProperties: null, positionalProperties: properties, isMixed: false);
+            return new ParsedTemplate(properties, namedProperties: null, positionalProperties: properties, isMixed: false);
         }
 
         return new ParsedTemplate(
-            text,
             properties,
             namedProperties: properties,
             positionalProperties: null,
