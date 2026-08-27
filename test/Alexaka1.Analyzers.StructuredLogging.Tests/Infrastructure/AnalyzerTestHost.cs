@@ -24,10 +24,11 @@ internal static class AnalyzerTestHost
         LanguageVersion languageVersion = LanguageVersion.Latest,
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
         ImmutableArray<MetadataReference>? references = null,
-        bool requireSuccessfulCompilation = false)
+        bool requireSuccessfulCompilation = false,
+        string? sourcePath = null)
     {
         var (source, expected) = Markup.Parse(markedSource);
-        return VerifyAsync(source, expected, editorConfig, languageVersion, additionalSources, references, requireSuccessfulCompilation);
+        return VerifyAsync(source, expected, editorConfig, languageVersion, additionalSources, references, requireSuccessfulCompilation, sourcePath);
     }
 
     public static async Task VerifyAsync(
@@ -37,7 +38,8 @@ internal static class AnalyzerTestHost
         LanguageVersion languageVersion = LanguageVersion.Latest,
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
         ImmutableArray<MetadataReference>? references = null,
-        bool requireSuccessfulCompilation = false)
+        bool requireSuccessfulCompilation = false,
+        string? sourcePath = null)
     {
         var diagnostics = await GetDiagnosticsAsync(
             source,
@@ -45,7 +47,8 @@ internal static class AnalyzerTestHost
             languageVersion,
             additionalSources,
             references,
-            requireSuccessfulCompilation).ConfigureAwait(false);
+            requireSuccessfulCompilation,
+            sourcePath).ConfigureAwait(false);
         var actual = diagnostics
             .Where(d => d.Id.StartsWith(DiagnosticIds.Prefix, StringComparison.Ordinal))
             .OrderBy(d => d.Location.SourceSpan.Start)
@@ -77,9 +80,10 @@ internal static class AnalyzerTestHost
         LanguageVersion languageVersion = LanguageVersion.Latest,
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
         ImmutableArray<MetadataReference>? references = null,
-        bool requireSuccessfulCompilation = false)
+        bool requireSuccessfulCompilation = false,
+        string? sourcePath = null)
     {
-        var (compilation, _, options) = CreateCompilation(source, editorConfig, languageVersion, additionalSources, references);
+        var (compilation, _, options) = CreateCompilation(source, editorConfig, languageVersion, additionalSources, references, sourcePath);
         if (requireSuccessfulCompilation)
         {
             AssertCompilationSucceeded(compilation, "Analyzer test compilation");
@@ -471,10 +475,11 @@ internal static class AnalyzerTestHost
         string? editorConfig,
         LanguageVersion languageVersion,
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
-        ImmutableArray<MetadataReference>? references = null)
+        ImmutableArray<MetadataReference>? references = null,
+        string? sourcePath = null)
     {
         var parseOptions = new CSharpParseOptions(languageVersion);
-        var tree = CSharpSyntaxTree.ParseText(source, parseOptions, path: "/0/Test.cs");
+        var tree = CSharpSyntaxTree.ParseText(source, parseOptions, path: sourcePath ?? "/0/Test.cs");
         var trees = new List<SyntaxTree> { tree };
         if (additionalSources is not null)
         {

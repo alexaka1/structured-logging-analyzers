@@ -214,6 +214,15 @@ This package recommends enabling the .NET SDK `CA*` / `SYSLIB10xx`
 logging rules if they are not already on; see
 `docs/microsoft-recommendations.md`.
 
+## Razor / Blazor
+
+Razor source-generated C# (`*_razor.g.cs`, `*.razor.g.cs`, and the `.cshtml`
+equivalents) is analyzed even though the SDK marks those trees as generated.
+Diagnostics from `@code` map back to the `.razor` file through `#line`
+directives. Code-behind `.razor.cs` files are ordinary C# and are analyzed
+the same way as other compilations. `LoggerMessage.g.cs` and other
+non-Razor generated files are still skipped.
+
 ## Diagnostic catalog
 
 | ID | Default | Message |

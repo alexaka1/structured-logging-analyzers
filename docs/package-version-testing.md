@@ -48,7 +48,7 @@ package version would get.
 | `Frameworks/LatestStablePackageTests.cs` | Always-run Facts against those `*Latest` constants. This is the suite that breaks when a new major ships a different API. |
 | `PackageVersionMatrix.cs` floors | Historical versions (Serilog 2/3, NLog 4, MEL 6/9, ZLogger 2, …). |
 | `Frameworks/PackageVersionMatrixTests.cs` | Same invocation shapes against each restored version, including floors and the current test-project pin. Compilation must succeed. |
-| `samples/` | Real SDK hosts (`net10.0`, `netstandard2.0`, `net472`). `Net472Example` covers Framework-shaped reference sets. Newer Roslyn ships with the SDK, not with the analyzer compile-time package. |
+| `samples/` | Real SDK hosts (`net10.0` console and Blazor, `netstandard2.0`, `net472`). `Net10BlazorExample` covers `.razor` `@code` and `.razor.cs` code-behind. `Net472Example` covers Framework-shaped reference sets. Newer Roslyn ships with the SDK, not with the analyzer compile-time package. |
 | `test/comparison/` | Frozen InspectCode parity corpus. Not a version matrix. |
 
 Do not add a test project per Serilog/NLog/MEL/ZLogger version.

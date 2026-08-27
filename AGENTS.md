@@ -6,7 +6,7 @@
 - `pack/Alexaka1.Analyzers.StructuredLogging`: Analyzer-only NuGet pack project (`Alexaka1.Analyzers.StructuredLogging`). No `lib/` assets.
 - `test/Alexaka1.Analyzers.StructuredLogging.Tests`: xUnit.net v3 tests hosted on .NET 10.
 - `test/comparison`: Optional InspectCode comparison against the published ReSharper marketplace plugin.
-- `samples/`: Consuming projects targeting `net10.0`, `netstandard2.0`, and SDK-style `net472`.
+- `samples/`: Consuming projects targeting `net10.0` (console and Blazor), `netstandard2.0`, and SDK-style `net472`.
 - `docs/`: Rule pages, compatibility notes, and the NuGet package readme. Root solution: `Alexaka1.Analyzers.StructuredLogging.slnx`.
 - `.changeset/`: Pending release notes consumed by Changesets.
 - `build/`: Release helper scripts (`version.sh`, `extract-changelog.sh`, `detect-duplicate-release.sh`).
@@ -14,7 +14,7 @@
 ## Build, Test, and Development
 - Test (native xUnit.net v3 runner): `dotnet run --project test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj -c Release --no-launch-profile`
 - Pack: `dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj -c Release`
-- Samples: `dotnet build samples/Net10Example/Net10Example.csproj -c Release`
+- Samples: `dotnet build samples/Net10Example/Net10Example.csproj -c Release` and `dotnet build samples/Net10BlazorExample/Net10BlazorExample.csproj -c Release`
 - Comparison (optional): `./test/comparison/run-comparison.sh`
 - Changeset (user-visible package changes): `pnpm changeset`
 

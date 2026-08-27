@@ -164,6 +164,7 @@ public sealed class PackageAndPerformanceTests
 
     [Theory]
     [InlineData("samples/Net10Example/Net10Example.csproj", "samples/Net10Example/bin/Release/net10.0", "Net10Example.dll")]
+    [InlineData("samples/Net10BlazorExample/Net10BlazorExample.csproj", "samples/Net10BlazorExample/bin/Release/net10.0", "Net10BlazorExample.dll")]
     [InlineData("samples/NetStandard20Example/NetStandard20Example.csproj", "samples/NetStandard20Example/bin/Release/netstandard2.0", "NetStandard20Example.dll")]
     [InlineData("samples/Net472Example/Net472Example.csproj", "samples/Net472Example/bin/Release/net472", "Net472Example.dll")]
     public void Sample_build_reports_aasl_diagnostics_and_does_not_copy_analyzer_assemblies(
@@ -295,6 +296,12 @@ public sealed class PackageAndPerformanceTests
             new("AASL0011", "LogMessages.cs", 49, 91),
             new("AASL0009", "LogMessages.cs", 52, 50),
             new("AASL0009", "Program.cs", 7, 27)
+        ],
+        ["samples/Net10BlazorExample/Net10BlazorExample.csproj"] =
+        [
+            new("AASL0009", "Counter.razor.cs", 17, 40),
+            new("AASL0011", "Counter.razor.cs", 17, 47),
+            new("AASL0009", "Home.razor", 17, 38)
         ],
         ["samples/NetStandard20Example/NetStandard20Example.csproj"] =
         [

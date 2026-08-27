@@ -225,6 +225,7 @@ test/
 
 samples/
   Net10Example/
+  Net10BlazorExample/
   NetStandard20Example/
   Net472Example/
 ```

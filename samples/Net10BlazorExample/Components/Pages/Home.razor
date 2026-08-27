@@ -1,0 +1,19 @@
+﻿@page "/"
+@inject ILogger<Home> Logger
+
+<PageTitle>Home</PageTitle>
+
+<h1>Structured logging sample</h1>
+
+<p>
+    <a href="/counter">Counter (code-behind)</a>
+</p>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Logger.LogInformation("Hello {Name}", "world");
+        // Intentional AASL0009: build-time diagnostic coverage for .razor @code.
+        Logger.LogInformation("Hello {name}", "world");
+    }
+}
