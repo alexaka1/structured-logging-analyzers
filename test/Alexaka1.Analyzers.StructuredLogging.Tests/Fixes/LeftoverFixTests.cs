@@ -357,6 +357,36 @@ public sealed class LeftoverFixTests
     }
 
     [Fact]
+    public Task AASL0005_preserves_trailing_argument_comments()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using System;
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Exception ex)
+                {
+                    logger.LogError("Failed {Op} {Error}", "save", {|AASL0005:ex|} /* keep */);
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using System;
+            using Microsoft.Extensions.Logging;
+            class C
+            {
+                void M(ILogger logger, Exception ex)
+                {
+                    logger.LogError(ex /* keep */, "Failed {Op}", "save");
+                }
+            }
+            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
+
+    [Fact]
     public Task AASL0005_interpolated_template_moves_exception_only()
     {
         return AnalyzerTestHost.VerifyFixAsync(

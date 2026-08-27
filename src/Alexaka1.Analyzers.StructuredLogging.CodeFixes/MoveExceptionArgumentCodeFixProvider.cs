@@ -199,7 +199,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         }
 
         args.RemoveAt(exceptionIndex);
-        var moved = exceptionArgument.WithNameColon(null);
+        var moved = RelocateExceptionArgument(invocation.ArgumentList.Arguments, exceptionIndex, exceptionArgument);
         args.Insert(templateIndex, moved);
         var separators = new SyntaxToken[args.Count - 1];
         for (var i = 0; i < separators.Length; i++)
@@ -210,6 +210,71 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
 
         return invocation.WithArgumentList(
             invocation.ArgumentList.WithArguments(SyntaxFactory.SeparatedList(args, separators)));
+    }
+
+    private static ArgumentSyntax RelocateExceptionArgument(
+        SeparatedSyntaxList<ArgumentSyntax> original,
+        int exceptionIndex,
+        ArgumentSyntax exceptionArgument)
+    {
+        var leadingComments = new List<SyntaxTrivia>();
+        AppendMultilineComments(leadingComments, exceptionArgument.GetLeadingTrivia());
+        if (exceptionIndex > 0)
+        {
+            AppendMultilineComments(leadingComments, original.GetSeparator(exceptionIndex - 1).TrailingTrivia);
+        }
+
+        var trailingComments = new List<SyntaxTrivia>();
+        AppendMultilineComments(trailingComments, exceptionArgument.GetTrailingTrivia());
+
+        return exceptionArgument.WithNameColon(null)
+            .WithLeadingTrivia(WrapComments(leadingComments, suffixSpace: true))
+            .WithTrailingTrivia(WrapComments(trailingComments, prefixSpace: true));
+    }
+
+    private static void AppendMultilineComments(List<SyntaxTrivia> comments, SyntaxTriviaList trivia)
+    {
+        foreach (var item in trivia)
+        {
+            if (item.IsKind(SyntaxKind.MultiLineCommentTrivia))
+            {
+                comments.Add(item);
+            }
+        }
+    }
+
+    private static SyntaxTriviaList WrapComments(
+        List<SyntaxTrivia> comments,
+        bool suffixSpace = false,
+        bool prefixSpace = false)
+    {
+        if (comments.Count == 0)
+        {
+            return default;
+        }
+
+        var trivia = new List<SyntaxTrivia>();
+        if (prefixSpace)
+        {
+            trivia.Add(SyntaxFactory.Space);
+        }
+
+        for (var i = 0; i < comments.Count; i++)
+        {
+            if (i > 0)
+            {
+                trivia.Add(SyntaxFactory.Space);
+            }
+
+            trivia.Add(comments[i]);
+        }
+
+        if (suffixSpace)
+        {
+            trivia.Add(SyntaxFactory.Space);
+        }
+
+        return SyntaxFactory.TriviaList(trivia);
     }
 
     private static int HoleIndexForException(
