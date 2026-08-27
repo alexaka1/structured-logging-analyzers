@@ -186,30 +186,36 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         ArgumentSyntax templateArgument,
         ArgumentSyntax exceptionArgument)
     {
-        var args = new List<ArgumentSyntax>(invocation.ArgumentList.Arguments.Count);
-        foreach (var argument in invocation.ArgumentList.Arguments)
-        {
-            args.Add(argument);
-        }
-        var exceptionIndex = args.IndexOf(exceptionArgument);
-        var templateIndex = args.IndexOf(templateArgument);
+        var original = invocation.ArgumentList.Arguments;
+        var exceptionIndex = original.IndexOf(exceptionArgument);
+        var templateIndex = original.IndexOf(templateArgument);
         if (exceptionIndex < 0 || templateIndex < 0 || exceptionIndex <= templateIndex)
         {
             return null;
         }
 
-        args.RemoveAt(exceptionIndex);
-        var moved = RelocateExceptionArgument(invocation.ArgumentList.Arguments, exceptionIndex, exceptionArgument);
-        args.Insert(templateIndex, moved);
-        var separators = new SyntaxToken[args.Count - 1];
-        for (var i = 0; i < separators.Length; i++)
+        var nodes = new List<ArgumentSyntax>(original.Count);
+        foreach (var argument in original)
         {
-            separators[i] = SyntaxFactory.Token(SyntaxKind.CommaToken)
-                .WithTrailingTrivia(SyntaxFactory.Space);
+            nodes.Add(argument);
         }
 
+        var separators = new List<SyntaxToken>(original.SeparatorCount);
+        foreach (var separator in original.GetSeparators())
+        {
+            separators.Add(separator);
+        }
+
+        var moved = RelocateExceptionArgument(original, exceptionIndex, exceptionArgument);
+        nodes.RemoveAt(exceptionIndex);
+        separators.RemoveAt(exceptionIndex - 1);
+        nodes.Insert(templateIndex, moved);
+        separators.Insert(
+            templateIndex,
+            SyntaxFactory.Token(SyntaxKind.CommaToken).WithTrailingTrivia(SyntaxFactory.Space));
+
         return invocation.WithArgumentList(
-            invocation.ArgumentList.WithArguments(SyntaxFactory.SeparatedList(args, separators)));
+            invocation.ArgumentList.WithArguments(SyntaxFactory.SeparatedList(nodes, separators)));
     }
 
     private static ArgumentSyntax RelocateExceptionArgument(
@@ -217,64 +223,142 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         int exceptionIndex,
         ArgumentSyntax exceptionArgument)
     {
-        var leadingComments = new List<SyntaxTrivia>();
-        AppendMultilineComments(leadingComments, exceptionArgument.GetLeadingTrivia());
+        var leading = new List<SyntaxTrivia>();
         if (exceptionIndex > 0)
         {
-            AppendMultilineComments(leadingComments, original.GetSeparator(exceptionIndex - 1).TrailingTrivia);
+            AppendCommentTrivia(leading, original.GetSeparator(exceptionIndex - 1).TrailingTrivia);
         }
 
-        var trailingComments = new List<SyntaxTrivia>();
-        AppendMultilineComments(trailingComments, exceptionArgument.GetTrailingTrivia());
+        AppendLeadingTrivia(leading, exceptionArgument.GetLeadingTrivia());
+
+        var trailing = new List<SyntaxTrivia>();
+        AppendCommentTrivia(trailing, exceptionArgument.GetTrailingTrivia());
+        PromoteSingleLineComments(trailing, leading);
+        EnsureLeadingCommentSpacing(leading);
+        EnsureTrailingCommentSpacing(trailing);
 
         return exceptionArgument.WithNameColon(null)
-            .WithLeadingTrivia(WrapComments(leadingComments, suffixSpace: true))
-            .WithTrailingTrivia(WrapComments(trailingComments, prefixSpace: true));
+            .WithLeadingTrivia(SyntaxFactory.TriviaList(leading))
+            .WithTrailingTrivia(SyntaxFactory.TriviaList(trailing));
     }
 
-    private static void AppendMultilineComments(List<SyntaxTrivia> comments, SyntaxTriviaList trivia)
+    private static void AppendCommentTrivia(List<SyntaxTrivia> comments, SyntaxTriviaList trivia)
+    {
+        for (var i = 0; i < trivia.Count; i++)
+        {
+            var item = trivia[i];
+            if (!item.IsKind(SyntaxKind.MultiLineCommentTrivia) &&
+                !item.IsKind(SyntaxKind.SingleLineCommentTrivia))
+            {
+                continue;
+            }
+
+            comments.Add(item);
+            if (!item.IsKind(SyntaxKind.SingleLineCommentTrivia))
+            {
+                continue;
+            }
+
+            if (i + 1 < trivia.Count && trivia[i + 1].IsKind(SyntaxKind.EndOfLineTrivia))
+            {
+                comments.Add(trivia[++i]);
+                if (i + 1 < trivia.Count && trivia[i + 1].IsKind(SyntaxKind.WhitespaceTrivia))
+                {
+                    comments.Add(trivia[++i]);
+                }
+            }
+            else
+            {
+                comments.Add(SyntaxFactory.EndOfLine("\n"));
+            }
+        }
+    }
+
+    private static void AppendLeadingTrivia(List<SyntaxTrivia> comments, SyntaxTriviaList trivia)
     {
         foreach (var item in trivia)
         {
-            if (item.IsKind(SyntaxKind.MultiLineCommentTrivia))
+            if (item.IsKind(SyntaxKind.MultiLineCommentTrivia) ||
+                item.IsKind(SyntaxKind.SingleLineCommentTrivia) ||
+                item.IsKind(SyntaxKind.EndOfLineTrivia) ||
+                item.IsKind(SyntaxKind.WhitespaceTrivia))
             {
                 comments.Add(item);
             }
         }
     }
 
-    private static SyntaxTriviaList WrapComments(
-        List<SyntaxTrivia> comments,
-        bool suffixSpace = false,
-        bool prefixSpace = false)
+    private static void PromoteSingleLineComments(List<SyntaxTrivia> trailing, List<SyntaxTrivia> leading)
+    {
+        var kept = new List<SyntaxTrivia>();
+        for (var i = 0; i < trailing.Count; i++)
+        {
+            var item = trailing[i];
+            if (!item.IsKind(SyntaxKind.SingleLineCommentTrivia))
+            {
+                if (!item.IsKind(SyntaxKind.EndOfLineTrivia))
+                {
+                    kept.Add(item);
+                }
+
+                continue;
+            }
+
+            leading.Add(item);
+            if (i + 1 < trailing.Count && trailing[i + 1].IsKind(SyntaxKind.EndOfLineTrivia))
+            {
+                leading.Add(trailing[++i]);
+                if (i + 1 < trailing.Count && trailing[i + 1].IsKind(SyntaxKind.WhitespaceTrivia))
+                {
+                    leading.Add(trailing[++i]);
+                }
+            }
+            else
+            {
+                leading.Add(SyntaxFactory.EndOfLine("\n"));
+            }
+        }
+
+        trailing.Clear();
+        trailing.AddRange(kept);
+    }
+
+    private static void EnsureLeadingCommentSpacing(List<SyntaxTrivia> comments)
     {
         if (comments.Count == 0)
         {
-            return default;
+            return;
         }
 
-        var trivia = new List<SyntaxTrivia>();
-        if (prefixSpace)
+        var last = comments[comments.Count - 1];
+        if (last.IsKind(SyntaxKind.EndOfLineTrivia) || last.IsKind(SyntaxKind.WhitespaceTrivia))
         {
-            trivia.Add(SyntaxFactory.Space);
+            return;
         }
 
-        for (var i = 0; i < comments.Count; i++)
+        comments.Add(last.IsKind(SyntaxKind.SingleLineCommentTrivia)
+            ? SyntaxFactory.EndOfLine("\n")
+            : SyntaxFactory.Space);
+    }
+
+    private static void EnsureTrailingCommentSpacing(List<SyntaxTrivia> comments)
+    {
+        if (comments.Count == 0)
         {
-            if (i > 0)
-            {
-                trivia.Add(SyntaxFactory.Space);
-            }
-
-            trivia.Add(comments[i]);
+            return;
         }
 
-        if (suffixSpace)
+        if (!comments[0].IsKind(SyntaxKind.WhitespaceTrivia) &&
+            !comments[0].IsKind(SyntaxKind.EndOfLineTrivia))
         {
-            trivia.Add(SyntaxFactory.Space);
+            comments.Insert(0, SyntaxFactory.Space);
         }
 
-        return SyntaxFactory.TriviaList(trivia);
+        var last = comments[comments.Count - 1];
+        if (last.IsKind(SyntaxKind.SingleLineCommentTrivia))
+        {
+            comments.Add(SyntaxFactory.EndOfLine("\n"));
+        }
     }
 
     private static int HoleIndexForException(
