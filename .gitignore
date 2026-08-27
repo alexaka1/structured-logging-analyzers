@@ -61,8 +61,6 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
-
-# Per-project compiler ErrorLog SARIF
 dotnet-build-error.sarif
 
 # ASP.NET Scaffolding

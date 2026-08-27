@@ -51,9 +51,6 @@ jobs:
       - name: Sample TFM matrix
         run: |
           set -euo pipefail
-
-          # Per-project relative ErrorLog so referenced analyzer projects do not
-          # overwrite the sample log. Escape the comma as %2c for -p:.
           build_sample() {
             local project="$1"
             dotnet clean "$project" -c Release
@@ -67,7 +64,7 @@ jobs:
 
       - name: Assert sample build diagnostics
         # Complements PackageAndPerformanceTests so CI fails even if the test
-        # host is skipped. Honor in-source suppressions (active results only).
+        # host is skipped, using the logs from the Sample TFM matrix step.
         run: |
           set -euo pipefail
           assert_rule() {
