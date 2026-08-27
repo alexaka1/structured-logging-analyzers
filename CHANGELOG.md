@@ -1,5 +1,11 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.6
+
+### Patch Changes
+
+- [#44](https://github.com/alexaka1/structured-logging-analyzers/pull/44) [`2501179`](https://github.com/alexaka1/structured-logging-analyzers/commit/250117977dac1d5d2ac316cdfd940263bd59339d) Thanks [@alexaka1](https://github.com/alexaka1)! - Use a version placeholder in README and NuGet install snippets so they do not need to be updated on each release.
+
 ## 0.1.0-preview.5
 
 ### Minor Changes
