@@ -22,3 +22,6 @@ Please:
 - Add a changeset (`pnpm changeset`) when a pull request changes the
   published `Alexaka1.Analyzers.StructuredLogging` package. CI versioning and GitHub
   releases are driven by those files.
+- Do not pin a package version in `README.md` or `docs/package-readme.md`
+  install snippets. Keep `x.y.z` as a placeholder so those docs do not
+  need a release bump.

@@ -11,13 +11,18 @@ This package inspects structured logging templates in any C# IDE or
 See [PROVENANCE.md](PROVENANCE.md) and [docs/compatibility.md](docs/compatibility.md).
 
 Package ID: `Alexaka1.Analyzers.StructuredLogging` (diagnostic prefix `AASL`).
+Use the latest version from [NuGet](https://www.nuget.org/packages/Alexaka1.Analyzers.StructuredLogging). `x.y.z` is a placeholder.
 
 ```xml
 <ItemGroup>
   <PackageReference Include="Alexaka1.Analyzers.StructuredLogging"
-                    Version="0.1.0-preview.2"
+                    Version="x.y.z"
                     PrivateAssets="all" />
 </ItemGroup>
+```
+
+```shell
+dotnet add package Alexaka1.Analyzers.StructuredLogging
 ```
 
 ## Recommended Microsoft analyzers
