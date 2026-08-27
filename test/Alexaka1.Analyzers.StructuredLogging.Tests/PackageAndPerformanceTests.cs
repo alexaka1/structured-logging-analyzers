@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.Text.Json;
 
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 
@@ -24,7 +24,6 @@ public sealed class PackageAndPerformanceTests
     private static readonly TimeSpan MaxAnalyzerExecution = TimeSpan.FromSeconds(5);
     private const long UnrelatedAllocationLimitBytes = 48 * 1024 * 1024;
     private const long LoggingAllocationLimitBytes = 32 * 1024 * 1024;
-    private static readonly Regex AaslId = new(@"\b(AASL\d{4})\b", RegexOptions.CultureInvariant);
     private readonly ITestOutputHelper _output;
 
     public PackageAndPerformanceTests(ITestOutputHelper output)
@@ -177,12 +176,25 @@ public sealed class PackageAndPerformanceTests
         var project = Path.Combine(repo, relativeProject.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(File.Exists(project), "Sample project missing: " + project);
 
-        var log = RunDotNet($"build \"{project}\" -c Release --no-incremental --nologo");
-
-        var ids = ParseAaslIds(log);
-        foreach (var expected in expectedIds)
+        var sarif = Path.Combine(Path.GetTempPath(), $"sla-sample-{Guid.NewGuid():N}.sarif");
+        try
         {
-            Assert.True(ids.Contains(expected), $"Expected {expected} in build output. Reported: {string.Join(", ", ids)}\n{log}");
+            var errorLog = Uri.EscapeDataString($"{sarif},version=2.1");
+            var log = RunDotNet($"build \"{project}\" -c Release --no-incremental --nologo -p:ErrorLog={errorLog}");
+            Assert.True(File.Exists(sarif), $"Expected ErrorLog SARIF at {sarif}. Build output:\n{log}");
+
+            var ids = ParseAaslIdsFromSarif(sarif);
+            foreach (var expected in expectedIds)
+            {
+                Assert.True(ids.Contains(expected), $"Expected {expected} in {sarif}. Reported: {string.Join(", ", ids)}\n{log}");
+            }
+        }
+        finally
+        {
+            if (File.Exists(sarif))
+            {
+                File.Delete(sarif);
+            }
         }
 
         var output = Path.Combine(repo, relativeOutput.Replace('/', Path.DirectorySeparatorChar));
@@ -272,12 +284,32 @@ public sealed class PackageAndPerformanceTests
             .OrderBy(key => key, StringComparer.Ordinal)
             .ToArray();
 
-    private static HashSet<string> ParseAaslIds(string output)
+    private static HashSet<string> ParseAaslIdsFromSarif(string sarifPath)
     {
+        using var stream = File.OpenRead(sarifPath);
+        using var doc = JsonDocument.Parse(stream);
         var ids = new HashSet<string>(StringComparer.Ordinal);
-        foreach (Match match in AaslId.Matches(output))
+        if (!doc.RootElement.TryGetProperty("runs", out var runs))
         {
-            ids.Add(match.Groups[1].Value);
+            return ids;
+        }
+
+        foreach (var run in runs.EnumerateArray())
+        {
+            if (!run.TryGetProperty("results", out var results))
+            {
+                continue;
+            }
+
+            foreach (var result in results.EnumerateArray())
+            {
+                if (result.TryGetProperty("ruleId", out var ruleId) &&
+                    ruleId.GetString() is { } id &&
+                    id.StartsWith("AASL", StringComparison.Ordinal))
+                {
+                    ids.Add(id);
+                }
+            }
         }
 
         return ids;

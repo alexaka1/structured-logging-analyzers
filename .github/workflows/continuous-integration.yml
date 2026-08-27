@@ -52,19 +52,41 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts
-          dotnet build samples/Net10Example/Net10Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/Net10Example-build.log
-          dotnet build samples/NetStandard20Example/NetStandard20Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/NetStandard20Example-build.log
-          dotnet build samples/Net472Example/Net472Example.csproj -c Release --no-incremental 2>&1 | tee artifacts/Net472Example-build.log
+
+          # ErrorLog is the C# compiler SARIF log. -property values are
+          # comma/semicolon lists and use %xx escapes, so URI-encode the
+          # entire value (path plus version=2.1).
+          # https://learn.microsoft.com/dotnet/csharp/language-reference/compiler-options/errors-warnings#errorlog
+          # https://learn.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
+          # https://learn.microsoft.com/visualstudio/msbuild/how-to-escape-special-characters-in-msbuild
+          build_sample() {
+            local project="$1"
+            local name="$2"
+            local sarif="${PWD}/artifacts/${name}.sarif"
+            local errorlog
+            errorlog="$(jq -nr --arg v "${sarif},version=2.1" '$v | @uri')"
+            dotnet build "$project" -c Release --no-incremental -p:ErrorLog="$errorlog"
+          }
+
+          build_sample samples/Net10Example/Net10Example.csproj Net10Example
+          build_sample samples/NetStandard20Example/NetStandard20Example.csproj NetStandard20Example
+          build_sample samples/Net472Example/Net472Example.csproj Net472Example
 
       - name: Assert sample build diagnostics
         # Complements PackageAndPerformanceTests so CI fails even if the test
-        # host is skipped, using the logs from the Sample TFM matrix step.
+        # host is skipped, using ErrorLog SARIF from the Sample TFM matrix step.
         run: |
           set -euo pipefail
-          grep -E 'warning AASL0009' artifacts/Net10Example-build.log
-          grep -E 'warning AASL0011' artifacts/Net10Example-build.log
-          grep -E 'warning AASL0009' artifacts/NetStandard20Example-build.log
-          grep -E 'warning AASL0009' artifacts/Net472Example-build.log
+          assert_rule() {
+            local sarif="$1"
+            local id="$2"
+            jq -e --arg id "$id" 'any(.runs[]?.results[]?; .ruleId == $id)' "$sarif"
+          }
+
+          assert_rule artifacts/Net10Example.sarif AASL0009
+          assert_rule artifacts/Net10Example.sarif AASL0011
+          assert_rule artifacts/NetStandard20Example.sarif AASL0009
+          assert_rule artifacts/Net472Example.sarif AASL0009
 
       - name: Upload nupkg
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
