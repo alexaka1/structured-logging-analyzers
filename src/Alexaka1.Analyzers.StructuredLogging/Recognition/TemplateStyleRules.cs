@@ -289,20 +289,13 @@ internal static class TemplateStyleRules
     {
         leafNames = new string?[named.Length];
         qualifiedNames = new string?[named.Length];
-        var usedLeaf = new HashSet<string>(StringComparer.Ordinal);
+        var usedPrimary = new HashSet<string>(StringComparer.Ordinal);
         var usedQualified = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < named.Length; i++)
         {
-            if (skipHole?.Invoke(named[i]) == true)
+            if (skipHole?.Invoke(named[i]) == true || !duplicate[i])
             {
-                usedLeaf.Add(named[i].PropertyName);
-                usedQualified.Add(named[i].PropertyName);
-                continue;
-            }
-
-            if (!duplicate[i])
-            {
-                usedLeaf.Add(named[i].PropertyName);
+                usedPrimary.Add(named[i].PropertyName);
                 usedQualified.Add(named[i].PropertyName);
                 continue;
             }
@@ -310,11 +303,26 @@ internal static class TemplateStyleRules
             var expression = argumentExpressions != null && i < argumentExpressions.Count
                 ? argumentExpressions[i]
                 : null;
+            var current = named[i].PropertyName;
             var leaf = SuggestDuplicateName(named[i], expression, style, ExpressionPropertyName.Kind.Leaf);
-            leafNames[i] = ExpressionPropertyName.Uniquify(leaf, usedLeaf);
-
             var qualified = SuggestDuplicateName(named[i], expression, style, ExpressionPropertyName.Kind.Qualified);
-            qualifiedNames[i] = ExpressionPropertyName.Uniquify(qualified, usedQualified);
+            var primaryRaw = !string.Equals(leaf, current, StringComparison.Ordinal)
+                ? leaf
+                : qualified;
+            var primary = ExpressionPropertyName.Uniquify(primaryRaw, usedPrimary);
+            leafNames[i] = primary;
+            usedQualified.Add(primary);
+
+            if (!string.Equals(qualified, leaf, StringComparison.Ordinal) &&
+                !string.Equals(qualified, current, StringComparison.Ordinal) &&
+                !string.Equals(qualified, primary, StringComparison.Ordinal))
+            {
+                qualifiedNames[i] = ExpressionPropertyName.Uniquify(qualified, usedQualified);
+            }
+            else
+            {
+                qualifiedNames[i] = primary;
+            }
         }
     }
 

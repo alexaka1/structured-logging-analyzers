@@ -58,5 +58,5 @@ See the [source-generator diagnostic index](https://learn.microsoft.com/dotnet/f
 [Meziantou.Analyzer](https://github.com/meziantou/Meziantou.Analyzer) `MA0180`
 can rewrite a mismatched `ILogger<T>` category. This package’s `AASL0004`
 flags the same class of mistake and now includes a containing-type rewrite
-for constructor parameters (including matching fields/properties) and
-`ForContext<T>()`.
+for `ILogger<T>` declarations (primary-constructor parameters, constructor
+parameters, fields, and properties) and `ForContext<T>()`.

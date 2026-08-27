@@ -199,7 +199,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         }
 
         args.RemoveAt(exceptionIndex);
-        var moved = exceptionArgument.WithNameColon(null).WithLeadingTrivia().WithTrailingTrivia();
+        var moved = exceptionArgument.WithNameColon(null);
         args.Insert(templateIndex, moved);
         var separators = new SyntaxToken[args.Count - 1];
         for (var i = 0; i < separators.Length; i++)

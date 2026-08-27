@@ -490,4 +490,34 @@ public sealed class FixAllTests
             typeof(RenameTemplatePropertyCodeFixProvider),
             codeActionIndex: 1);
     }
+
+    [Fact]
+    public Task Uniquify_duplicate_properties_mixed_primary_names()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Request request, string requestId)
+                {
+                    Log.Logger.Information("{|AASL0006:{Id}|} {|AASL0006:{Id}|}", request.Id, requestId);
+                }
+            }
+            public sealed class Request { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Request request, string requestId)
+                {
+                    Log.Logger.Information("{RequestId} {RequestId2}", request.Id, requestId);
+                }
+            }
+            public sealed class Request { public int Id { get; set; } }
+            """,
+            "AASL0006",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
 }

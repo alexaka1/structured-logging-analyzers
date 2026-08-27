@@ -579,7 +579,7 @@ Shipped outside original-plugin parity:
 - AASL0008: rename positional holes from argument expressions when an identifier can be derived. Qualified names are a second action when they differ.
 - AASL0003: add `destructureObjects: true` on two-argument `LogContext.PushProperty`.
 - AASL0004: replace mismatched `ILogger<T>` / `ForContext<T>` with the containing type.
-- AASL0005: move an exception argument before the template and remove the aligned hole when the template is constant.
+- AASL0005: move an exception argument before the template and remove the aligned hole when the template is a mappable constant.
 - AASL0006: unique names for duplicate properties on logging invocations (not `[LoggerMessage]`).
 
 Kept without a code fix:
