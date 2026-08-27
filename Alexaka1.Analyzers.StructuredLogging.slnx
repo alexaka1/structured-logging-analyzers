@@ -3,6 +3,7 @@
     <Project Path="pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj" />
   </Folder>
   <Folder Name="/samples/">
+    <Project Path="samples/Net10BlazorExample/Net10BlazorExample.csproj" />
     <Project Path="samples/Net10Example/Net10Example.csproj" />
     <Project Path="samples/Net472Example/Net472Example.csproj" />
     <Project Path="samples/NetStandard20Example/NetStandard20Example.csproj" />

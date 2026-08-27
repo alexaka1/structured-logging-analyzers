@@ -24,10 +24,11 @@ internal static class AnalyzerTestHost
         LanguageVersion languageVersion = LanguageVersion.Latest,
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
         ImmutableArray<MetadataReference>? references = null,
-        bool requireSuccessfulCompilation = false)
+        bool requireSuccessfulCompilation = false,
+        string? sourcePath = null)
     {
         var (source, expected) = Markup.Parse(markedSource);
-        return VerifyAsync(source, expected, editorConfig, languageVersion, additionalSources, references, requireSuccessfulCompilation);
+        return VerifyAsync(source, expected, editorConfig, languageVersion, additionalSources, references, requireSuccessfulCompilation, sourcePath);
     }
 
     public static async Task VerifyAsync(
@@ -37,7 +38,8 @@ internal static class AnalyzerTestHost
         LanguageVersion languageVersion = LanguageVersion.Latest,
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
         ImmutableArray<MetadataReference>? references = null,
-        bool requireSuccessfulCompilation = false)
+        bool requireSuccessfulCompilation = false,
+        string? sourcePath = null)
     {
         var diagnostics = await GetDiagnosticsAsync(
             source,
@@ -45,7 +47,8 @@ internal static class AnalyzerTestHost
             languageVersion,
             additionalSources,
             references,
-            requireSuccessfulCompilation).ConfigureAwait(false);
+            requireSuccessfulCompilation,
+            sourcePath).ConfigureAwait(false);
         var actual = diagnostics
             .Where(d => d.Id.StartsWith(DiagnosticIds.Prefix, StringComparison.Ordinal))
             .OrderBy(d => d.Location.SourceSpan.Start)
@@ -77,9 +80,10 @@ internal static class AnalyzerTestHost
         LanguageVersion languageVersion = LanguageVersion.Latest,
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
         ImmutableArray<MetadataReference>? references = null,
-        bool requireSuccessfulCompilation = false)
+        bool requireSuccessfulCompilation = false,
+        string? sourcePath = null)
     {
-        var (compilation, _, options) = CreateCompilation(source, editorConfig, languageVersion, additionalSources, references);
+        var (compilation, _, options) = CreateCompilation(source, editorConfig, languageVersion, additionalSources, references, sourcePath);
         if (requireSuccessfulCompilation)
         {
             AssertCompilationSucceeded(compilation, "Analyzer test compilation");
@@ -196,15 +200,16 @@ internal static class AnalyzerTestHost
         string? editorConfig = null,
         int codeActionIndex = 0,
         int? expectedActionCount = null,
-        int? remainingCount = null)
+        int? remainingCount = null,
+        string? sourcePath = null)
     {
         var (source, expected) = Markup.Parse(markedSource);
-        var diagnostics = await GetDiagnosticsAsync(source, editorConfig).ConfigureAwait(false);
+        var diagnostics = await GetDiagnosticsAsync(source, editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
         var matching = diagnostics.FirstOrDefault(d => d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan))
                        ?? diagnostics.FirstOrDefault(d => d.Id == diagnosticId);
         Assert.NotNull(matching);
 
-        var document = CreateDocument(source, editorConfig);
+        var document = CreateDocument(source, editorConfig, sourcePath);
         var beforeErrors = await GetCompilerErrorKeysAsync(document).ConfigureAwait(false);
         var beforeCount = diagnostics.Count(d => d.Id == diagnosticId);
         var provider = (CodeFixProvider)Activator.CreateInstance(codeFixType)!;
@@ -219,7 +224,8 @@ internal static class AnalyzerTestHost
                 diagnosticId,
                 beforeCount,
                 remainingCount: remainingCount ?? beforeCount - 1,
-                beforeErrors)
+                beforeErrors,
+                sourcePath)
             .ConfigureAwait(false);
     }
 
@@ -227,15 +233,16 @@ internal static class AnalyzerTestHost
         string markedSource,
         string diagnosticId,
         Type codeFixType,
-        string? editorConfig = null)
+        string? editorConfig = null,
+        string? sourcePath = null)
     {
         var (source, expected) = Markup.Parse(markedSource);
-        var diagnostics = await GetDiagnosticsAsync(source, editorConfig).ConfigureAwait(false);
+        var diagnostics = await GetDiagnosticsAsync(source, editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
         var matching = diagnostics.FirstOrDefault(d => d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan))
                        ?? diagnostics.FirstOrDefault(d => d.Id == diagnosticId);
         Assert.NotNull(matching);
 
-        var document = CreateDocument(source, editorConfig);
+        var document = CreateDocument(source, editorConfig, sourcePath);
         var provider = (CodeFixProvider)Activator.CreateInstance(codeFixType)!;
         // Hosts only invoke a provider for IDs it advertises. Providers that do not
         // filter internally would still register actions if called directly.
@@ -260,10 +267,11 @@ internal static class AnalyzerTestHost
         string diagnosticId,
         Type codeFixType,
         string? editorConfig = null,
-        int codeActionIndex = 0)
+        int codeActionIndex = 0,
+        string? sourcePath = null)
     {
         var (source, _) = Markup.Parse(markedSource);
-        var document = CreateDocument(source, editorConfig);
+        var document = CreateDocument(source, editorConfig, sourcePath);
         var diagnostics = await GetAnalyzerDiagnosticsAsync(document).ConfigureAwait(false);
         var matching = diagnostics.Where(d => d.Id == diagnosticId).ToArray();
         Assert.True(matching.Length >= 2, "FixAll tests require at least two diagnostics of the target id.");
@@ -306,7 +314,8 @@ internal static class AnalyzerTestHost
                 diagnosticId,
                 matching.Length,
                 remainingCount: 0,
-                beforeErrors)
+                beforeErrors,
+                sourcePath)
             .ConfigureAwait(false);
 
         var remainingDiagnostics = await GetAnalyzerDiagnosticsAsync(updated).ConfigureAwait(false);
@@ -366,10 +375,11 @@ internal static class AnalyzerTestHost
         string diagnosticId,
         int beforeCount,
         int remainingCount,
-        IReadOnlyCollection<string> beforeErrors)
+        IReadOnlyCollection<string> beforeErrors,
+        string? sourcePath = null)
     {
         var text = await updated.GetTextAsync().ConfigureAwait(false);
-        var secondPass = await GetDiagnosticsAsync(text.ToString(), editorConfig).ConfigureAwait(false);
+        var secondPass = await GetDiagnosticsAsync(text.ToString(), editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
         var remaining = secondPass.Count(d => d.Id == diagnosticId);
         Assert.Equal(remainingCount, remaining);
         Assert.True(remaining < beforeCount);
@@ -471,10 +481,11 @@ internal static class AnalyzerTestHost
         string? editorConfig,
         LanguageVersion languageVersion,
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
-        ImmutableArray<MetadataReference>? references = null)
+        ImmutableArray<MetadataReference>? references = null,
+        string? sourcePath = null)
     {
         var parseOptions = new CSharpParseOptions(languageVersion);
-        var tree = CSharpSyntaxTree.ParseText(source, parseOptions, path: "/0/Test.cs");
+        var tree = CSharpSyntaxTree.ParseText(source, parseOptions, path: sourcePath ?? "/0/Test.cs");
         var trees = new List<SyntaxTree> { tree };
         if (additionalSources is not null)
         {
@@ -506,8 +517,15 @@ internal static class AnalyzerTestHost
         return (compilation, tree, options);
     }
 
-    private static Document CreateDocument(string source, string? editorConfig)
+    private static Document CreateDocument(string source, string? editorConfig, string? sourcePath = null)
     {
+        var path = sourcePath ?? "/0/Test.cs";
+        var name = Path.GetFileName(path);
+        if (string.IsNullOrEmpty(name))
+        {
+            name = "Test.cs";
+        }
+
         var workspace = new AdhocWorkspace();
         var projectId = ProjectId.CreateNewId();
         var documentId = DocumentId.CreateNewId(projectId);
@@ -516,7 +534,7 @@ internal static class AnalyzerTestHost
             .WithProjectCompilationOptions(projectId, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .WithProjectParseOptions(projectId, new CSharpParseOptions(LanguageVersion.Latest))
             .AddMetadataReferences(projectId, References)
-            .AddDocument(documentId, "Test.cs", source, filePath: "/0/Test.cs");
+            .AddDocument(documentId, name, source, filePath: path);
 
         if (!string.IsNullOrEmpty(editorConfig))
         {

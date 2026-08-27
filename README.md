@@ -71,7 +71,8 @@ dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj
 ```
 
 The production assemblies target `netstandard2.0` and analyze projects targeting
-`net10.0`, `netstandard2.0`, and SDK-style `net472`. Logging-library version
+`net10.0` (including Blazor `.razor` / `.razor.cs`), `netstandard2.0`, and
+SDK-style `net472`. Logging-library version
 coverage is documented in [docs/package-version-testing.md](docs/package-version-testing.md).
 
 ## Diagnostics
@@ -92,7 +93,8 @@ coverage is documented in [docs/package-version-testing.md](docs/package-version
 | [AASL0012](docs/rules/AASL0012.md) | Generated logging cannot use Semantic Conventions property names |
 
 `[LoggerMessage]` declarations and `LoggerMessage.Define` / `DefineScope` are
-included. When template naming is `semantic_conventions`, AASL0012 (generated
+included. Blazor `.razor` `@code` and `.razor.cs` code-behind are analyzed and
+fixed. When template naming is `semantic_conventions`, AASL0012 (generated
 logging cannot use Semantic Conventions property names) warns on `[LoggerMessage]`.
 SDK `CA*` / `SYSLIB10xx` rules are recommended alongside this package;
 see [Recommended Microsoft analyzers](#recommended-microsoft-analyzers).

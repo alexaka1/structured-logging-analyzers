@@ -59,6 +59,7 @@ jobs:
           }
 
           build_sample samples/Net10Example/Net10Example.csproj
+          build_sample samples/Net10BlazorExample/Net10BlazorExample.csproj
           build_sample samples/NetStandard20Example/NetStandard20Example.csproj
           build_sample samples/Net472Example/Net472Example.csproj
 
@@ -103,6 +104,11 @@ jobs:
             {"ruleId":"AASL0011","file":"LogMessages.cs","line":49,"column":91},
             {"ruleId":"AASL0009","file":"LogMessages.cs","line":52,"column":50},
             {"ruleId":"AASL0009","file":"Program.cs","line":7,"column":27}
+          ]'
+          assert_aasl samples/Net10BlazorExample/dotnet-build-error.sarif '[
+            {"ruleId":"AASL0009","file":"Counter.razor.cs","line":17,"column":40},
+            {"ruleId":"AASL0011","file":"Counter.razor.cs","line":17,"column":47},
+            {"ruleId":"AASL0009","file":"Home.razor","line":17,"column":38}
           ]'
           assert_aasl samples/NetStandard20Example/dotnet-build-error.sarif '[
             {"ruleId":"AASL0009","file":"Sample.cs","line":9,"column":39}
