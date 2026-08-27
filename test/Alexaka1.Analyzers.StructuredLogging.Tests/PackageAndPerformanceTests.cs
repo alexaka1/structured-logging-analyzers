@@ -339,10 +339,9 @@ public sealed class PackageAndPerformanceTests
                     continue;
                 }
 
-                if (!TryReadPrimaryLocation(result, out var fileName, out var line, out var column))
-                {
-                    continue;
-                }
+                Assert.True(
+                    TryReadPrimaryLocation(result, out var fileName, out var line, out var column),
+                    $"Active AASL diagnostic '{id}' has no readable primary location.");
 
                 diagnostics.Add(new SarifDiagnostic(id, fileName, line, column));
             }
