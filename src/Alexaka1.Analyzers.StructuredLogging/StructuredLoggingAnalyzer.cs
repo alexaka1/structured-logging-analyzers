@@ -299,7 +299,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (!LoggerMessageAttributeReader.TryGet(context.SemanticModel, method, known, context.CancellationToken, out var template))
+        if (!LoggerMessageAttributeReader.TryGet(method, known, context.CancellationToken, out var template))
         {
             return;
         }
@@ -322,7 +322,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         var source = ConstTemplateMapper.Resolve(
             context.SemanticModel,
             template.Expression,
-            template.Text,
             method,
             context.CancellationToken);
 
