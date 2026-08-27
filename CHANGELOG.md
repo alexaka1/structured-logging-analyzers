@@ -1,5 +1,11 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.8
+
+### Patch Changes
+
+- [#49](https://github.com/alexaka1/structured-logging-analyzers/pull/49) [`f61c55f`](https://github.com/alexaka1/structured-logging-analyzers/commit/f61c55fb68dd118aa4640ad278751586147cb888) Thanks [@alexaka1](https://github.com/alexaka1)! - Document the Visual Studio 2022 17.8 / Roslyn 4.8 host floor in the package readme and add dedicated IDE/compiler and performance policy pages.
+
 ## 0.1.0-preview.7
 
 ### Patch Changes
