@@ -8,10 +8,12 @@ reference to consuming applications.
 
 ## Install
 
+Use the latest version from NuGet. `x.y.z` is a placeholder.
+
 ```xml
 <ItemGroup>
   <PackageReference Include="Alexaka1.Analyzers.StructuredLogging"
-                    Version="0.1.0-preview.2"
+                    Version="x.y.z"
                     PrivateAssets="all" />
 </ItemGroup>
 ```
@@ -22,10 +24,12 @@ reference to consuming applications.
 dotnet package add Alexaka1.Analyzers.StructuredLogging
 ```
 
+Add `--prerelease` when the current version is a preview.
+
 Central package management:
 
 ```xml
-<PackageVersion Include="Alexaka1.Analyzers.StructuredLogging" Version="0.1.0-preview.2" />
+<PackageVersion Include="Alexaka1.Analyzers.StructuredLogging" Version="x.y.z" />
 ```
 
 ```xml
