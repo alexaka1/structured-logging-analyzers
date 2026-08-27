@@ -67,22 +67,49 @@ jobs:
         # host is skipped, using the logs from the Sample TFM matrix step.
         run: |
           set -euo pipefail
-          assert_rule() {
+          assert_aasl() {
             local sarif="$1"
-            local id="$2"
-            jq -e --arg id "$id" '
-              any(
-                .runs[]?.results[]?;
-                .ruleId == $id
-                and ((.suppressions | not) or ((.suppressions | length) == 0))
-              )
+            local expected="$2"
+            jq -e --argjson expected "$expected" '
+              def key: [.ruleId, .file, .line, .column];
+              def actual:
+                [
+                  .runs[]?.results[]?
+                  | select((.suppressions | not) or ((.suppressions | length) == 0))
+                  | select(.ruleId | startswith("AASL"))
+                  | {
+                      ruleId,
+                      file: (.locations[0].physicalLocation.artifactLocation.uri | split("/")[-1]),
+                      line: .locations[0].physicalLocation.region.startLine,
+                      column: .locations[0].physicalLocation.region.startColumn
+                    }
+                ] | sort_by(key);
+              ($expected | sort_by(key)) as $exp
+              | if actual == $exp then true
+                else error("AASL results mismatch\nexpected: \($exp)\nactual: \(actual)")
+                end
             ' "$sarif"
           }
 
-          assert_rule samples/Net10Example/dotnet-build-error.sarif AASL0009
-          assert_rule samples/Net10Example/dotnet-build-error.sarif AASL0011
-          assert_rule samples/NetStandard20Example/dotnet-build-error.sarif AASL0009
-          assert_rule samples/Net472Example/dotnet-build-error.sarif AASL0009
+          assert_aasl samples/Net10Example/dotnet-build-error.sarif '[
+            {"ruleId":"AASL0009","file":"LogMessages.cs","line":14,"column":31},
+            {"ruleId":"AASL0011","file":"LogMessages.cs","line":14,"column":40},
+            {"ruleId":"AASL0009","file":"LogMessages.cs","line":17,"column":48},
+            {"ruleId":"AASL0009","file":"LogMessages.cs","line":20,"column":29},
+            {"ruleId":"AASL0009","file":"LogMessages.cs","line":26,"column":78},
+            {"ruleId":"AASL0009","file":"LogMessages.cs","line":36,"column":81},
+            {"ruleId":"AASL0009","file":"LogMessages.cs","line":42,"column":83},
+            {"ruleId":"AASL0009","file":"LogMessages.cs","line":49,"column":82},
+            {"ruleId":"AASL0011","file":"LogMessages.cs","line":49,"column":91},
+            {"ruleId":"AASL0009","file":"LogMessages.cs","line":52,"column":50},
+            {"ruleId":"AASL0009","file":"Program.cs","line":7,"column":27}
+          ]'
+          assert_aasl samples/NetStandard20Example/dotnet-build-error.sarif '[
+            {"ruleId":"AASL0009","file":"Sample.cs","line":9,"column":39}
+          ]'
+          assert_aasl samples/Net472Example/dotnet-build-error.sarif '[
+            {"ruleId":"AASL0009","file":"Sample.cs","line":9,"column":39}
+          ]'
 
       - name: Upload nupkg
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
