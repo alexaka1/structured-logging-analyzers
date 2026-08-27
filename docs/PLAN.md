@@ -577,13 +577,13 @@ Evaluate guarded fixes for rules that previously had none. Keep them outside the
 Shipped outside original-plugin parity:
 
 - AASL0008: rename positional holes from argument expressions when an identifier can be derived. Qualified names are a second action when they differ.
+- AASL0003: add `destructureObjects: true` on two-argument `LogContext.PushProperty`.
+- AASL0004: replace mismatched `ILogger<T>` / `ForContext<T>` with the containing type.
+- AASL0005: move an exception argument before the template and remove the aligned hole when the template is a mappable constant.
+- AASL0006: unique names for duplicate properties on logging invocations (not `[LoggerMessage]`).
 
-Kept out of the first milestone (no code fix):
+Kept without a code fix:
 
-- AASL0003 context-object destructuring (`destructureObjects: true`)
-- AASL0004 contextual logger type replacement
-- AASL0005 move exception to an exception overload
-- AASL0006 unique names for duplicate properties
 - AASL0012 generated logging vs Semantic Conventions (API choice, not a template rewrite)
 
 Completion criterion: fixes are offered only where semantic validity can be demonstrated.

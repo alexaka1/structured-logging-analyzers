@@ -151,13 +151,17 @@ Code fixes map logical template offsets through:
 | Diagnostic | Fix | Notes |
 |---|---|---|
 | AASL0001, AASL0002 | Insert `@` after `{` | Full; Serilog-like invocations only (not MEL, ZLogger, or `LoggerMessage.Define` / `DefineScope`) |
+| AASL0003 | Add `destructureObjects: true` | `LogContext.PushProperty` with exactly two arguments |
+| AASL0004 | Replace logger category with the containing type | `ILogger<T>` constructor / primary-constructor parameters and matching fields/properties in that type. `ForContext<T>()` type argument only. Nested types are left alone. |
+| AASL0005 | Move exception before the template | Inserts the exception argument immediately before the message template (after EventId/LogLevel) and removes the aligned hole when the template is a mappable constant. Interpolated templates move the argument only. |
+| AASL0006 | Rename duplicate holes to unique names | Invocations only. Subsequent holes are uniquified (`{Test}` `{Test2}`), or renamed from argument identifiers when those can be derived. Leaf and qualified primary suggestions share one used-name set. Qualified names are a second action when they differ. Not offered for `[LoggerMessage]` (renaming a hole would not add a C# parameter). |
 | AASL0008 | Rename positional hole | `[LoggerMessage]` when the remaining parameters match the holes. Invocations when the aligned argument has a derivable identifier (`order.Id` → `{Id}`). Qualified names as a second action when they differ. Not offered for literals, anonymous objects, `LoggerMessage.Define` / `DefineScope`, or a params array passed as a single variable. |
 | AASL0009 | Rename hole to suggested name | Full; also `[LoggerMessage]` attribute strings |
 | AASL0010 | Replace `PushProperty` name | Full |
 | AASL0011 | Remove trailing `.` | Full; span is the period |
 | AASL0007 | Convert interpolation | Partial: deterministic leaf names; extra action uses qualified names when they differ. No hotspots |
 
-No first-milestone fixes for AASL0003, AASL0004, AASL0005, AASL0006, or AASL0012.
+No code fix for AASL0012: the diagnostic fires on `[LoggerMessage]` whenever template naming is `semantic_conventions`, so a template rewrite cannot clear it. Converting the method to `LoggerMessage.Define` or a `Log*` call is an API choice (and fights CA1848).
 
 ## Source-generated logging (`[LoggerMessage]`)
 

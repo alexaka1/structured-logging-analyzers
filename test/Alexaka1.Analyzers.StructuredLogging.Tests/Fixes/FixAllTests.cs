@@ -333,4 +333,191 @@ public sealed class FixAllTests
             "AASL0008",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
+
+    [Fact]
+    public Task Destructure_context_objects_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using System;
+            using Serilog.Context;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    {|AASL0003:LogContext.PushProperty("First", new Random())|};
+                    {|AASL0003:LogContext.PushProperty("Second", new Random())|};
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using System;
+            using Serilog.Context;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    LogContext.PushProperty("First", new Random(), destructureObjects: true);
+                    LogContext.PushProperty("Second", new Random(), destructureObjects: true);
+                }
+            }
+            """,
+            "AASL0003",
+            typeof(AddContextDestructuringCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Replace_contextual_logger_types_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class A
+            {
+                public A({|AASL0004:ILogger<B>|} log) { }
+            }
+            class C
+            {
+                public C({|AASL0004:ILogger<B>|} log) { }
+            }
+            class B { }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class A
+            {
+                public A(ILogger<A> log) { }
+            }
+            class C
+            {
+                public C(ILogger<C> log) { }
+            }
+            class B { }
+            """,
+            "AASL0004",
+            typeof(ReplaceContextualLoggerTypeCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Move_exception_arguments_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using System;
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{One} {Exc}", 1, {|AASL0005:new Exception()|});
+                    Log.Logger.Error("{Error}", {|AASL0005:new Exception()|});
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using System;
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information(new Exception(), "{One}", 1);
+                    Log.Logger.Error(new Exception(), "");
+                }
+            }
+            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Uniquify_duplicate_properties_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(string orderId, string name)
+                {
+                    Log.Logger.Information("{|AASL0006:{Count}|} {|AASL0006:{Count}|}", orderId, name);
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(string orderId, string name)
+                {
+                    Log.Logger.Information("{OrderId} {Name}", orderId, name);
+                }
+            }
+            """,
+            "AASL0006",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Uniquify_duplicate_properties_qualified_names_document()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Order order, User user)
+                {
+                    Log.Logger.Information("{|AASL0006:{Count}|} {|AASL0006:{Count}|}", order.Id, user.Id);
+                }
+            }
+            public sealed class Order { public int Id { get; set; } }
+            public sealed class User { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Order order, User user)
+                {
+                    Log.Logger.Information("{OrderId} {UserId}", order.Id, user.Id);
+                }
+            }
+            public sealed class Order { public int Id { get; set; } }
+            public sealed class User { public int Id { get; set; } }
+            """,
+            "AASL0006",
+            typeof(RenameTemplatePropertyCodeFixProvider),
+            codeActionIndex: 1);
+    }
+
+    [Fact]
+    public Task Uniquify_duplicate_properties_mixed_primary_names()
+    {
+        return AnalyzerTestHost.VerifyFixAllAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Request request, string requestId)
+                {
+                    Log.Logger.Information("{|AASL0006:{Id}|} {|AASL0006:{Id}|}", request.Id, requestId);
+                }
+            }
+            public sealed class Request { public int Id { get; set; } }
+            """,
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main(Request request, string requestId)
+                {
+                    Log.Logger.Information("{RequestId} {RequestId2}", request.Id, requestId);
+                }
+            }
+            public sealed class Request { public int Id { get; set; } }
+            """,
+            "AASL0006",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
 }

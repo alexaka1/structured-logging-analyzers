@@ -22,6 +22,11 @@ The following plugin behaviors were reimplemented against C# inputs:
   - rename a template property
   - rename a `LogContext.PushProperty` name
   - remove a trailing period
+- Additional guarded fixes that the original plugin did not ship:
+  - `destructureObjects: true` on `LogContext.PushProperty`
+  - containing-type rewrite for `ILogger<T>` / `ForContext<T>`
+  - move an exception argument before the message template
+  - unique names for duplicate template properties on invocations
 - Invocation recognition for Serilog, NLog, Microsoft.Extensions.Logging,
   ZLogger, and `MessageTemplateFormatMethodAttribute`.
 
