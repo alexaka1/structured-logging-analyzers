@@ -176,11 +176,13 @@ public sealed class PackageAndPerformanceTests
         var project = Path.Combine(repo, relativeProject.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(File.Exists(project), "Sample project missing: " + project);
 
-        var sarif = Path.Combine(Path.GetTempPath(), $"sla-sample-{Guid.NewGuid():N}.sarif");
+        var projectDir = Path.GetDirectoryName(project)!;
+        var sarif = Path.Combine(projectDir, "dotnet-build-error.sarif");
         try
         {
-            var errorLog = Uri.EscapeDataString($"{sarif},version=2.1");
-            var log = RunDotNet($"build \"{project}\" -c Release --no-incremental --nologo -p:ErrorLog={errorLog}");
+            RunDotNet($"clean \"{project}\" -c Release --nologo");
+            var log = RunDotNet(
+                $"build \"{project}\" -c Release --no-incremental --nologo -v:minimal -p:ErrorLog=dotnet-build-error.sarif%2cversion=2.1");
             Assert.True(File.Exists(sarif), $"Expected ErrorLog SARIF at {sarif}. Build output:\n{log}");
 
             var ids = ParseAaslIdsFromSarif(sarif);
@@ -303,6 +305,11 @@ public sealed class PackageAndPerformanceTests
 
             foreach (var result in results.EnumerateArray())
             {
+                if (!IsActiveSarifResult(result))
+                {
+                    continue;
+                }
+
                 if (result.TryGetProperty("ruleId", out var ruleId) &&
                     ruleId.GetString() is { } id &&
                     id.StartsWith("AASL", StringComparison.Ordinal))
@@ -313,6 +320,17 @@ public sealed class PackageAndPerformanceTests
         }
 
         return ids;
+    }
+
+    private static bool IsActiveSarifResult(JsonElement result)
+    {
+        if (!result.TryGetProperty("suppressions", out var suppressions) ||
+            suppressions.ValueKind != JsonValueKind.Array)
+        {
+            return true;
+        }
+
+        return suppressions.GetArrayLength() == 0;
     }
 
     private static string Pack()

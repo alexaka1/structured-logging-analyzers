@@ -51,42 +51,41 @@ jobs:
       - name: Sample TFM matrix
         run: |
           set -euo pipefail
-          mkdir -p artifacts
 
-          # ErrorLog is the C# compiler SARIF log. -property values are
-          # comma/semicolon lists and use %xx escapes, so URI-encode the
-          # entire value (path plus version=2.1).
-          # https://learn.microsoft.com/dotnet/csharp/language-reference/compiler-options/errors-warnings#errorlog
-          # https://learn.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-          # https://learn.microsoft.com/visualstudio/msbuild/how-to-escape-special-characters-in-msbuild
+          # Per-project relative ErrorLog so referenced analyzer projects do not
+          # overwrite the sample log. Escape the comma as %2c for -p:.
           build_sample() {
             local project="$1"
-            local name="$2"
-            local sarif="${PWD}/artifacts/${name}.sarif"
-            local errorlog
-            errorlog="$(jq -nr --arg v "${sarif},version=2.1" '$v | @uri')"
-            dotnet build "$project" -c Release --no-incremental -p:ErrorLog="$errorlog"
+            dotnet clean "$project" -c Release
+            dotnet build "$project" -c Release --no-incremental -v:minimal \
+              -p:ErrorLog='dotnet-build-error.sarif%2cversion=2.1'
           }
 
-          build_sample samples/Net10Example/Net10Example.csproj Net10Example
-          build_sample samples/NetStandard20Example/NetStandard20Example.csproj NetStandard20Example
-          build_sample samples/Net472Example/Net472Example.csproj Net472Example
+          build_sample samples/Net10Example/Net10Example.csproj
+          build_sample samples/NetStandard20Example/NetStandard20Example.csproj
+          build_sample samples/Net472Example/Net472Example.csproj
 
       - name: Assert sample build diagnostics
         # Complements PackageAndPerformanceTests so CI fails even if the test
-        # host is skipped, using ErrorLog SARIF from the Sample TFM matrix step.
+        # host is skipped. Honor in-source suppressions (active results only).
         run: |
           set -euo pipefail
           assert_rule() {
             local sarif="$1"
             local id="$2"
-            jq -e --arg id "$id" 'any(.runs[]?.results[]?; .ruleId == $id)' "$sarif"
+            jq -e --arg id "$id" '
+              any(
+                .runs[]?.results[]?;
+                .ruleId == $id
+                and ((.suppressions | not) or ((.suppressions | length) == 0))
+              )
+            ' "$sarif"
           }
 
-          assert_rule artifacts/Net10Example.sarif AASL0009
-          assert_rule artifacts/Net10Example.sarif AASL0011
-          assert_rule artifacts/NetStandard20Example.sarif AASL0009
-          assert_rule artifacts/Net472Example.sarif AASL0009
+          assert_rule samples/Net10Example/dotnet-build-error.sarif AASL0009
+          assert_rule samples/Net10Example/dotnet-build-error.sarif AASL0011
+          assert_rule samples/NetStandard20Example/dotnet-build-error.sarif AASL0009
+          assert_rule samples/Net472Example/dotnet-build-error.sarif AASL0009
 
       - name: Upload nupkg
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
