@@ -32,8 +32,8 @@ and under Visual Studio 2026.
 ## Why this floor
 
 - Broader IDE support than Roslyn 5.x (VS 2026-only).
-- C# 12 syntax used by the analyzer (primary constructors, raw string
-  literals in consumer code).
+- Syntax used by the analyzer: C# 12 primary constructors and C# 11 raw
+  string literals in consumer code.
 - [RS1041](https://github.com/dotnet/roslyn-analyzers/blob/main/docs/rules/RS1041.md):
   compiler extensions target `netstandard2.0` so they load under both .NET
   and .NET Framework hosts.
@@ -74,8 +74,10 @@ analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll
 
 No `lib/` assets. Analyzer dependencies stay `PrivateAssets="all"`. The
 packed nupkg must not contain `Microsoft.CodeAnalysis.dll`. Sample builds
-must not copy the analyzer assemblies into application output. Those
-invariants are asserted in `PackageAndPerformanceTests`.
+must not copy the analyzer assemblies into application output.
+`PackageAndPerformanceTests` asserts the package-entry and sample-output
+invariants (`lib/`, `Microsoft.CodeAnalysis.dll`, analyzer DLLs in output).
+It does not inspect `PrivateAssets` metadata.
 
 ## Renovate
 

@@ -68,8 +68,10 @@ policy change: update this page and the assertion in
 
 ## Regression gates
 
-Ceilings cover analyzer work **plus** Roslyn `CompilationWithAnalyzers`
-allocations on a **warmed** process. Retune after SDK or Roslyn upgrades.
+Ceilings cover allocations during `GetAnalysisResultAsync` on a **warmed**
+process, after `CompilationWithAnalyzers` is constructed. Setup and host
+construction are outside the measured window. Retune after SDK or Roslyn
+upgrades.
 
 | Gate | Input | Limits |
 |---|---|---|
