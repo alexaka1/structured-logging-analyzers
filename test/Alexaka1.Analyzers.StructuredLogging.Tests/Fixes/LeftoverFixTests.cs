@@ -448,4 +448,96 @@ public sealed class LeftoverFixTests
             expectedActionCount: 2,
             remainingCount: 0);
     }
+
+    [Fact]
+    public Task AASL0006_preserves_destructuring_operator()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{@Test} {|AASL0006:{@Test}|}", 1, 2);
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using Serilog;
+            public static class Program
+            {
+                public static void Main()
+                {
+                    Log.Logger.Information("{@Test} {@Test2}", 1, 2);
+                }
+            }
+            """,
+            "AASL0006",
+            typeof(RenameTemplatePropertyCodeFixProvider),
+            remainingCount: 0);
+    }
+
+    [Fact]
+    public Task AASL0005_nlog()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using System;
+            using NLog;
+            class C
+            {
+                void M(Logger logger, Exception ex)
+                {
+                    logger.Error("Failed {Op} {Error}", "save", {|AASL0005:ex|});
+                }
+            }
+            """,
+            /*lang=csharp*/ """
+            using System;
+            using NLog;
+            class C
+            {
+                void M(Logger logger, Exception ex)
+                {
+                    logger.Error(ex, "Failed {Op}", "save");
+                }
+            }
+            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
+
+    [Fact]
+    public Task AASL0004_does_not_rewrite_nested_type()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class A
+            {
+                public A({|AASL0004:ILogger<B>|} log) { }
+                class Nested
+                {
+                    public Nested(ILogger<B> log) { }
+                }
+            }
+            class B { }
+            """,
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            class A
+            {
+                public A(ILogger<A> log) { }
+                class Nested
+                {
+                    public Nested(ILogger<B> log) { }
+                }
+            }
+            class B { }
+            """,
+            "AASL0004",
+            typeof(ReplaceContextualLoggerTypeCodeFixProvider),
+            remainingCount: 1);
+    }
 }

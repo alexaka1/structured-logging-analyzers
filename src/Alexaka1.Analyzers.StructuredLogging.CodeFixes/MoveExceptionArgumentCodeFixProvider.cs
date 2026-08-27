@@ -199,20 +199,17 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         }
 
         args.RemoveAt(exceptionIndex);
-        var moved = exceptionArgument.WithNameColon(null);
-        var leading = moved.GetLeadingTrivia();
-        for (var i = 0; i < leading.Count; i++)
+        var moved = exceptionArgument.WithNameColon(null).WithLeadingTrivia().WithTrailingTrivia();
+        args.Insert(templateIndex, moved);
+        var separators = new SyntaxToken[args.Count - 1];
+        for (var i = 0; i < separators.Length; i++)
         {
-            if (leading[i].IsKind(SyntaxKind.EndOfLineTrivia))
-            {
-                moved = moved.WithLeadingTrivia(SyntaxFactory.Space);
-                break;
-            }
+            separators[i] = SyntaxFactory.Token(SyntaxKind.CommaToken)
+                .WithTrailingTrivia(SyntaxFactory.Space);
         }
 
-        args.Insert(templateIndex, moved);
         return invocation.WithArgumentList(
-            invocation.ArgumentList.WithArguments(SyntaxFactory.SeparatedList(args)));
+            invocation.ArgumentList.WithArguments(SyntaxFactory.SeparatedList(args, separators)));
     }
 
     private static int HoleIndexForException(
