@@ -26,7 +26,7 @@ public sealed class ReplaceContextualLoggerTypeCodeFixProvider : CodeFixProvider
 
         foreach (var diagnostic in context.Diagnostics)
         {
-            if (!TryGetReplacement(root, model, diagnostic.Location.SourceSpan, context.CancellationToken, out _, out _, out var containingName))
+            if (!TryGetReplacement(root, model, diagnostic.Location.SourceSpan, context.CancellationToken, out _, out var containingName))
             {
                 continue;
             }
@@ -58,7 +58,6 @@ public sealed class ReplaceContextualLoggerTypeCodeFixProvider : CodeFixProvider
                 diagnostic.Location.SourceSpan,
                 cancellationToken,
                 out var replacements,
-                out _,
                 out _))
         {
             return document;
@@ -74,11 +73,9 @@ public sealed class ReplaceContextualLoggerTypeCodeFixProvider : CodeFixProvider
         Microsoft.CodeAnalysis.Text.TextSpan span,
         CancellationToken cancellationToken,
         out Dictionary<TypeSyntax, TypeSyntax> replacements,
-        out INamedTypeSymbol containing,
         out string containingName)
     {
         replacements = new Dictionary<TypeSyntax, TypeSyntax>();
-        containing = null!;
         containingName = string.Empty;
 
         var node = root.FindNode(span, getInnermostNodeForTie: true);
@@ -88,13 +85,11 @@ public sealed class ReplaceContextualLoggerTypeCodeFixProvider : CodeFixProvider
             return false;
         }
 
-        var containingSymbol = model.GetDeclaredSymbol(containingType, cancellationToken);
-        if (containingSymbol is not INamedTypeSymbol containingNamed)
+        if (model.GetDeclaredSymbol(containingType, cancellationToken) is not { } containingNamed)
         {
             return false;
         }
 
-        containing = containingNamed;
         containingName = containingNamed.ToMinimalDisplayString(model, span.Start);
         if (string.IsNullOrEmpty(containingName))
         {
