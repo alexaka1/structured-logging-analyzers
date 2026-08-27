@@ -1,5 +1,4 @@
 using Alexaka1.Analyzers.StructuredLogging.CodeFixes;
-using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Xunit;
 
@@ -10,6 +9,9 @@ public sealed class FirstMilestoneFixPolicyTests
     private static readonly Type[] CodeFixProviders =
     [
         typeof(AddDestructuringCodeFixProvider),
+        typeof(AddContextDestructuringCodeFixProvider),
+        typeof(ReplaceContextualLoggerTypeCodeFixProvider),
+        typeof(MoveExceptionArgumentCodeFixProvider),
         typeof(RenameTemplatePropertyCodeFixProvider),
         typeof(RenameContextPropertyCodeFixProvider),
         typeof(RemoveTrailingPeriodCodeFixProvider),
@@ -17,90 +19,15 @@ public sealed class FirstMilestoneFixPolicyTests
     ];
 
     [Fact]
-    public void Withheld_rules_are_not_registered_on_any_provider()
+    public void AASL0012_is_not_registered_on_any_provider()
     {
-        string[] withheld =
-        [
-            DiagnosticIds.ComplexObjectInContextShouldBeDestructured,
-            DiagnosticIds.ContextualLoggerMismatch,
-            DiagnosticIds.ExceptionPassedAsTemplateArgument,
-            DiagnosticIds.DuplicateTemplateProperty,
-            DiagnosticIds.GeneratedLoggingCannotUseSemanticConventions
-        ];
-
         foreach (var type in CodeFixProviders)
         {
             var provider = (CodeFixProvider)Activator.CreateInstance(type)!;
-            Assert.Empty(provider.FixableDiagnosticIds.Intersect(withheld, StringComparer.Ordinal));
+            Assert.DoesNotContain(
+                DiagnosticIds.GeneratedLoggingCannotUseSemanticConventions,
+                provider.FixableDiagnosticIds);
         }
-    }
-
-    [Fact]
-    public Task AASL0003_has_no_code_fix()
-    {
-        return VerifyNoFixesAsync(
-            /*lang=csharp*/ """
-            using System;
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    {|AASL0003:LogContext.PushProperty("Test", new Random())|};
-                }
-            }
-            """,
-            "AASL0003");
-    }
-
-    [Fact]
-    public Task AASL0004_has_no_code_fix()
-    {
-        return VerifyNoFixesAsync(
-            /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class A
-            {
-                public A({|AASL0004:ILogger<B>|} log) { }
-            }
-            class B { }
-            """,
-            "AASL0004");
-    }
-
-    [Fact]
-    public Task AASL0005_has_no_code_fix()
-    {
-        return VerifyNoFixesAsync(
-            /*lang=csharp*/ """
-            using System;
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{One} {Exc}", 1, {|AASL0005:new Exception()|});
-                }
-            }
-            """,
-            "AASL0005");
-    }
-
-    [Fact]
-    public Task AASL0006_has_no_code_fix()
-    {
-        return VerifyNoFixesAsync(
-            /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0006:{Test}|} {|AASL0006:{Test}|}", 1, 2);
-                }
-            }
-            """,
-            "AASL0006");
     }
 
     [Fact]
@@ -119,11 +46,27 @@ public sealed class FirstMilestoneFixPolicyTests
             "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
+    [Fact]
+    public Task LoggerMessage_duplicate_properties_have_no_code_fix()
+    {
+        return VerifyNoFixesAsync(
+            /*lang=csharp*/ """
+            using Microsoft.Extensions.Logging;
+            public static partial class Log
+            {
+                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{|AASL0006:{OrderId}|} {|AASL0006:{OrderId}|}")]
+                public static partial void ProcessingOrder(ILogger logger, int orderId);
+            }
+            """,
+            "AASL0006");
+    }
+
     private static async Task VerifyNoFixesAsync(string source, string diagnosticId, string? editorConfig = null)
     {
         foreach (var type in CodeFixProviders)
         {
-            await AnalyzerTestHost.VerifyNoFixAsync(source, diagnosticId, type, editorConfig).ConfigureAwait(false);
+            await Infrastructure.AnalyzerTestHost.VerifyNoFixAsync(source, diagnosticId, type, editorConfig)
+                .ConfigureAwait(false);
         }
     }
 }

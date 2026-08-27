@@ -18,9 +18,19 @@ internal static class TemplateStyleRules
         AnalyzerSettings settings,
         RegexCache regexCache,
         Func<PropertyHole, bool>? skipHole,
-        bool allowRewrite)
+        bool allowRewrite,
+        IReadOnlyList<ExpressionSyntax?>? argumentExpressions = null,
+        bool uniquifyDuplicates = false)
     {
-        AnalyzeDuplicates(context, map, named, skipHole, allowRewrite);
+        AnalyzeDuplicates(
+            context,
+            map,
+            named,
+            skipHole,
+            allowRewrite,
+            settings,
+            argumentExpressions,
+            uniquifyDuplicates);
         AnalyzeNaming(context, map, named, settings, regexCache, skipHole, allowRewrite);
     }
 
@@ -168,9 +178,12 @@ internal static class TemplateStyleRules
         TemplateSourceMap map,
         PropertyHole[] named,
         Func<PropertyHole, bool>? skipHole,
-        bool allowRewrite)
+        bool allowRewrite,
+        AnalyzerSettings settings,
+        IReadOnlyList<ExpressionSyntax?>? argumentExpressions,
+        bool uniquifyDuplicates)
     {
-        _ = allowRewrite;
+        var duplicate = new bool[named.Length];
         for (var i = 0; i < named.Length; i++)
         {
             if (skipHole?.Invoke(named[i]) == true)
@@ -192,11 +205,136 @@ internal static class TemplateStyleRules
                 }
             }
 
-            if (count > 1)
+            duplicate[i] = count > 1;
+        }
+
+        var style = settings.GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
+        string?[]? leafNames = null;
+        string?[]? qualifiedNames = null;
+        if (allowRewrite && uniquifyDuplicates)
+        {
+            SuggestDuplicateNames(
+                named,
+                skipHole,
+                duplicate,
+                argumentExpressions,
+                style,
+                out leafNames,
+                out qualifiedNames);
+        }
+
+        for (var i = 0; i < named.Length; i++)
+        {
+            if (!duplicate[i])
             {
-                ReportHole(context, map, named[i], Descriptors.DuplicateTemplateProperty);
+                continue;
+            }
+
+            ImmutableDictionary<string, string?>? properties = null;
+            if (allowRewrite && uniquifyDuplicates)
+            {
+                properties = DuplicateFixProperties(named[i], leafNames?[i], qualifiedNames?[i]);
+            }
+            else if (!allowRewrite)
+            {
+                properties = ImmutableDictionary<string, string?>.Empty.Add(FixProperties.AllowRewrite, "false");
+            }
+
+            ReportHole(context, map, named[i], Descriptors.DuplicateTemplateProperty, properties);
+        }
+    }
+
+    private static ImmutableDictionary<string, string?>? DuplicateFixProperties(
+        PropertyHole hole,
+        string? leaf,
+        string? qualified)
+    {
+        var current = hole.PropertyName;
+        var primary = !string.IsNullOrEmpty(leaf) && !string.Equals(leaf, current, StringComparison.Ordinal)
+            ? leaf
+            : !string.IsNullOrEmpty(qualified) && !string.Equals(qualified, current, StringComparison.Ordinal)
+                ? qualified
+                : null;
+        if (primary is null)
+        {
+            return null;
+        }
+
+        var properties = ImmutableDictionary<string, string?>.Empty
+            .Add(FixProperties.SuggestedName, primary)
+            .Add(FixProperties.PropertyName, current)
+            .Add(FixProperties.NameLogicalStart, hole.NameStartIndex.ToString(CultureInfo.InvariantCulture))
+            .Add(FixProperties.NameLogicalLength, hole.NameLength.ToString(CultureInfo.InvariantCulture))
+            .Add(FixProperties.AllowRewrite, "true");
+        if (!string.IsNullOrEmpty(leaf) &&
+            !string.IsNullOrEmpty(qualified) &&
+            !string.Equals(qualified, leaf, StringComparison.Ordinal) &&
+            !string.Equals(qualified, current, StringComparison.Ordinal) &&
+            !string.Equals(primary, qualified, StringComparison.Ordinal))
+        {
+            properties = properties.Add(FixProperties.QualifiedSuggestedName, qualified);
+        }
+
+        return properties;
+    }
+
+    private static void SuggestDuplicateNames(
+        PropertyHole[] named,
+        Func<PropertyHole, bool>? skipHole,
+        bool[] duplicate,
+        IReadOnlyList<ExpressionSyntax?>? argumentExpressions,
+        PropertyNamingStyle style,
+        out string?[] leafNames,
+        out string?[] qualifiedNames)
+    {
+        leafNames = new string?[named.Length];
+        qualifiedNames = new string?[named.Length];
+        var usedLeaf = new HashSet<string>(StringComparer.Ordinal);
+        var usedQualified = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < named.Length; i++)
+        {
+            if (skipHole?.Invoke(named[i]) == true)
+            {
+                usedLeaf.Add(named[i].PropertyName);
+                usedQualified.Add(named[i].PropertyName);
+                continue;
+            }
+
+            if (!duplicate[i])
+            {
+                usedLeaf.Add(named[i].PropertyName);
+                usedQualified.Add(named[i].PropertyName);
+                continue;
+            }
+
+            var expression = argumentExpressions != null && i < argumentExpressions.Count
+                ? argumentExpressions[i]
+                : null;
+            var leaf = SuggestDuplicateName(named[i], expression, style, ExpressionPropertyName.Kind.Leaf);
+            leafNames[i] = ExpressionPropertyName.Uniquify(leaf, usedLeaf);
+
+            var qualified = SuggestDuplicateName(named[i], expression, style, ExpressionPropertyName.Kind.Qualified);
+            qualifiedNames[i] = ExpressionPropertyName.Uniquify(qualified, usedQualified);
+        }
+    }
+
+    private static string SuggestDuplicateName(
+        PropertyHole hole,
+        ExpressionSyntax? expression,
+        PropertyNamingStyle style,
+        ExpressionPropertyName.Kind kind)
+    {
+        if (expression is not null)
+        {
+            var fromArgument = ExpressionPropertyName.TrySuggest(expression, style, kind);
+            if (!string.IsNullOrEmpty(fromArgument))
+            {
+                return fromArgument!;
             }
         }
+
+        var fromHole = PropertyNaming.Suggest(hole.PropertyName, style);
+        return string.IsNullOrEmpty(fromHole) ? hole.PropertyName : fromHole;
     }
 
     private static void AnalyzeNaming(

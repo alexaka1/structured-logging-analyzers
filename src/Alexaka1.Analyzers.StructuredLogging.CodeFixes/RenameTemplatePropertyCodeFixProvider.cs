@@ -15,7 +15,8 @@ public sealed class RenameTemplatePropertyCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds =>
         ImmutableArray.Create(
             DiagnosticIds.InconsistentTemplatePropertyNaming,
-            DiagnosticIds.PositionalPropertyUsed);
+            DiagnosticIds.PositionalPropertyUsed,
+            DiagnosticIds.DuplicateTemplateProperty);
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 

@@ -257,18 +257,27 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        var named = parsed.NamedProperties;
+        var argumentExpressions = new ExpressionSyntax?[named.Length];
+        for (var i = 0; i < named.Length; i++)
+        {
+            argumentExpressions[i] = PropertyArgumentMapper.ArgumentForHole(arguments, template, i);
+        }
+
         TemplateStyleRules.AnalyzeNamed(
             context,
             map,
-            parsed.NamedProperties,
+            named,
             settings,
             regexCache,
             skipHole: null,
-            allowRewrite: true);
+            allowRewrite: true,
+            argumentExpressions,
+            uniquifyDuplicates: true);
 
         if (allowDestructuring)
         {
-            AnalyzeAnonymousAndComplex(context, invocation, template, arguments, parsed.NamedProperties, map);
+            AnalyzeAnonymousAndComplex(context, invocation, template, arguments, named, map);
         }
     }
 
