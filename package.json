@@ -1,6 +1,6 @@
 {
   "name": "Alexaka1.Analyzers.StructuredLogging",
-  "version": "0.1.0-preview.7",
+  "version": "0.1.0-preview.8",
   "private": true,
   "scripts": {
     "changeset": "changeset",
