@@ -7,7 +7,7 @@
 - `test/Alexaka1.Analyzers.StructuredLogging.Tests`: xUnit.net v3 tests hosted on .NET 10.
 - `test/comparison`: Optional InspectCode comparison against the published ReSharper marketplace plugin.
 - `samples/`: Consuming projects targeting `net10.0` (console and Blazor), `netstandard2.0`, and SDK-style `net472`.
-- `docs/`: Rule pages, compatibility notes, and the NuGet package readme. Root solution: `Alexaka1.Analyzers.StructuredLogging.slnx`.
+- `docs/`: Rule pages, compatibility notes, IDE/compiler and performance policy, and the NuGet package readme. Root solution: `Alexaka1.Analyzers.StructuredLogging.slnx`.
 - `.changeset/`: Pending release notes consumed by Changesets.
 - `build/`: Release helper scripts (`version.sh`, `extract-changelog.sh`, `detect-duplicate-release.sh`).
 
@@ -18,7 +18,7 @@
 - Comparison (optional): `./test/comparison/run-comparison.sh`
 - Changeset (user-visible package changes): `pnpm changeset`
 
-Keep analyzer assemblies free of Workspaces references. Do not add runtime or `lib/` assets to the NuGet package.
+Keep analyzer assemblies free of Workspaces references. Do not add runtime or `lib/` assets to the NuGet package. Roslyn compile-time API floor: 4.8.0 (VS 2022 17.8); see `docs/ide-compiler-policy.md`. Performance gates: `docs/performance-policy.md`.
 
 ## Coding Style & Naming
 - Follow `.editorconfig`. Treat nullable warnings as actionable.

@@ -605,14 +605,14 @@ Completion criterion: package, compatibility, and performance requirements pass.
 
 Publish:
 
-- Installation instructions.
-- Central package management example.
-- `.editorconfig` reference.
-- Rule documentation.
-- Old/new diagnostic ID mapping.
-- Compatibility differences.
-- Supported IDE/compiler policy.
-- Performance policy.
+- Installation instructions (`README.md`, `docs/package-readme.md`).
+- Central package management example (`docs/package-readme.md`).
+- `.editorconfig` reference (`README.md`, `docs/compatibility.md`).
+- Rule documentation (`docs/rules/`).
+- Old/new diagnostic ID mapping (`docs/compatibility.md`).
+- Compatibility differences (`docs/compatibility.md`).
+- Supported IDE/compiler policy (`docs/ide-compiler-policy.md`).
+- Performance policy (`docs/performance-policy.md`).
 
 Release a prerelease before declaring behavioral parity.
 

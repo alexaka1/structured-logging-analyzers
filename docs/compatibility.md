@@ -5,6 +5,8 @@ preserved quirks and intentional corrections.
 
 Diagnostic prefix: `AASL` (`Alexaka1.Analyzers.StructuredLogging`).
 Package ID: `Alexaka1.Analyzers.StructuredLogging`.
+Host and compiler floors: [ide-compiler-policy.md](ide-compiler-policy.md).
+Allocation and concurrency gates: [performance-policy.md](performance-policy.md).
 
 ## ReSharper CLI comparison
 
@@ -27,6 +29,25 @@ characterization corpus under `test/comparison/corpus`.
   whole literal. Comparison is by file and rule id, not span.
 
 See `test/comparison/README.md` and `test/comparison/reports/comparison.md`.
+
+## Diagnostic ID mapping
+
+| ReSharper / Rider inspection | AASL |
+|---|---|
+| `AnonymousObjectDestructuringProblem` | [AASL0001](rules/AASL0001.md) |
+| `ComplexObjectDestructuringProblem` | [AASL0002](rules/AASL0002.md) |
+| `ComplexObjectInContextDestructuringProblem` | [AASL0003](rules/AASL0003.md) |
+| `ContextualLoggerProblem` | [AASL0004](rules/AASL0004.md) |
+| `ExceptionPassedAsTemplateArgumentProblem` | [AASL0005](rules/AASL0005.md) |
+| `TemplateDuplicatePropertyProblem` | [AASL0006](rules/AASL0006.md) |
+| `TemplateIsNotCompileTimeConstantProblem` | [AASL0007](rules/AASL0007.md) |
+| `PositionalPropertyUsedProblem` | [AASL0008](rules/AASL0008.md) |
+| `InconsistentLogPropertyNaming` | [AASL0009](rules/AASL0009.md) |
+| `InconsistentContextLogPropertyNaming` | [AASL0010](rules/AASL0010.md) |
+| `LogMessageIsSentenceProblem` | [AASL0011](rules/AASL0011.md) |
+| *(no plugin equivalent)* | [AASL0012](rules/AASL0012.md) |
+
+The comparison runner uses the same map in `test/comparison/runner/RuleMap.cs`.
 
 ## Host differences (not portable)
 

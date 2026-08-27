@@ -4,6 +4,10 @@ Please:
 
 - Keep analyzer assemblies free of Workspaces references.
 - Do not add runtime or `lib/` assets to the NuGet package.
+- Keep the Roslyn compile-time API at 4.8.0 unless
+  [docs/ide-compiler-policy.md](docs/ide-compiler-policy.md) is updated.
+- Keep allocation, telemetry, and concurrency assertions aligned with
+  [docs/performance-policy.md](docs/performance-policy.md).
 - Do not copy Apache-2.0 Serilog parser sources from the upstream plugin
   into the analyzer.
 - Add tests for new diagnostics, invocation shapes, and code fixes.
