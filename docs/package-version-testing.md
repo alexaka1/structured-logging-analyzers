@@ -67,13 +67,16 @@ argument because current NLog attributes those overloads.
 
 ## Roslyn is not a consumer library
 
-`Microsoft.CodeAnalysis.CSharp` 4.8.0 is the **compile-time API floor** (Visual
-Studio 2022 17.8). Bumping it to 5.x would require VS 2026. The analyzer is
-forward-compatible with newer compilers; samples building on the .NET 10 SDK
-are the host smoke test. Do not put Roslyn into the logging-library matrix.
+The compile-time API floor is `Microsoft.CodeAnalysis.CSharp` 4.8.0 (Visual
+Studio 2022 17.8). Do not put Roslyn into the logging-library matrix. Host
+support, Renovate freezes, and why 5.x is rejected are in
+[ide-compiler-policy.md](ide-compiler-policy.md). Allocation, telemetry, and
+concurrency gates are in [performance-policy.md](performance-policy.md).
 
 ## Renovate
 
+Roslyn package freezes are documented in
+[ide-compiler-policy.md](ide-compiler-policy.md). In short:
 `Microsoft.CodeAnalysis.CSharp` and `Microsoft.CodeAnalysis.CSharp.Workspaces`
 are frozen at 4.8.0. `Microsoft.CodeAnalysis.Analyzers` is limited to the 3.x
 line (`allowedVersions: "<4"`), and majors of other `Microsoft.CodeAnalysis.*`

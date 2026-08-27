@@ -4,7 +4,10 @@ Roslyn analyzers and code fixes for structured logging message templates.
 Supports Serilog, NLog, Microsoft.Extensions.Logging, and ZLogger.
 
 This package is analyzer-only. It adds no runtime or compile-time assembly
-reference to consuming applications.
+reference to consuming applications. The compile-time Roslyn API floor is
+4.8.0 ([Visual Studio 2022 17.8](https://learn.microsoft.com/visualstudio/extensibility/roslyn-version-support)
+or a newer compiler host). See the
+[IDE/compiler policy](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/ide-compiler-policy.md).
 
 ## Install
 

@@ -72,7 +72,10 @@ dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj
 
 The production assemblies target `netstandard2.0` and analyze projects targeting
 `net10.0` (including Blazor `.razor` / `.razor.cs`), `netstandard2.0`, and
-SDK-style `net472`. Logging-library version
+SDK-style `net472`. The compile-time Roslyn API floor is 4.8.0 (Visual Studio
+2022 17.8); see [docs/ide-compiler-policy.md](docs/ide-compiler-policy.md).
+Allocation, telemetry, and concurrency gates are in
+[docs/performance-policy.md](docs/performance-policy.md). Logging-library version
 coverage is documented in [docs/package-version-testing.md](docs/package-version-testing.md).
 
 ## Diagnostics
