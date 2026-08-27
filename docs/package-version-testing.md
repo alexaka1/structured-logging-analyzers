@@ -74,6 +74,14 @@ are the host smoke test. Do not put Roslyn into the logging-library matrix.
 
 ## Renovate
 
+`Microsoft.CodeAnalysis.CSharp` and `Microsoft.CodeAnalysis.CSharp.Workspaces`
+are frozen at 4.8.0. `Microsoft.CodeAnalysis.Analyzers` is limited to the 3.x
+line (`allowedVersions: "<4"`), and majors of other `Microsoft.CodeAnalysis.*`
+packages are disabled. Those rules keep Roslyn 5.x out of the grouped
+`dotnet-monorepo` update. Before they landed, Analyzers 5.x (version-aligned
+with Roslyn 5 / VS 2026) still grouped with that monorepo and opened a major
+PR. 3.x minors of the Analyzers package may still ship.
+
 Major upgrades of logging libraries in the test `.csproj` would change the
 default `typeof` host and drop coverage of the previous API. Majors are
 disabled there. Latest majors are the `*Latest` constants in
@@ -83,3 +91,9 @@ in the matrix because those versions are read from the csproj.
 Regex-manager updates of `*Latest` include majors. Those major PRs are not
 automerge: a new major can change overloads, attributes, or template APIs, and
 `LatestStablePackageTests` is the gate.
+
+`samples/` and `test/comparison/` are ignored through `nuget.ignorePaths` as
+well as top-level `ignorePaths`. `config:best-practices` includes
+`:ignoreModulesAndTests`, which sets a dedicated `nuget.ignorePaths` that does
+not merge with top-level `ignorePaths`, so NuGet-only paths must be listed in
+the `nuget` block.
