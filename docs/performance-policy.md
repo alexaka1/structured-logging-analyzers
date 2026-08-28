@@ -75,8 +75,8 @@ upgrades.
 
 | Gate | Input | Limits |
 |---|---|---|
-| Unrelated compilation | 4,000 `Console.WriteLine` calls | Wall clock under 20 s; analyzer execution under 500 ms; allocated under 48 MiB; no AASL diagnostics |
-| Logging compilation | 500 Serilog `Information` calls with unique named holes | Wall clock under 20 s; analyzer execution under 500 ms; allocated under 32 MiB; no AASL diagnostics |
+| Unrelated compilation | 4,000 `Console.WriteLine` calls | Wall clock under 20 s; analyzer execution under 500 ms; allocated under 24 MiB; no AASL diagnostics |
+| Logging compilation | 500 Serilog `Information` calls with unique named holes | Wall clock under 20 s; analyzer execution under 500 ms; allocated under 16 MiB; no AASL diagnostics |
 | Cold / warm telemetry | 200 logging calls, two consecutive analyses | Concurrent + action shape; execution under 500 ms each; no AASL diagnostics |
 | Concurrent determinism | 8 parallel analyses vs one sequential run | Same ordered diagnostic keys; telemetry shape on every run |
 | Invalid `.editorconfig` | Unclosed `ignored_properties_regex` | Analyzer does not throw; `AASL0009` still reports |
