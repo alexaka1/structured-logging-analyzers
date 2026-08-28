@@ -22,7 +22,7 @@ public sealed class PackageAndPerformanceTests
     // process, after CompilationWithAnalyzers is constructed. Retune after
     // SDK or Roslyn upgrades. Keep docs/performance-policy.md in sync.
     private static readonly TimeSpan MaxWallClock = TimeSpan.FromSeconds(20);
-    private static readonly TimeSpan MaxAnalyzerExecution = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan MaxAnalyzerExecution = TimeSpan.FromMilliseconds(500);
     private const long UnrelatedAllocationLimitBytes = 48 * 1024 * 1024;
     private const long LoggingAllocationLimitBytes = 32 * 1024 * 1024;
     private readonly ITestOutputHelper _output;
