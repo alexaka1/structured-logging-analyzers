@@ -1,4 +1,11 @@
 <Solution>
+  <Folder Name="/build/">
+    <File Path="build/Directory.Build.props" />
+    <File Path="build/detect-duplicate-release.cs" />
+    <File Path="build/extract-changelog.cs" />
+    <File Path="build/resolve-release-version.cs" />
+    <File Path="build/version.cs" />
+  </Folder>
   <Folder Name="/pack/">
     <Project Path="pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj" />
   </Folder>
