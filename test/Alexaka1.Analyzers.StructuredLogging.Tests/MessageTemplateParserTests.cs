@@ -20,6 +20,7 @@ public sealed class MessageTemplateParserTests
     {
         var parsed = MessageTemplateParser.Parse("hello world");
         Assert.Empty(parsed.Properties);
+        Assert.Same(ParsedTemplate.Empty, parsed);
     }
 
     [Fact]
@@ -65,6 +66,23 @@ public sealed class MessageTemplateParserTests
     }
 
     [Fact]
+    public void Triple_braces_contain_a_hole()
+    {
+        var parsed = MessageTemplateParser.Parse("{{{Name}}}");
+        var hole = Assert.Single(parsed.NamedProperties!);
+        Assert.Equal("Name", hole.PropertyName);
+        Assert.Equal(2, hole.StartIndex);
+    }
+
+    [Fact]
+    public void Escaped_closing_braces_after_a_hole_are_text()
+    {
+        var parsed = MessageTemplateParser.Parse("{Name}}}");
+        var hole = Assert.Single(parsed.NamedProperties!);
+        Assert.Equal("Name", hole.PropertyName);
+    }
+
+    [Fact]
     public void Positional_only_template()
     {
         var parsed = MessageTemplateParser.Parse("{0} {1}");
@@ -100,6 +118,10 @@ public sealed class MessageTemplateParserTests
         Assert.Empty(MessageTemplateParser.Parse("{@}").Properties);
         Assert.Empty(MessageTemplateParser.Parse("{Name").Properties);
         Assert.Empty(MessageTemplateParser.Parse("{Name,}").Properties);
+        Assert.Empty(MessageTemplateParser.Parse("{Name:}").Properties);
+        Assert.Empty(MessageTemplateParser.Parse("{Name,1:}").Properties);
+        Assert.Empty(MessageTemplateParser.Parse("{Name,+1}").Properties);
+        Assert.Empty(MessageTemplateParser.Parse("{Name,1-}").Properties);
     }
 
     [Fact]
@@ -116,5 +138,32 @@ public sealed class MessageTemplateParserTests
         Assert.Equal(2, parsed.NamedProperties!.Length);
         Assert.Equal("Test", parsed.NamedProperties[0].PropertyName);
         Assert.Equal("Test", parsed.NamedProperties[1].PropertyName);
+    }
+
+    [Fact]
+    public void Malformed_hole_does_not_hide_a_later_valid_hole()
+    {
+        var parsed = MessageTemplateParser.Parse("{Bad,} {Good}");
+        var hole = Assert.Single(parsed.NamedProperties!);
+        Assert.Equal("Good", hole.PropertyName);
+    }
+
+    [Fact]
+    public void Format_accepts_every_character_except_closing_brace()
+    {
+        var parsed = MessageTemplateParser.Parse("{Value:€°∑}");
+        var hole = Assert.Single(parsed.NamedProperties!);
+        Assert.Equal("€°∑", hole.Format);
+    }
+
+    [Theory]
+    [InlineData("{Value,0}", "0")]
+    [InlineData("{Value,-0}", "-0")]
+    [InlineData("{Value,999999999999999999999999999999}", "999999999999999999999999999999")]
+    public void Alignment_follows_the_public_digit_grammar(string template, string expected)
+    {
+        var parsed = MessageTemplateParser.Parse(template);
+        var hole = Assert.Single(parsed.NamedProperties!);
+        Assert.Equal(expected, hole.Alignment);
     }
 }

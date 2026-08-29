@@ -191,6 +191,45 @@ public sealed class PositionalRenameFixTests
     }
 
     [Fact]
+    public Task Rename_in_indented_multiline_raw_string()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """"
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main(string orderId)
+                                {
+                                    Log.Logger.Information(
+                                        """
+                                        Processing
+                                          {|AASL0008:{0}|}
+                                        """,
+                                        orderId);
+                                }
+                            }
+                            """",
+            /*lang=csharp*/ """"
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main(string orderId)
+                                {
+                                    Log.Logger.Information(
+                                        """
+                                        Processing
+                                          {OrderId}
+                                        """,
+                                        orderId);
+                                }
+                            }
+                            """",
+            "AASL0008",
+            typeof(RenameTemplatePropertyCodeFixProvider),
+            expectedActionCount: 1);
+    }
+
+    [Fact]
     public Task Rename_named_reordered_argument()
     {
         return AnalyzerTestHost.VerifyFixAsync(

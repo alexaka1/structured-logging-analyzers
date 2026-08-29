@@ -424,23 +424,185 @@ internal static class LiteralSpanMapper
             return false;
         }
 
-        if (i < source.Length && source[i] == '\r')
+        var multiline = TryReadNewLine(source, ref i);
+        if (!multiline)
         {
-            i++;
+            return TryMapSingleLineRaw(source, spanStart, value, quoteCount, i, out map);
         }
 
-        if (i < source.Length && source[i] == '\n')
+        var closingQuoteStart = source.Length - quoteCount;
+        if (closingQuoteStart < i)
         {
-            i++;
+            map = Array.Empty<MappedChar>();
+            return false;
+        }
+
+        var closingLineStart = FindLineStart(source, closingQuoteStart);
+        var contentEnd = closingLineStart;
+        if (contentEnd > 0 && source[contentEnd - 1] == '\n')
+        {
+            contentEnd--;
+            if (contentEnd > 0 && source[contentEnd - 1] == '\r')
+            {
+                contentEnd--;
+            }
+        }
+        else if (contentEnd > 0 && source[contentEnd - 1] == '\r')
+        {
+            contentEnd--;
+        }
+
+        if (contentEnd < i)
+        {
+            map = Array.Empty<MappedChar>();
+            return value.Length == 0;
+        }
+
+        return TryMapMultilineRawContent(source, spanStart, i, contentEnd, value, out map);
+    }
+
+    private static bool TryMapSingleLineRaw(
+        string source,
+        int spanStart,
+        string value,
+        int quoteCount,
+        int contentStart,
+        out MappedChar[] map)
+    {
+        var contentEnd = source.Length - quoteCount;
+        if (contentStart + value.Length != contentEnd)
+        {
+            map = Array.Empty<MappedChar>();
+            return false;
         }
 
         map = new MappedChar[value.Length];
-        for (var logical = 0; logical < value.Length && i < source.Length; logical++, i++)
+        for (var logical = 0; logical < value.Length; logical++)
         {
-            map[logical] = new MappedChar(new TextSpan(spanStart + i, 1));
+            var sourceIndex = contentStart + logical;
+            if (source[sourceIndex] != value[logical])
+            {
+                map = Array.Empty<MappedChar>();
+                return false;
+            }
+
+            map[logical] = new MappedChar(new TextSpan(spanStart + sourceIndex, 1));
         }
 
-        return map.Length == value.Length;
+        return true;
+    }
+
+    private static bool TryMapMultilineRawContent(
+        string source,
+        int spanStart,
+        int contentStart,
+        int contentEnd,
+        string value,
+        out MappedChar[] map)
+    {
+        map = new MappedChar[value.Length];
+        var sourceIndex = contentStart;
+        var logicalIndex = 0;
+
+        while (sourceIndex < contentEnd || logicalIndex < value.Length)
+        {
+            var sourceLineEnd = FindNewLineStart(source, sourceIndex, contentEnd);
+            var logicalLineEnd = FindNewLineStart(value, logicalIndex, value.Length);
+            var sourceLineLength = sourceLineEnd - sourceIndex;
+            var logicalLineLength = logicalLineEnd - logicalIndex;
+            var indentationLength = sourceLineLength - logicalLineLength;
+            if (indentationLength < 0)
+            {
+                map = Array.Empty<MappedChar>();
+                return false;
+            }
+
+            var mappedLineStart = sourceIndex + indentationLength;
+            for (var i = 0; i < logicalLineLength; i++)
+            {
+                if (source[mappedLineStart + i] != value[logicalIndex + i])
+                {
+                    map = Array.Empty<MappedChar>();
+                    return false;
+                }
+
+                map[logicalIndex + i] = new MappedChar(new TextSpan(spanStart + mappedLineStart + i, 1));
+            }
+
+            sourceIndex = sourceLineEnd;
+            logicalIndex = logicalLineEnd;
+            if (sourceIndex == contentEnd || logicalIndex == value.Length)
+            {
+                break;
+            }
+
+            var sourceNewLineLength = ReadNewLineLength(source, sourceIndex, contentEnd);
+            var logicalNewLineLength = ReadNewLineLength(value, logicalIndex, value.Length);
+            if (sourceNewLineLength == 0 || logicalNewLineLength == 0)
+            {
+                map = Array.Empty<MappedChar>();
+                return false;
+            }
+
+            var newLineSpan = new TextSpan(spanStart + sourceIndex, sourceNewLineLength);
+            for (var i = 0; i < logicalNewLineLength; i++)
+            {
+                map[logicalIndex + i] = new MappedChar(newLineSpan);
+            }
+
+            sourceIndex += sourceNewLineLength;
+            logicalIndex += logicalNewLineLength;
+        }
+
+        if (sourceIndex != contentEnd || logicalIndex != value.Length)
+        {
+            map = Array.Empty<MappedChar>();
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryReadNewLine(string text, ref int index)
+    {
+        var length = ReadNewLineLength(text, index, text.Length);
+        index += length;
+        return length > 0;
+    }
+
+    private static int ReadNewLineLength(string text, int index, int end)
+    {
+        if (index >= end)
+        {
+            return 0;
+        }
+
+        if (text[index] == '\r')
+        {
+            return index + 1 < end && text[index + 1] == '\n' ? 2 : 1;
+        }
+
+        return text[index] == '\n' ? 1 : 0;
+    }
+
+    private static int FindLineStart(string text, int index)
+    {
+        while (index > 0 && text[index - 1] != '\r' && text[index - 1] != '\n')
+        {
+            index--;
+        }
+
+        return index;
+    }
+
+    private static int FindNewLineStart(string text, int start, int end)
+    {
+        while (start < end && text[start] != '\r' && text[start] != '\n')
+        {
+            start++;
+        }
+
+        return start;
     }
 
     private static MappedChar[] FallbackMap(TextSpan span, string value)

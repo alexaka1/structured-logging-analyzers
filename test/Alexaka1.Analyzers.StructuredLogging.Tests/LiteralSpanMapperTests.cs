@@ -62,6 +62,29 @@ public sealed class LiteralSpanMapperTests
         Assert.Equal("{Name}", source);
     }
 
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    public void Multiline_raw_string_maps_indented_hole(string newLine)
+    {
+        var source = /*lang=csharp*/ """"
+                                     class C
+                                     {
+                                         string S = """
+                                             Hello
+                                               {Name}
+                                             """;
+                                     }
+                                     """".Replace("\n", newLine, StringComparison.Ordinal);
+        var map = Map(source);
+        var start = map.Value.IndexOf("{Name}", StringComparison.Ordinal);
+        var span = map.TryGetSpan(start, "{Name}".Length);
+        Assert.NotNull(span);
+        var mappedSource = map.Expression.SyntaxTree.GetText(TestContext.Current.CancellationToken)
+            .ToString(span.Value);
+        Assert.Equal("{Name}", mappedSource);
+    }
+
     private static TemplateSourceMap Map(string source)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
