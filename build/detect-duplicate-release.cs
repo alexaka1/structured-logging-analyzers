@@ -1,7 +1,4 @@
 #!/usr/bin/env -S dotnet --
-#:property TargetFramework=net10.0
-#:property PublishAot=false
-#:property PackAsTool=false
 
 using System.Diagnostics;
 using System.Net;
@@ -14,7 +11,8 @@ if (args is not [var tag, var version, var packageId])
     return Fail("Usage: detect-duplicate-release.cs TAG VERSION NUGET_PACKAGE_ID");
 }
 
-var token = FirstNonEmpty(Environment.GetEnvironmentVariable("GH_TOKEN"), Environment.GetEnvironmentVariable("GITHUB_TOKEN"));
+var token = FirstNonEmpty(Environment.GetEnvironmentVariable("GH_TOKEN"),
+    Environment.GetEnvironmentVariable("GITHUB_TOKEN"));
 if (string.IsNullOrEmpty(token))
 {
     return Fail("Error: GH_TOKEN or GITHUB_TOKEN is required to query GitHub releases.");
@@ -31,7 +29,8 @@ var repository = FirstNonEmpty(
     Environment.GetEnvironmentVariable("GH_REPO"),
     TryGetRepositoryFromGit());
 if (!string.IsNullOrEmpty(repository)
-    && (repository.Contains("://", StringComparison.Ordinal) || repository.StartsWith("git@", StringComparison.Ordinal)))
+    && (repository.Contains("://", StringComparison.Ordinal) ||
+        repository.StartsWith("git@", StringComparison.Ordinal)))
 {
     repository = ParseGitHubRepository(repository);
 }
@@ -72,7 +71,8 @@ try
 {
     exists = await NuGetPackageExists(http, nugetSource, packageId, version);
 }
-catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException or KeyNotFoundException)
+catch (Exception ex) when (ex is HttpRequestException or JsonException or InvalidOperationException
+                               or KeyNotFoundException)
 {
     return Fail($"Error: Failed to query NuGet package {packageId}.\n{ex.Message}");
 }
@@ -90,7 +90,8 @@ static async Task<bool> NuGetPackageExists(HttpClient http, string source, strin
     if (!indexResponse.IsSuccessStatusCode)
     {
         var body = await indexResponse.Content.ReadAsStringAsync();
-        throw new InvalidOperationException($"Failed to query NuGet source '{source}': {(int)indexResponse.StatusCode} {indexResponse.ReasonPhrase}\n{body}");
+        throw new InvalidOperationException(
+            $"Failed to query NuGet source '{source}': {(int)indexResponse.StatusCode} {indexResponse.ReasonPhrase}\n{body}");
     }
 
     using var index = await JsonDocument.ParseAsync(await indexResponse.Content.ReadAsStreamAsync());
@@ -124,7 +125,8 @@ static async Task<bool> NuGetPackageExists(HttpClient http, string source, strin
     if (!versionsResponse.IsSuccessStatusCode)
     {
         var body = await versionsResponse.Content.ReadAsStringAsync();
-        throw new InvalidOperationException($"Failed to query NuGet package versions: {(int)versionsResponse.StatusCode} {versionsResponse.ReasonPhrase}\n{body}");
+        throw new InvalidOperationException(
+            $"Failed to query NuGet package versions: {(int)versionsResponse.StatusCode} {versionsResponse.ReasonPhrase}\n{body}");
     }
 
     using var versions = await JsonDocument.ParseAsync(await versionsResponse.Content.ReadAsStreamAsync());

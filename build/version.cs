@@ -1,7 +1,4 @@
 #!/usr/bin/env -S dotnet --
-#:property TargetFramework=net10.0
-#:property PublishAot=false
-#:property PackAsTool=false
 
 using System.Diagnostics;
 using System.Text.Json;

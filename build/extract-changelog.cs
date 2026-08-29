@@ -1,7 +1,4 @@
 #!/usr/bin/env -S dotnet --
-#:property TargetFramework=net10.0
-#:property PublishAot=false
-#:property PackAsTool=false
 
 using System.Text.RegularExpressions;
 
@@ -16,7 +13,8 @@ if (!File.Exists(inputFile))
 }
 
 var text = await File.ReadAllTextAsync(inputFile);
-var heading = new Regex(@"^## [0-9]+\.[0-9]+\.[0-9]", RegexOptions.Multiline | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+var heading = new Regex(@"^## [0-9]+\.[0-9]+\.[0-9]", RegexOptions.Multiline | RegexOptions.CultureInvariant,
+    TimeSpan.FromSeconds(1));
 var matches = heading.Matches(text);
 if (matches.Count == 0)
 {
