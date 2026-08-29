@@ -97,7 +97,6 @@ coverage is documented in [docs/package-version-testing.md](docs/package-version
 
 `[LoggerMessage]` declarations and `LoggerMessage.Define` / `DefineScope` are
 included. Blazor `.razor` `@code` and `.razor.cs` code-behind are analyzed and
-fixed. When template naming is `semantic_conventions`, AASL0012 (generated
-logging cannot use Semantic Conventions property names) warns on `[LoggerMessage]`.
+fixed.
 SDK `CA*` / `SYSLIB10xx` rules are recommended alongside this package;
 see [Recommended Microsoft analyzers](#recommended-microsoft-analyzers).
