@@ -140,12 +140,23 @@ public sealed class MessageTemplateParserTests
         Assert.Equal("Test", parsed.NamedProperties[1].PropertyName);
     }
 
-    [Fact]
-    public void Malformed_hole_does_not_hide_a_later_valid_hole()
+    [Theory]
+    [InlineData("{Bad,} {Good}")]
+    [InlineData("{Bad {Good}}")]
+    public void Malformed_hole_does_not_hide_a_later_valid_hole(string template)
     {
-        var parsed = MessageTemplateParser.Parse("{Bad,} {Good}");
+        var parsed = MessageTemplateParser.Parse(template);
         var hole = Assert.Single(parsed.NamedProperties!);
         Assert.Equal("Good", hole.PropertyName);
+    }
+
+    [Fact]
+    public void Opening_brace_in_format_is_not_a_nested_hole()
+    {
+        var parsed = MessageTemplateParser.Parse("{Value:{Good}}");
+        var hole = Assert.Single(parsed.NamedProperties!);
+        Assert.Equal("Value", hole.PropertyName);
+        Assert.Equal("{Good", hole.Format);
     }
 
     [Fact]

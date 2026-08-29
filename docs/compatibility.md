@@ -160,7 +160,7 @@ The parser follows the public message-template grammar for:
 - Alignment with an optional leading `-` followed by one or more digits,
   including zero and widths larger than `Int32.MaxValue`
 - A non-empty format containing any character except `}`
-- malformed holes become text
+- malformed holes become text; a later or nested valid hole is still parsed
 - all-positional vs named vs mixed classification as above
 
 For recovery and naming diagnostics, the parser also recognizes property names

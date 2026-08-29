@@ -31,9 +31,15 @@ internal static class MessageTemplateParser
             if (TryReadHole(template, open, out var hole, out var consumedThrough))
             {
                 (holes ??= new List<PropertyHole>()).Add(hole);
+                index = consumedThrough;
+                continue;
             }
 
-            index = consumedThrough;
+            // A failed hole may still contain a later `{`; resume there instead of
+            // treating the rest of the failed span as text. `{Value:{Good}}` stays
+            // one hole because that outer parse succeeds.
+            var nested = FindUnescapedOpenBrace(template, open + 1);
+            index = nested >= 0 && nested < consumedThrough ? nested : consumedThrough;
         }
 
         return holes is null ? ParsedTemplate.Empty : Classify(holes);
