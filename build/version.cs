@@ -4,18 +4,30 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-var changeset = Run("pnpm", "run", "changeset:version");
-if (changeset != 0)
-{
-    return changeset;
-}
-
 const string packageJson = "package.json";
 const string versionFile = "pack/Alexaka1.Analyzers.StructuredLogging/Version.props";
+const string versionElementPattern = @"<Version>[^<]*</Version>";
 
 if (!File.Exists(packageJson))
 {
     return Fail($"Error: Missing {packageJson}");
+}
+
+if (!File.Exists(versionFile))
+{
+    return Fail($"Error: Missing {versionFile}");
+}
+
+var contents = await File.ReadAllTextAsync(versionFile);
+if (!Regex.IsMatch(contents, versionElementPattern, RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1)))
+{
+    return Fail($"Error: No <Version> element found in {versionFile}");
+}
+
+var changeset = Run("pnpm", "run", "changeset:version");
+if (changeset != 0)
+{
+    return changeset;
 }
 
 using var json = JsonDocument.Parse(await File.ReadAllTextAsync(packageJson));
@@ -27,15 +39,10 @@ if (string.IsNullOrEmpty(version))
     return Fail($"Error: No version in {packageJson}");
 }
 
-if (!File.Exists(versionFile))
-{
-    return Fail($"Error: Missing {versionFile}");
-}
-
-var contents = await File.ReadAllTextAsync(versionFile);
+contents = await File.ReadAllTextAsync(versionFile);
 var updated = Regex.Replace(
     contents,
-    @"<Version>[^<]*</Version>",
+    versionElementPattern,
     $"<Version>{version}</Version>",
     RegexOptions.CultureInvariant,
     TimeSpan.FromSeconds(1));
@@ -52,9 +59,20 @@ static int Run(string fileName, params string[] arguments)
 {
     var psi = new ProcessStartInfo
     {
-        FileName = OperatingSystem.IsWindows() ? fileName + ".cmd" : fileName,
         UseShellExecute = false,
     };
+
+    if (OperatingSystem.IsWindows())
+    {
+        psi.FileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe";
+        psi.ArgumentList.Add("/c");
+        psi.ArgumentList.Add(fileName);
+    }
+    else
+    {
+        psi.FileName = fileName;
+    }
+
     foreach (var argument in arguments)
     {
         psi.ArgumentList.Add(argument);
