@@ -91,6 +91,7 @@ Read `docs/compatibility.md` before changing rule behavior and `docs/ide-compile
 - `samples` - real consumer projects for .NET 10, Blazor, .NET Standard 2.0, and SDK-style .NET Framework 4.7.2.
 - `docs/rules` - public documentation for each diagnostic.
 - `.changeset` - pending user-facing release notes.
+- `build` - release helper file-based C# programs (`version.cs`, `extract-changelog.cs`, `resolve-release-version.cs`, `detect-duplicate-release.cs`).
 
 ## Formatting
 
