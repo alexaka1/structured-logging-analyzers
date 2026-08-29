@@ -126,7 +126,6 @@ Replacement for JetBrains `StringUtil` naming:
   some all-caps prefixes (`MYIgnored`). This only shows up when such a
   name is not ignored by regex.
 - `camel_case`: PascalCase then decapitalize the first letter.
-- `camel_case`: PascalCase then decapitalize the first letter.
 - `snake_case`: lowercase words joined by `_`.
 - `elastic_naming`: snake_case with `_` replaced by `.`.
 - `semantic_conventions`: lowercase ASCII; `.` is a namespace delimiter and `_`
@@ -147,23 +146,40 @@ Replacement for JetBrains `StringUtil` naming:
 
 ## Parser
 
-Independent implementation of message-template syntax:
+The analyzer parses each recognized constant template once from its logical
+string value. The shared result records each hole's name, raw text, logical
+offsets, destructuring hint, alignment, format, and positional classification.
+Independent rules inspect that result. See [PROVENANCE.md](../PROVENANCE.md) for
+implementation lineage.
+
+The parser follows the public message-template grammar for:
 
 - Text with `{property}` holes
 - `{{` / `}}` escapes
 - `@` destructure and `$` stringify
-- alignment and format
-- property names: letters, digits, `_`, `.`, space
-- malformed holes become text
+- Alignment with an optional leading `-` followed by one or more digits,
+  including zero and widths larger than `Int32.MaxValue`
+- A non-empty format containing any character except `}`, including extra `:`
+  or `,` (`{Timestamp:HH:mm:ss}`, `{Value:#,0}`). `{Bad: {Good}}` is one hole
+  whose format is ` {Good`, not a nested property.
+- malformed holes become text; a later or nested valid hole is still parsed
+- A hole is positional only when its name parses as a non-negative `Int32`.
+  `{00}` is positional; `{ 0}` and `{999999999999}` are named
 - all-positional vs named vs mixed classification as above
+
+For recovery and naming diagnostics, the parser also recognizes property names
+containing `.`, spaces, or non-ASCII letters. These names extend the public
+grammar so rules can report and safely rewrite library-specific or invalid
+names instead of treating the whole hole as text.
 
 ## Literal mapping
 
-Code fixes map logical template offsets through:
+`LiteralSpanMapper` converts the parser's logical offsets back to exact C#
+source spans for diagnostics and fixes. It maps:
 
 - regular string literals
 - verbatim string literals
-- raw string literals
+- single-line and indentation-trimmed multiline raw string literals
 - constant concatenations
 - escaped braces, quotes, backslashes, and Unicode escapes
 

@@ -62,6 +62,81 @@ public sealed class LiteralSpanMapperTests
         Assert.Equal("{Name}", source);
     }
 
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    [InlineData("\r")]
+    public void Multiline_raw_string_maps_indented_hole(string newLine)
+    {
+        var source = /*lang=csharp*/ """"
+                                     class C
+                                     {
+                                         string S = """
+                                             Hello
+                                               {Name}
+                                             """;
+                                     }
+                                     """".Replace("\n", newLine, StringComparison.Ordinal);
+        var map = Map(source);
+        var start = map.Value.IndexOf("{Name}", StringComparison.Ordinal);
+        var span = map.TryGetSpan(start, "{Name}".Length);
+        Assert.NotNull(span);
+        var mappedSource = map.Expression.SyntaxTree.GetText(TestContext.Current.CancellationToken)
+            .ToString(span.Value);
+        Assert.Equal("{Name}", mappedSource);
+    }
+
+    [Fact]
+    public void Multiline_raw_string_maps_hole_on_first_content_line()
+    {
+        var source = /*lang=csharp*/ """"
+                                     class C
+                                     {
+                                         string S = """
+                                             {Name}
+                                             """;
+                                     }
+                                     """";
+        AssertMappedHole(source, "{Name}");
+    }
+
+    [Fact]
+    public void Extra_quote_raw_string_maps_hole()
+    {
+        var source = /*lang=csharp*/ """""
+                                     class C
+                                     {
+                                         string S = """"
+                                             Hello {Name}
+                                             """";
+                                     }
+                                     """"";
+        AssertMappedHole(source, "{Name}");
+    }
+
+    [Fact]
+    public void Regular_string_maps_unicode_escaped_braces()
+    {
+        var map = Map("class C { string S = \"\\u007BName\\u007D\"; }");
+        Assert.Equal("{Name}", map.Value);
+        var start = map.Value.IndexOf("{Name}", StringComparison.Ordinal);
+        var span = map.TryGetSpan(start, "{Name}".Length);
+        Assert.NotNull(span);
+        var source = map.Expression.SyntaxTree.GetText(TestContext.Current.CancellationToken).ToString(span.Value);
+        Assert.Equal("\\u007BName\\u007D", source);
+    }
+
+    [Fact]
+    public void Concatenation_maps_hole_split_across_fragments()
+    {
+        var map = Map("class C { string S = \"Hel{\" + \"Name}\"; }");
+        var start = map.Value.IndexOf("{Name}", StringComparison.Ordinal);
+        Assert.Equal("{Name}", map.Value.Substring(start, "{Name}".Length));
+        var text = map.Expression.SyntaxTree.GetText(TestContext.Current.CancellationToken);
+        Assert.Equal("{", text.ToString(map.Map[start].SourceSpan));
+        Assert.Equal("}", text.ToString(map.Map[start + "{Name}".Length - 1].SourceSpan));
+    }
+
     private static TemplateSourceMap Map(string source)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -78,5 +153,16 @@ public sealed class LiteralSpanMapperTests
                                           .First();
         Assert.True(LiteralSpanMapper.TryMap(model, expression, cancellationToken, out var map));
         return map;
+    }
+
+    private static void AssertMappedHole(string source, string hole)
+    {
+        var map = Map(source);
+        var start = map.Value.IndexOf(hole, StringComparison.Ordinal);
+        var span = map.TryGetSpan(start, hole.Length);
+        Assert.NotNull(span);
+        var mappedSource = map.Expression.SyntaxTree.GetText(TestContext.Current.CancellationToken)
+            .ToString(span.Value);
+        Assert.Equal(hole, mappedSource);
     }
 }

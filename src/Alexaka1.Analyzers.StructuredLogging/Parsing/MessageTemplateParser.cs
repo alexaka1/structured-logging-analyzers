@@ -1,10 +1,8 @@
 namespace Alexaka1.Analyzers.StructuredLogging.Parsing;
 
 /// <summary>
-/// Parses message-template strings according to the public message-template
-/// syntax (https://messagetemplates.org/) as used by Serilog, NLog, and similar
-/// libraries. This is an independent implementation; it is not derived from
-/// Apache-2.0 Serilog sources.
+/// Parses the shared message-template grammar documented in
+/// docs/compatibility.md. See PROVENANCE.md for implementation lineage.
 /// </summary>
 internal static class MessageTemplateParser
 {
@@ -20,7 +18,7 @@ internal static class MessageTemplateParser
             return ParsedTemplate.Empty;
         }
 
-        var holes = new List<PropertyHole>();
+        List<PropertyHole>? holes = null;
         var index = 0;
         while (index < template.Length)
         {
@@ -32,16 +30,19 @@ internal static class MessageTemplateParser
 
             if (TryReadHole(template, open, out var hole, out var consumedThrough))
             {
-                holes.Add(hole);
+                (holes ??= new List<PropertyHole>()).Add(hole);
                 index = consumedThrough;
+                continue;
             }
-            else
-            {
-                index = consumedThrough;
-            }
+
+            // A failed hole may still contain a later `{`; resume there instead of
+            // treating the rest of the failed span as text. `{Value:{Good}}` stays
+            // one hole because that outer parse succeeds.
+            var nested = FindUnescapedOpenBrace(template, open + 1);
+            index = nested >= 0 && nested < consumedThrough ? nested : consumedThrough;
         }
 
-        return Classify(holes);
+        return holes is null ? ParsedTemplate.Empty : Classify(holes);
     }
 
     private static int FindUnescapedOpenBrace(string template, int start)
@@ -77,7 +78,7 @@ internal static class MessageTemplateParser
     {
         hole = default;
         var scan = open + 1;
-        while (scan < template.Length && IsHoleInterior(template[scan]))
+        while (scan < template.Length && template[scan] != '}')
         {
             scan++;
         }
@@ -123,36 +124,27 @@ internal static class MessageTemplateParser
 
         if (format != null)
         {
-            for (var i = 0; i < format.Length; i++)
+            if (format.Length == 0)
             {
-                if (!IsFormatChar(format[i]))
-                {
-                    return false;
-                }
+                return false;
             }
         }
 
         if (alignment != null)
         {
-            for (var i = 0; i < alignment.Length; i++)
+            var digitStart = alignment.Length > 0 && alignment[0] == '-' ? 1 : 0;
+            if (digitStart == alignment.Length)
+            {
+                return false;
+            }
+
+            for (var i = digitStart; i < alignment.Length; i++)
             {
                 var ch = alignment[i];
-                if (ch != '-' && (ch < '0' || ch > '9'))
+                if (ch < '0' || ch > '9')
                 {
                     return false;
                 }
-            }
-
-            var dash = alignment.LastIndexOf('-');
-            if (dash > 0)
-            {
-                return false;
-            }
-
-            var widthText = dash == -1 ? alignment : alignment.Substring(1);
-            if (!int.TryParse(widthText, NumberStyles.None, CultureInfo.InvariantCulture, out var width) || width == 0)
-            {
-                return false;
             }
         }
 
@@ -188,7 +180,13 @@ internal static class MessageTemplateParser
         if (comma < 0 || (colon >= 0 && comma > colon))
         {
             nameAndHint = interior.Substring(0, colon);
-            format = colon == interior.Length - 1 ? null : interior.Substring(colon + 1);
+            if (colon == interior.Length - 1)
+            {
+                alignment = format = null;
+                return false;
+            }
+
+            format = interior.Substring(colon + 1);
             alignment = null;
             return true;
         }
@@ -214,7 +212,13 @@ internal static class MessageTemplateParser
         }
 
         alignment = interior.Substring(comma + 1, colon - comma - 1);
-        format = colon == interior.Length - 1 ? null : interior.Substring(colon + 1);
+        if (colon == interior.Length - 1)
+        {
+            alignment = format = null;
+            return false;
+        }
+
+        format = interior.Substring(colon + 1);
         return true;
     }
 
@@ -234,33 +238,13 @@ internal static class MessageTemplateParser
         }
     }
 
-    private static bool IsHoleInterior(char c)
-    {
-        return c == '@' || c == '$' || IsNameChar(c) || IsFormatChar(c) || c == ':';
-    }
-
     private static bool IsNameChar(char c)
     {
         return char.IsLetterOrDigit(c) || c == '_' || c == '.' || c == ' ';
     }
 
-    private static bool IsFormatChar(char c)
-    {
-        if (c == '}')
-        {
-            return false;
-        }
-
-        return char.IsLetterOrDigit(c) || char.IsPunctuation(c) || c == ' ' || c == '+';
-    }
-
     private static ParsedTemplate Classify(List<PropertyHole> holes)
     {
-        if (holes.Count == 0)
-        {
-            return new ParsedTemplate(Array.Empty<PropertyHole>(), null, null, isMixed: false);
-        }
-
         var properties = holes.ToArray();
         var allPositional = true;
         var anyPositional = false;
