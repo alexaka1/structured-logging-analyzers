@@ -1,5 +1,7 @@
 using Alexaka1.Analyzers.StructuredLogging.CodeFixes;
+
 using Microsoft.CodeAnalysis.CodeFixes;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Fixes;
@@ -35,13 +37,13 @@ public sealed class FirstMilestoneFixPolicyTests
     {
         return VerifyNoFixesAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Call {http.request.method}")]
-                public static partial void RequestStarted(ILogger logger, string method);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Call {http.request.method}")]
+                                public static partial void RequestStarted(ILogger logger, string method);
+                            }
+                            """,
             "AASL0012",
             "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
@@ -51,13 +53,13 @@ public sealed class FirstMilestoneFixPolicyTests
     {
         return VerifyNoFixesAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{|AASL0006:{OrderId}|} {|AASL0006:{OrderId}|}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{|AASL0006:{OrderId}|} {|AASL0006:{OrderId}|}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             "AASL0006");
     }
 

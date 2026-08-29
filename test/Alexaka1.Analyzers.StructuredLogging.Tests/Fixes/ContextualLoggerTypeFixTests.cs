@@ -1,5 +1,6 @@
 using Alexaka1.Analyzers.StructuredLogging.CodeFixes;
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Fixes;
@@ -11,21 +12,21 @@ public sealed class ContextualLoggerTypeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class A
-            {
-                public A({|AASL0004:ILogger<B>|} log) { }
-            }
-            class B { }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class A
+                            {
+                                public A({|AASL0004:ILogger<B>|} log) { }
+                            }
+                            class B { }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class A
-            {
-                public A(ILogger<A> log) { }
-            }
-            class B { }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class A
+                            {
+                                public A(ILogger<A> log) { }
+                            }
+                            class B { }
+                            """,
             "AASL0004",
             typeof(ReplaceContextualLoggerTypeCodeFixProvider));
     }
@@ -35,29 +36,29 @@ public sealed class ContextualLoggerTypeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class A
-            {
-                ILogger<B> _log;
-                public A({|AASL0004:ILogger<B>|} log)
-                {
-                    _log = log;
-                }
-            }
-            class B { }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class A
+                            {
+                                ILogger<B> _log;
+                                public A({|AASL0004:ILogger<B>|} log)
+                                {
+                                    _log = log;
+                                }
+                            }
+                            class B { }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class A
-            {
-                ILogger<A> _log;
-                public A(ILogger<A> log)
-                {
-                    _log = log;
-                }
-            }
-            class B { }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class A
+                            {
+                                ILogger<A> _log;
+                                public A(ILogger<A> log)
+                                {
+                                    _log = log;
+                                }
+                            }
+                            class B { }
+                            """,
             "AASL0004",
             typeof(ReplaceContextualLoggerTypeCodeFixProvider));
     }
@@ -67,21 +68,21 @@ public sealed class ContextualLoggerTypeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class A({|AASL0004:ILogger<B>|} log)
-            {
-                private readonly ILogger<B> _log = log;
-            }
-            class B { }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class A({|AASL0004:ILogger<B>|} log)
+                            {
+                                private readonly ILogger<B> _log = log;
+                            }
+                            class B { }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class A(ILogger<A> log)
-            {
-                private readonly ILogger<A> _log = log;
-            }
-            class B { }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class A(ILogger<A> log)
+                            {
+                                private readonly ILogger<A> _log = log;
+                            }
+                            class B { }
+                            """,
             "AASL0004",
             typeof(ReplaceContextualLoggerTypeCodeFixProvider));
     }
@@ -91,27 +92,27 @@ public sealed class ContextualLoggerTypeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            namespace X { class A { } }
-            namespace Y
-            {
-                class A
-                {
-                    public A({|AASL0004:ILogger<X.A>|} log) { }
-                }
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            namespace X { class A { } }
+                            namespace Y
+                            {
+                                class A
+                                {
+                                    public A({|AASL0004:ILogger<X.A>|} log) { }
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            namespace X { class A { } }
-            namespace Y
-            {
-                class A
-                {
-                    public A(ILogger<A> log) { }
-                }
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            namespace X { class A { } }
+                            namespace Y
+                            {
+                                class A
+                                {
+                                    public A(ILogger<A> log) { }
+                                }
+                            }
+                            """,
             "AASL0004",
             typeof(ReplaceContextualLoggerTypeCodeFixProvider));
     }
@@ -121,27 +122,27 @@ public sealed class ContextualLoggerTypeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            class A
-            {
-                void M(ILogger log)
-                {
-                    {|AASL0004:log.ForContext<B>()|};
-                }
-            }
-            class B { }
-            """,
+                            using Serilog;
+                            class A
+                            {
+                                void M(ILogger log)
+                                {
+                                    {|AASL0004:log.ForContext<B>()|};
+                                }
+                            }
+                            class B { }
+                            """,
             /*lang=csharp*/ """
-            using Serilog;
-            class A
-            {
-                void M(ILogger log)
-                {
-                    log.ForContext<A>();
-                }
-            }
-            class B { }
-            """,
+                            using Serilog;
+                            class A
+                            {
+                                void M(ILogger log)
+                                {
+                                    log.ForContext<A>();
+                                }
+                            }
+                            class B { }
+                            """,
             "AASL0004",
             typeof(ReplaceContextualLoggerTypeCodeFixProvider));
     }
@@ -151,29 +152,29 @@ public sealed class ContextualLoggerTypeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class A
-            {
-                public A({|AASL0004:ILogger<B>|} log) { }
-                class Nested
-                {
-                    public Nested(ILogger<B> log) { }
-                }
-            }
-            class B { }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class A
+                            {
+                                public A({|AASL0004:ILogger<B>|} log) { }
+                                class Nested
+                                {
+                                    public Nested(ILogger<B> log) { }
+                                }
+                            }
+                            class B { }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class A
-            {
-                public A(ILogger<A> log) { }
-                class Nested
-                {
-                    public Nested(ILogger<B> log) { }
-                }
-            }
-            class B { }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class A
+                            {
+                                public A(ILogger<A> log) { }
+                                class Nested
+                                {
+                                    public Nested(ILogger<B> log) { }
+                                }
+                            }
+                            class B { }
+                            """,
             "AASL0004",
             typeof(ReplaceContextualLoggerTypeCodeFixProvider),
             remainingCount: 1);

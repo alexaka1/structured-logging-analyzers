@@ -1,4 +1,5 @@
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Parity;
@@ -8,76 +9,76 @@ public sealed class NamingAnalyzerTests
     [Fact]
     public Task Pascal_invalid()
     {
-        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
-                }
-            }
-            """);
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
+                                                                 }
+                                                             }
+                                                             """);
     }
 
     [Fact]
     public Task Pascal_valid()
     {
-        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{MyProperty}", 1);
-                }
-            }
-            """);
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     Log.Logger.Information("{MyProperty}", 1);
+                                                                 }
+                                                             }
+                                                             """);
     }
 
     [Fact]
     public Task Destructured_valid()
     {
-        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{@MyProperty}", 1);
-                }
-            }
-            """);
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     Log.Logger.Information("{@MyProperty}", 1);
+                                                                 }
+                                                             }
+                                                             """);
     }
 
     [Fact]
     public Task Dot_in_name()
     {
-        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{My.Property}|}", 1);
-                }
-            }
-            """);
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     Log.Logger.Information("{|AASL0009:{My.Property}|}", 1);
+                                                                 }
+                                                             }
+                                                             """);
     }
 
     [Fact]
     public Task Space_in_name()
     {
-        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{My Property}|}", 1);
-                }
-            }
-            """);
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     Log.Logger.Information("{|AASL0009:{My Property}|}", 1);
+                                                                 }
+                                                             }
+                                                             """);
     }
 
     [Fact]
@@ -85,15 +86,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = elastic_naming");
     }
 
@@ -102,15 +103,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{myProperty}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{myProperty}", 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = camel_case");
     }
 
@@ -119,15 +120,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
+                                }
+                            }
+                            """,
             editorConfig: "structured_logging_property_naming = camel_case");
     }
 
@@ -136,15 +137,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL0009.property_naming = elastic_naming");
     }
 
@@ -153,15 +154,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{MY_IGNORED.Property_}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{MY_IGNORED.Property_}", 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.ignored_properties_regex = MY_.*");
     }
 
@@ -170,15 +171,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    LogContext.PushProperty({|AASL0010:"Test"|}, 1);
-                }
-            }
-            """,
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    LogContext.PushProperty({|AASL0010:"Test"|}, 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL0010.property_naming = camel_case");
     }
 
@@ -187,36 +188,36 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{myProperty}", 1);
-                    LogContext.PushProperty({|AASL0010:"myProperty"|}, 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{myProperty}", 1);
+                                    LogContext.PushProperty({|AASL0010:"myProperty"|}, 1);
+                                }
+                            }
+                            """,
             editorConfig: /*lang=editorconfig*/ """
-            dotnet_code_quality.AASL0009.property_naming = camel_case
-            dotnet_code_quality.AASL0010.property_naming = snake_case
-            """);
+                                                dotnet_code_quality.AASL0009.property_naming = camel_case
+                                                dotnet_code_quality.AASL0010.property_naming = snake_case
+                                                """);
     }
 
     [Fact]
     public Task Context_property_naming()
     {
-        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    LogContext.PushProperty({|AASL0010:"test"|}, 1);
-                }
-            }
-            """);
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog.Context;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     LogContext.PushProperty({|AASL0010:"test"|}, 1);
+                                                                 }
+                                                             }
+                                                             """);
     }
 
     [Fact]
@@ -224,19 +225,19 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    LogContext.PushProperty("service.name", "api");
-                    LogContext.PushProperty("http.request.method", "GET");
-                    LogContext.PushProperty("http.response.status_code", 200);
-                    LogContext.PushProperty("exception.type", "IOException");
-                    LogContext.PushProperty("db.system.name", "postgresql");
-                }
-            }
-            """,
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    LogContext.PushProperty("service.name", "api");
+                                    LogContext.PushProperty("http.request.method", "GET");
+                                    LogContext.PushProperty("http.response.status_code", 200);
+                                    LogContext.PushProperty("exception.type", "IOException");
+                                    LogContext.PushProperty("db.system.name", "postgresql");
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
@@ -245,16 +246,16 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Call {http.request.method} {url.scheme}", "GET", "https");
-                    Log.Logger.Information("Status {http.response.status_code}", 200);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Call {http.request.method} {url.scheme}", "GET", "https");
+                                    Log.Logger.Information("Status {http.response.status_code}", 200);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
@@ -263,15 +264,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static class Program
-            {
-                public static void Main(ILogger logger)
-                {
-                    logger.LogInformation("Call {http.request.method}", "GET");
-                }
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static class Program
+                            {
+                                public static void Main(ILogger logger)
+                                {
+                                    logger.LogInformation("Call {http.request.method}", "GET");
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
@@ -280,15 +281,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    LogContext.PushProperty("service.name", "api");
-                }
-            }
-            """,
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    LogContext.PushProperty("service.name", "api");
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semconv");
     }
 
@@ -297,15 +298,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    LogContext.PushProperty({|AASL0010:"OrderId"|}, 1);
-                }
-            }
-            """,
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    LogContext.PushProperty({|AASL0010:"OrderId"|}, 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
@@ -314,15 +315,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{OrderId}|}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{OrderId}|}", 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
@@ -331,18 +332,18 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{OrderId}", 1);
-                    LogContext.PushProperty("service.name", "api");
-                    LogContext.PushProperty({|AASL0010:"OrderId"|}, 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{OrderId}", 1);
+                                    LogContext.PushProperty("service.name", "api");
+                                    LogContext.PushProperty({|AASL0010:"OrderId"|}, 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL0010.property_naming = semantic_conventions");
     }
 
@@ -351,15 +352,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{http.response.status_code}|}", 200);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{http.response.status_code}|}", 200);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = elastic_naming");
     }
 
@@ -368,15 +369,15 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{MyCafé}|}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{MyCafé}|}", 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
@@ -385,31 +386,31 @@ public sealed class NamingAnalyzerTests
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{1name}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{1name}", 1);
+                                }
+                            }
+                            """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
     }
 
     [Fact]
     public Task Context_interpolated_name_is_ignored()
     {
-        return AnalyzerTestHost.VerifyAsync(/*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    var x = "t";
-                    LogContext.PushProperty($"{x}est", 1);
-                }
-            }
-            """);
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog.Context;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     var x = "t";
+                                                                     LogContext.PushProperty($"{x}est", 1);
+                                                                 }
+                                                             }
+                                                             """);
     }
 }

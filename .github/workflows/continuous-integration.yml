@@ -103,12 +103,12 @@ jobs:
             {"ruleId":"AASL0009","file":"LogMessages.cs","line":49,"column":82},
             {"ruleId":"AASL0011","file":"LogMessages.cs","line":49,"column":91},
             {"ruleId":"AASL0009","file":"LogMessages.cs","line":52,"column":50},
-            {"ruleId":"AASL0009","file":"Program.cs","line":7,"column":27}
+            {"ruleId":"AASL0009","file":"Program.cs","line":8,"column":27}
           ]'
           assert_aasl samples/Net10BlazorExample/dotnet-build-error.sarif '[
-            {"ruleId":"AASL0009","file":"Counter.razor.cs","line":17,"column":40},
-            {"ruleId":"AASL0011","file":"Counter.razor.cs","line":17,"column":47},
-            {"ruleId":"AASL0009","file":"Home.razor","line":17,"column":38}
+            {"ruleId":"AASL0009","file":"Counter.razor.cs","line":16,"column":40},
+            {"ruleId":"AASL0011","file":"Counter.razor.cs","line":16,"column":47},
+            {"ruleId":"AASL0009","file":"Home.razor","line":18,"column":38}
           ]'
           assert_aasl samples/NetStandard20Example/dotnet-build-error.sarif '[
             {"ruleId":"AASL0009","file":"Sample.cs","line":9,"column":39}

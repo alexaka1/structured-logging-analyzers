@@ -1,5 +1,6 @@
 using Alexaka1.Analyzers.StructuredLogging.CodeFixes;
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Fixes;
@@ -11,27 +12,27 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{One} {Exc}", 1, {|AASL0005:new Exception()|});
-                }
-            }
-            """,
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{One} {Exc}", 1, {|AASL0005:new Exception()|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information(new Exception(), "{One}", 1);
-                }
-            }
-            """,
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information(new Exception(), "{One}", 1);
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -41,27 +42,27 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Error("{Error}", {|AASL0005:new Exception()|});
-                }
-            }
-            """,
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Error("{Error}", {|AASL0005:new Exception()|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Error(new Exception(), "");
-                }
-            }
-            """,
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Error(new Exception(), "");
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -71,27 +72,27 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError("Failed {Op} {Error}", "save", {|AASL0005:ex|});
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError("Failed {Op} {Error}", "save", {|AASL0005:ex|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError(ex, "Failed {Op}", "save");
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(ex, "Failed {Op}", "save");
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -101,27 +102,27 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError(42, "Failed {Error}", {|AASL0005:ex|});
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(42, "Failed {Error}", {|AASL0005:ex|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError(42, ex, "Failed");
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(42, ex, "Failed");
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -131,27 +132,27 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError("Failed {Op} {Error}", "save", /* keep */ {|AASL0005:ex|});
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError("Failed {Op} {Error}", "save", /* keep */ {|AASL0005:ex|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError(/* keep */ ex, "Failed {Op}", "save");
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(/* keep */ ex, "Failed {Op}", "save");
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -161,27 +162,27 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError("Failed {Op} {Error}", "save", {|AASL0005:ex|} /* keep */);
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError("Failed {Op} {Error}", "save", {|AASL0005:ex|} /* keep */);
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError(ex /* keep */, "Failed {Op}", "save");
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(ex /* keep */, "Failed {Op}", "save");
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -191,29 +192,29 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError("Failed {Op} {Error}", "save", // keep
-                        {|AASL0005:ex|});
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError("Failed {Op} {Error}", "save", // keep
+                                        {|AASL0005:ex|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError(// keep
-                        ex, "Failed {Op}", "save");
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(// keep
+                                        ex, "Failed {Op}", "save");
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -223,29 +224,29 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError("Failed {Op} {Error}", "save", {|AASL0005:ex|} // keep
-                    );
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError("Failed {Op} {Error}", "save", {|AASL0005:ex|} // keep
+                                    );
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError(// keep
-            ex, "Failed {Op}", "save"        );
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(// keep
+                            ex, "Failed {Op}", "save"        );
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -255,27 +256,27 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError("Failed {Op} {Error}",/* keep-save */ "save", {|AASL0005:ex|});
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError("Failed {Op} {Error}",/* keep-save */ "save", {|AASL0005:ex|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex)
-                {
-                    logger.LogError(ex, "Failed {Op}",/* keep-save */ "save");
-                }
-            }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(ex, "Failed {Op}",/* keep-save */ "save");
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -285,27 +286,27 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information({|AASL0007:$"{DateTime.Now} {{Error}}"|}, {|AASL0005:new Exception()|});
-                }
-            }
-            """,
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information({|AASL0007:$"{DateTime.Now} {{Error}}"|}, {|AASL0005:new Exception()|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information(new Exception(), $"{DateTime.Now} {{Error}}");
-                }
-            }
-            """,
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information(new Exception(), $"{DateTime.Now} {{Error}}");
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
@@ -315,27 +316,27 @@ public sealed class ExceptionArgumentFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using NLog;
-            class C
-            {
-                void M(Logger logger, Exception ex)
-                {
-                    logger.Error("Failed {Op} {Error}", "save", {|AASL0005:ex|});
-                }
-            }
-            """,
+                            using System;
+                            using NLog;
+                            class C
+                            {
+                                void M(Logger logger, Exception ex)
+                                {
+                                    logger.Error("Failed {Op} {Error}", "save", {|AASL0005:ex|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using NLog;
-            class C
-            {
-                void M(Logger logger, Exception ex)
-                {
-                    logger.Error(ex, "Failed {Op}", "save");
-                }
-            }
-            """,
+                            using System;
+                            using NLog;
+                            class C
+                            {
+                                void M(Logger logger, Exception ex)
+                                {
+                                    logger.Error(ex, "Failed {Op}", "save");
+                                }
+                            }
+                            """,
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }

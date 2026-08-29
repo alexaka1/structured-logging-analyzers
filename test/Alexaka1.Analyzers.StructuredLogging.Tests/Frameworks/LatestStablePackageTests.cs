@@ -1,4 +1,5 @@
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Frameworks;
@@ -43,15 +44,15 @@ public sealed class LatestStablePackageTests
     {
         return AnalyzerTestHost.VerifyPackageVersionAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{myProperty}|}", 1);
+                                }
+                            }
+                            """,
             PackageVersionMatrix.SerilogId,
             PackageVersionMatrix.SerilogLatest);
     }
@@ -61,15 +62,15 @@ public sealed class LatestStablePackageTests
     {
         return AnalyzerTestHost.VerifyPackageVersionAsync(
             /*lang=csharp*/ """
-            using NLog;
-            class C
-            {
-                void M(Logger logger)
-                {
-                    logger.Info("{|AASL0009:{myProperty}|}", 1);
-                }
-            }
-            """,
+                            using NLog;
+                            class C
+                            {
+                                void M(Logger logger)
+                                {
+                                    logger.Info("{|AASL0009:{myProperty}|}", 1);
+                                }
+                            }
+                            """,
             PackageVersionMatrix.NLogId,
             PackageVersionMatrix.NLogLatest);
     }
@@ -79,15 +80,15 @@ public sealed class LatestStablePackageTests
     {
         return AnalyzerTestHost.VerifyPackageVersionAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger)
-                {
-                    logger.LogInformation("{|AASL0009:{myProperty}|}", 1);
-                }
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger)
+                                {
+                                    logger.LogInformation("{|AASL0009:{myProperty}|}", 1);
+                                }
+                            }
+                            """,
             PackageVersionMatrix.MelId,
             PackageVersionMatrix.MelLatest);
     }
@@ -97,13 +98,13 @@ public sealed class LatestStablePackageTests
     {
         return AnalyzerTestHost.VerifyPackageVersionAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(1, LogLevel.Information, "Processing {|AASL0009:{orderId}|}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(1, LogLevel.Information, "Processing {|AASL0009:{orderId}|}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             PackageVersionMatrix.MelId,
             PackageVersionMatrix.MelLatest);
     }
@@ -112,17 +113,17 @@ public sealed class LatestStablePackageTests
     public async Task ZLogger_latest_interpolated_call_compiles_without_template_rules()
     {
         var source = /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            using ZLogger;
-            class A
-            {
-                public A(ILogger<A> log)
-                {
-                    var name = "n";
-                    log.ZLogInformation($"Hello {name}");
-                }
-            }
-            """;
+                                     using Microsoft.Extensions.Logging;
+                                     using ZLogger;
+                                     class A
+                                     {
+                                         public A(ILogger<A> log)
+                                         {
+                                             var name = "n";
+                                             log.ZLogInformation($"Hello {name}");
+                                         }
+                                     }
+                                     """;
         var references = NuGetPackageResolver.GetReferences(
             (PackageVersionMatrix.ZLoggerId, PackageVersionMatrix.ZLoggerLatest));
         var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(

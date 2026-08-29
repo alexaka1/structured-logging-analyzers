@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+
 using Alexaka1.Analyzers.StructuredLogging.Classification;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Configuration;

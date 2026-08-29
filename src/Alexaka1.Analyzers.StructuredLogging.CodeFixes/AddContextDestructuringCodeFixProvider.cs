@@ -66,7 +66,8 @@ public sealed class AddContextDestructuringCodeFixProvider : CodeFixProvider
         return document.WithSyntaxRoot(root.ReplaceNode(invocation, updated));
     }
 
-    private static InvocationExpressionSyntax? FindInvocation(SyntaxNode root, Microsoft.CodeAnalysis.Text.TextSpan span)
+    private static InvocationExpressionSyntax? FindInvocation(SyntaxNode root,
+        Microsoft.CodeAnalysis.Text.TextSpan span)
     {
         var node = root.FindNode(span, getInnermostNodeForTie: true);
         return node as InvocationExpressionSyntax ?? node.FirstAncestorOrSelf<InvocationExpressionSyntax>();

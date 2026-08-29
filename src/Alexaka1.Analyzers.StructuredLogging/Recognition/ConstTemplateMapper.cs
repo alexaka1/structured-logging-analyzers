@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using Alexaka1.Analyzers.StructuredLogging.Mapping;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Recognition;
