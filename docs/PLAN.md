@@ -1,3 +1,7 @@
+> Scratch implementation plan from the initial Roslyn port. This file is
+> not project documentation. Do not link to it from docs, tests, or other
+> source.
+
 # Roslyn Migration Feasibility Report
 
 ## 1. Premise

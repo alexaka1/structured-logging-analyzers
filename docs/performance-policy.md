@@ -89,8 +89,7 @@ Sample `dotnet build` SARIF assertions (console, Blazor, `netstandard2.0`,
 gates. They still require that analyzer assemblies do not copy to output.
 
 These tests are **not** a substitute for IDE live-analysis latency. Rider
-and Visual Studio responsiveness remain a manual smoke check
-([PLAN.md](PLAN.md) Phase 9).
+and Visual Studio responsiveness remain a manual smoke check.
 
 ## How to run
 
