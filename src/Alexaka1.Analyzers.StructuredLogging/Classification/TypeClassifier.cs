@@ -49,14 +49,16 @@ internal static class TypeClassifier
             return false;
         }
 
-        if (type.TypeKind is TypeKind.Interface or TypeKind.Struct or TypeKind.Enum or TypeKind.TypeParameter or TypeKind.Pointer or TypeKind.Delegate)
+        if (type.TypeKind is TypeKind.Interface or TypeKind.Struct or TypeKind.Enum or TypeKind.TypeParameter
+            or TypeKind.Pointer or TypeKind.Delegate)
         {
             return false;
         }
 
         if (type.TypeKind == TypeKind.Array)
         {
-            return type is IArrayTypeSymbol array && NeedsDestructuringCore(array.ElementType, inspectingObjectItself: true);
+            return type is IArrayTypeSymbol array &&
+                   NeedsDestructuringCore(array.ElementType, inspectingObjectItself: true);
         }
 
         if (type.TypeKind != TypeKind.Class)
@@ -76,7 +78,10 @@ internal static class TypeClassifier
     {
         foreach (var member in type.GetMembers("ToString"))
         {
-            if (member is IMethodSymbol { IsStatic: false, Parameters.Length: 0, ReturnType.SpecialType: SpecialType.System_String } method &&
+            if (member is IMethodSymbol
+                {
+                    IsStatic: false, Parameters.Length: 0, ReturnType.SpecialType: SpecialType.System_String
+                } method &&
                 method.IsOverride)
             {
                 return true;

@@ -1,4 +1,5 @@
 using Alexaka1.Analyzers.StructuredLogging.Classification;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests;

@@ -35,7 +35,8 @@ public sealed class RemoveTrailingPeriodCodeFixProvider : CodeFixProvider
         return Task.CompletedTask;
     }
 
-    private static async Task<Document> ApplyAsync(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    private static async Task<Document> ApplyAsync(Document document, Diagnostic diagnostic,
+        CancellationToken cancellationToken)
     {
         var text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
         var span = diagnostic.Location.SourceSpan;

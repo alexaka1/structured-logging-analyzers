@@ -1,0 +1,52 @@
+name: Formatting
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  MSBUILDDISABLENODEREUSE: '1'
+
+jobs:
+  check:
+    name: Formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            10.0.x
+
+      - name: Restore ReSharper CLI
+        run: dotnet tool restore
+
+      - name: Run ReSharper formatter
+        run: node --run fmt
+
+      - name: Verify formatting
+        run: |
+          if ! git diff --quiet; then
+            echo "::error::ReSharper changed tracked files. Run node --run fmt and commit the result."
+            git diff --exit-code
+          fi

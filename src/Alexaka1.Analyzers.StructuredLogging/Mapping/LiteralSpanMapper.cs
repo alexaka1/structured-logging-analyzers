@@ -66,7 +66,8 @@ internal sealed class TemplateSourceMap
 
 internal static class LiteralSpanMapper
 {
-    public static bool TryMap(SemanticModel model, ExpressionSyntax expression, CancellationToken cancellationToken, out TemplateSourceMap map)
+    public static bool TryMap(SemanticModel model, ExpressionSyntax expression, CancellationToken cancellationToken,
+        out TemplateSourceMap map)
     {
         var fragments = new List<(string Value, MappedChar[] Chars)>();
         if (!TryCollect(model, expression, fragments, cancellationToken))
@@ -96,7 +97,8 @@ internal static class LiteralSpanMapper
         return true;
     }
 
-    public static bool TryGetConstantText(SemanticModel model, ExpressionSyntax expression, CancellationToken cancellationToken, out string text)
+    public static bool TryGetConstantText(SemanticModel model, ExpressionSyntax expression,
+        CancellationToken cancellationToken, out string text)
     {
         var constant = model.GetConstantValue(expression, cancellationToken);
         if (constant.HasValue && constant.Value is string s)

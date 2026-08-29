@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+
 using Alexaka1.Analyzers.StructuredLogging.Mapping;
 
 namespace Alexaka1.Analyzers.StructuredLogging.CodeFixes;
@@ -36,7 +37,8 @@ public sealed class AddDestructuringCodeFixProvider : CodeFixProvider
         }
     }
 
-    private static async Task<Document> ApplyAsync(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    private static async Task<Document> ApplyAsync(Document document, Diagnostic diagnostic,
+        CancellationToken cancellationToken)
     {
         var text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
         var insertAt = await ResolveInsertPositionAsync(document, diagnostic, cancellationToken).ConfigureAwait(false);
@@ -49,13 +51,15 @@ public sealed class AddDestructuringCodeFixProvider : CodeFixProvider
         return document.WithText(updated);
     }
 
-    private static async Task<int?> ResolveInsertPositionAsync(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    private static async Task<int?> ResolveInsertPositionAsync(Document document, Diagnostic diagnostic,
+        CancellationToken cancellationToken)
     {
         if (diagnostic.Properties.TryGetValue(FixProperties.InsertLogicalIndex, out var logicalText) &&
             int.TryParse(logicalText, out var logicalIndex))
         {
-            var mapped = await TryMapContainingTemplateAsync(document, diagnostic.Location.SourceSpan, cancellationToken)
-                .ConfigureAwait(false);
+            var mapped =
+                await TryMapContainingTemplateAsync(document, diagnostic.Location.SourceSpan, cancellationToken)
+                    .ConfigureAwait(false);
             var source = mapped?.TryGetSourceStart(logicalIndex);
             if (source is not null)
             {
@@ -90,7 +94,8 @@ public sealed class AddDestructuringCodeFixProvider : CodeFixProvider
         var token = root.FindToken(span.Start);
         var attributeArgument = token.Parent?.FirstAncestorOrSelf<AttributeArgumentSyntax>();
         var argument = token.Parent?.FirstAncestorOrSelf<ArgumentSyntax>();
-        var expression = attributeArgument?.Expression ?? argument?.Expression ?? token.Parent?.FirstAncestorOrSelf<ExpressionSyntax>();
+        var expression = attributeArgument?.Expression ??
+                         argument?.Expression ?? token.Parent?.FirstAncestorOrSelf<ExpressionSyntax>();
         if (expression is null)
         {
             return null;

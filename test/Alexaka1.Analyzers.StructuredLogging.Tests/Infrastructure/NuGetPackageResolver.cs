@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
+
 using Microsoft.CodeAnalysis;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
@@ -10,7 +11,9 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 internal static class NuGetPackageResolver
 {
     private static readonly ConcurrentDictionary<string, object> RestoreLocks = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly ConcurrentDictionary<string, ImmutableArray<string>> AssemblyCache = new(StringComparer.OrdinalIgnoreCase);
+
+    private static readonly ConcurrentDictionary<string, ImmutableArray<string>> AssemblyCache =
+        new(StringComparer.OrdinalIgnoreCase);
 
     public static ImmutableArray<MetadataReference> GetReferences(params (string Id, string Version)[] packages)
     {
@@ -124,19 +127,19 @@ internal static class NuGetPackageResolver
         var csproj = Path.Combine(stubDir, "PackageRef.csproj");
         var nugetConfig = Path.Combine(FindRepoRoot(), "nuget.config");
         File.WriteAllText(csproj, $"""
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup>
-                <TargetFramework>net10.0</TargetFramework>
-                <Nullable>enable</Nullable>
-                <ImplicitUsings>disable</ImplicitUsings>
-                <EnableDefaultItems>false</EnableDefaultItems>
-                <IsPackable>false</IsPackable>
-              </PropertyGroup>
-              <ItemGroup>
-                <PackageReference Include="{packageId}" Version="{version}" />
-              </ItemGroup>
-            </Project>
-            """);
+                                   <Project Sdk="Microsoft.NET.Sdk">
+                                     <PropertyGroup>
+                                       <TargetFramework>net10.0</TargetFramework>
+                                       <Nullable>enable</Nullable>
+                                       <ImplicitUsings>disable</ImplicitUsings>
+                                       <EnableDefaultItems>false</EnableDefaultItems>
+                                       <IsPackable>false</IsPackable>
+                                     </PropertyGroup>
+                                     <ItemGroup>
+                                       <PackageReference Include="{packageId}" Version="{version}" />
+                                     </ItemGroup>
+                                   </Project>
+                                   """);
 
         var psi = new ProcessStartInfo("dotnet")
         {
@@ -158,7 +161,8 @@ internal static class NuGetPackageResolver
 
         psi.Environment["MSBUILDDISABLENODEREUSE"] = "1";
         psi.Environment["DOTNET_NOLOGO"] = "1";
-        using var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet restore.");
+        using var process =
+            Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet restore.");
         var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
         if (!process.WaitForExit(120_000))

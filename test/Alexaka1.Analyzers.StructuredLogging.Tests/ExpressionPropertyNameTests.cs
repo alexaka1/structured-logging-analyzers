@@ -1,5 +1,7 @@
 using Alexaka1.Analyzers.StructuredLogging.Classification;
+
 using Microsoft.CodeAnalysis.CSharp;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests;
@@ -18,8 +20,12 @@ public sealed class ExpressionPropertyNameTests
     public void Suggests_leaf_and_qualified_pascal_names(string expression, string leaf, string qualified)
     {
         var syntax = SyntaxFactory.ParseExpression(expression);
-        Assert.Equal(leaf, ExpressionPropertyName.TrySuggest(syntax, PropertyNamingStyle.PascalCase, ExpressionPropertyName.Kind.Leaf));
-        Assert.Equal(qualified, ExpressionPropertyName.TrySuggest(syntax, PropertyNamingStyle.PascalCase, ExpressionPropertyName.Kind.Qualified));
+        Assert.Equal(leaf,
+            ExpressionPropertyName.TrySuggest(syntax, PropertyNamingStyle.PascalCase,
+                ExpressionPropertyName.Kind.Leaf));
+        Assert.Equal(qualified,
+            ExpressionPropertyName.TrySuggest(syntax, PropertyNamingStyle.PascalCase,
+                ExpressionPropertyName.Kind.Qualified));
     }
 
     [Theory]
@@ -31,8 +37,10 @@ public sealed class ExpressionPropertyNameTests
     public void Withholds_when_no_identifier(string expression)
     {
         var syntax = SyntaxFactory.ParseExpression(expression);
-        Assert.Null(ExpressionPropertyName.TrySuggest(syntax, PropertyNamingStyle.PascalCase, ExpressionPropertyName.Kind.Leaf));
-        Assert.Null(ExpressionPropertyName.TrySuggest(syntax, PropertyNamingStyle.PascalCase, ExpressionPropertyName.Kind.Qualified));
+        Assert.Null(ExpressionPropertyName.TrySuggest(syntax, PropertyNamingStyle.PascalCase,
+            ExpressionPropertyName.Kind.Leaf));
+        Assert.Null(ExpressionPropertyName.TrySuggest(syntax, PropertyNamingStyle.PascalCase,
+            ExpressionPropertyName.Kind.Qualified));
     }
 
     [Fact]

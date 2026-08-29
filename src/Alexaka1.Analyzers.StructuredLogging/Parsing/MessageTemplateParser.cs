@@ -156,7 +156,8 @@ internal static class MessageTemplateParser
             }
         }
 
-        var positional = int.TryParse(name, NumberStyles.None, CultureInfo.InvariantCulture, out var position) && position >= 0;
+        var positional = int.TryParse(name, NumberStyles.None, CultureInfo.InvariantCulture, out var position) &&
+                         position >= 0;
         var nameOffsetInRaw = 1 + (destructuring == DestructuringKind.Default ? 0 : 1);
         hole = new PropertyHole(
             name,
@@ -171,7 +172,8 @@ internal static class MessageTemplateParser
         return true;
     }
 
-    private static bool TrySplitInterior(string interior, out string nameAndHint, out string? alignment, out string? format)
+    private static bool TrySplitInterior(string interior, out string nameAndHint, out string? alignment,
+        out string? format)
     {
         var colon = interior.IndexOf(':');
         var comma = interior.IndexOf(',');
@@ -276,7 +278,8 @@ internal static class MessageTemplateParser
 
         if (allPositional)
         {
-            return new ParsedTemplate(properties, namedProperties: null, positionalProperties: properties, isMixed: false);
+            return new ParsedTemplate(properties, namedProperties: null, positionalProperties: properties,
+                isMixed: false);
         }
 
         return new ParsedTemplate(

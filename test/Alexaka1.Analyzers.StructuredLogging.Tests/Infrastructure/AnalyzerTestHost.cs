@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -9,6 +10,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Diagnostics.Telemetry;
 using Microsoft.CodeAnalysis.Text;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
@@ -28,7 +30,8 @@ internal static class AnalyzerTestHost
         string? sourcePath = null)
     {
         var (source, expected) = Markup.Parse(markedSource);
-        return VerifyAsync(source, expected, editorConfig, languageVersion, additionalSources, references, requireSuccessfulCompilation, sourcePath);
+        return VerifyAsync(source, expected, editorConfig, languageVersion, additionalSources, references,
+            requireSuccessfulCompilation, sourcePath);
     }
 
     public static async Task VerifyAsync(
@@ -83,7 +86,8 @@ internal static class AnalyzerTestHost
         bool requireSuccessfulCompilation = false,
         string? sourcePath = null)
     {
-        var (compilation, _, options) = CreateCompilation(source, editorConfig, languageVersion, additionalSources, references, sourcePath);
+        var (compilation, _, options) = CreateCompilation(source, editorConfig, languageVersion, additionalSources,
+            references, sourcePath);
         if (requireSuccessfulCompilation)
         {
             AssertCompilationSucceeded(compilation, "Analyzer test compilation");
@@ -205,7 +209,8 @@ internal static class AnalyzerTestHost
     {
         var (source, expected) = Markup.Parse(markedSource);
         var diagnostics = await GetDiagnosticsAsync(source, editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
-        var matching = diagnostics.FirstOrDefault(d => d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan))
+        var matching = diagnostics.FirstOrDefault(d =>
+                           d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan))
                        ?? diagnostics.FirstOrDefault(d => d.Id == diagnosticId);
         Assert.NotNull(matching);
 
@@ -238,7 +243,8 @@ internal static class AnalyzerTestHost
     {
         var (source, expected) = Markup.Parse(markedSource);
         var diagnostics = await GetDiagnosticsAsync(source, editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
-        var matching = diagnostics.FirstOrDefault(d => d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan))
+        var matching = diagnostics.FirstOrDefault(d =>
+                           d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan))
                        ?? diagnostics.FirstOrDefault(d => d.Id == diagnosticId);
         Assert.NotNull(matching);
 
@@ -379,7 +385,8 @@ internal static class AnalyzerTestHost
         string? sourcePath = null)
     {
         var text = await updated.GetTextAsync().ConfigureAwait(false);
-        var secondPass = await GetDiagnosticsAsync(text.ToString(), editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
+        var secondPass = await GetDiagnosticsAsync(text.ToString(), editorConfig, sourcePath: sourcePath)
+            .ConfigureAwait(false);
         var remaining = secondPass.Count(d => d.Id == diagnosticId);
         Assert.Equal(remainingCount, remaining);
         Assert.True(remaining < beforeCount);

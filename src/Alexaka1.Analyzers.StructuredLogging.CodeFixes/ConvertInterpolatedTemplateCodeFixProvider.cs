@@ -1,9 +1,11 @@
 using System.Text;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using Alexaka1.Analyzers.StructuredLogging.Classification;
 using Alexaka1.Analyzers.StructuredLogging.Configuration;
 
@@ -55,7 +57,8 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                     LeafEquivalenceKey),
                 diagnostic);
 
-            if (TryBuild(interpolated, style, ExpressionPropertyName.Kind.Qualified, out var qualifiedTemplate, out _) &&
+            if (TryBuild(interpolated, style, ExpressionPropertyName.Kind.Qualified, out var qualifiedTemplate,
+                    out _) &&
                 !string.Equals(qualifiedTemplate, leafTemplate, StringComparison.Ordinal))
             {
                 context.RegisterCodeFix(

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+
 using Serilog;
 
 var logger = Log.Logger;

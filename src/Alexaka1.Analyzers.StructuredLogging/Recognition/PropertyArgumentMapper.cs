@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using Alexaka1.Analyzers.StructuredLogging.Parsing;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Recognition;

@@ -10,10 +10,12 @@
 </p>
 
 @code {
+
     protected override void OnInitialized()
     {
         Logger.LogInformation("Hello {Name}", "world");
         // Intentional AASL0009: build-time diagnostic coverage for .razor @code.
         Logger.LogInformation("Hello {name}", "world");
     }
+
 }

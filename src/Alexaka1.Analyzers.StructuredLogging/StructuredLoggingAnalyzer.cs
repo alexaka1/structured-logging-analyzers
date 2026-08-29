@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+
 using Alexaka1.Analyzers.StructuredLogging.Classification;
 using Alexaka1.Analyzers.StructuredLogging.Configuration;
 using Alexaka1.Analyzers.StructuredLogging.Mapping;
@@ -142,7 +143,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var method = LoggingInvocationClassifier.ResolveMethod(context.SemanticModel, invocation, context.CancellationToken);
+        var method =
+            LoggingInvocationClassifier.ResolveMethod(context.SemanticModel, invocation, context.CancellationToken);
         if (method is null)
         {
             return;
@@ -197,16 +199,19 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                 template.Expression.GetLocation()));
         }
 
-        AnalyzeException(context, invocation, method, template, known, skip: LoggerMessageParameterMapper.IsLoggerMessageDefine(method, known));
+        AnalyzeException(context, invocation, method, template, known,
+            skip: LoggerMessageParameterMapper.IsLoggerMessageDefine(method, known));
 
         if (!isConstant)
         {
             return;
         }
 
-        if (!LiteralSpanMapper.TryMap(context.SemanticModel, template.Expression, context.CancellationToken, out var map))
+        if (!LiteralSpanMapper.TryMap(context.SemanticModel, template.Expression, context.CancellationToken,
+                out var map))
         {
-            if (!LiteralSpanMapper.TryGetConstantText(context.SemanticModel, template.Expression, context.CancellationToken, out var constantText))
+            if (!LiteralSpanMapper.TryGetConstantText(context.SemanticModel, template.Expression,
+                    context.CancellationToken, out var constantText))
             {
                 return;
             }
@@ -216,7 +221,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
         var parsed = MessageTemplateParser.Parse(map.Value);
         var allowDestructuring = LoggingInvocationClassifier.SupportsDestructuringOperator(method);
-        AnalyzeTemplateRules(context, invocation, template, arguments, parsed, map, settings, regexCache, allowDestructuring);
+        AnalyzeTemplateRules(context, invocation, template, arguments, parsed, map, settings, regexCache,
+            allowDestructuring);
         TemplateStyleRules.AnalyzeTrailingPeriod(
             context,
             context.SemanticModel,
@@ -331,7 +337,9 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         }
 
         var parsed = MessageTemplateParser.Parse(source.Map.Value);
-        bool Skip(PropertyHole hole) => LoggerMessageParameterMapper.IsSpecialPlaceholder(parameters, hole.PropertyName);
+
+        bool Skip(PropertyHole hole) =>
+            LoggerMessageParameterMapper.IsSpecialPlaceholder(parameters, hole.PropertyName);
 
         if (parsed.PositionalProperties != null)
         {
@@ -456,11 +464,13 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         {
             return;
         }
+
         var exceptionType = known.Exception;
         if (exceptionType is null)
         {
             return;
         }
+
         var invalid = FindInvalidExceptionArgument(context, invocation, template, exceptionType);
         if (invalid is null)
         {
@@ -510,7 +520,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static bool HasExceptionOverload(IMethodSymbol method, INamedTypeSymbol exceptionType, int invalidArgumentIndex)
+    private static bool HasExceptionOverload(IMethodSymbol method, INamedTypeSymbol exceptionType,
+        int invalidArgumentIndex)
     {
         var type = method.ContainingType;
         if (type is null)
@@ -632,11 +643,13 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeConstructor(SyntaxNodeAnalysisContext context, LoggingInvocationClassifier classifier)
     {
         var constructor = (ConstructorDeclarationSyntax)context.Node;
-        var containing = context.SemanticModel.GetDeclaredSymbol(constructor, context.CancellationToken)?.ContainingType;
+        var containing = context.SemanticModel.GetDeclaredSymbol(constructor, context.CancellationToken)
+            ?.ContainingType;
         AnalyzeLoggerParameters(context, constructor.ParameterList, containing, classifier);
     }
 
-    private static void AnalyzeTypePrimaryConstructor(SyntaxNodeAnalysisContext context, LoggingInvocationClassifier classifier)
+    private static void AnalyzeTypePrimaryConstructor(SyntaxNodeAnalysisContext context,
+        LoggingInvocationClassifier classifier)
     {
         var typeDecl = (TypeDeclarationSyntax)context.Node;
         if (typeDecl.ParameterList is null)
@@ -672,7 +685,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             }
 
             var type = context.SemanticModel.GetTypeInfo(parameter.Type, context.CancellationToken).Type;
-            if (type is null || !classifier.IsGenericMicrosoftLogger(type, out var typeArgument) || typeArgument is null)
+            if (type is null || !classifier.IsGenericMicrosoftLogger(type, out var typeArgument) ||
+                typeArgument is null)
             {
                 continue;
             }
@@ -689,7 +703,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsCompileTimeConstant(SemanticModel model, ExpressionSyntax expression, CancellationToken cancellationToken)
+    private static bool IsCompileTimeConstant(SemanticModel model, ExpressionSyntax expression,
+        CancellationToken cancellationToken)
     {
         var constant = model.GetConstantValue(expression, cancellationToken);
         return constant.HasValue && constant.Value is string;

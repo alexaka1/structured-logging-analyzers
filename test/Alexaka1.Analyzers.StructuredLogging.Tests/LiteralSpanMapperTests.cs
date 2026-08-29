@@ -1,7 +1,9 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using Alexaka1.Analyzers.StructuredLogging.Mapping;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests;
@@ -72,7 +74,8 @@ public sealed class LiteralSpanMapperTests
         var model = compilation.GetSemanticModel(tree);
         var root = tree.GetRoot(cancellationToken);
         ExpressionSyntax expression = root.DescendantNodes().OfType<BinaryExpressionSyntax>().FirstOrDefault()
-            ?? (ExpressionSyntax)root.DescendantNodes().OfType<LiteralExpressionSyntax>().First();
+                                      ?? (ExpressionSyntax)root.DescendantNodes().OfType<LiteralExpressionSyntax>()
+                                          .First();
         Assert.True(LiteralSpanMapper.TryMap(model, expression, cancellationToken, out var map));
         return map;
     }

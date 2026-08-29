@@ -1,5 +1,6 @@
 using Alexaka1.Analyzers.StructuredLogging.CodeFixes;
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.SourceGenerated;
@@ -11,21 +12,21 @@ public sealed class LoggerMessageFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0009:{orderId}|}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0009:{orderId}|}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {OrderId}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {OrderId}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
@@ -35,21 +36,21 @@ public sealed class LoggerMessageFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = @"Processing {|AASL0009:{orderId}|}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = @"Processing {|AASL0009:{orderId}|}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = @"Processing {OrderId}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = @"Processing {OrderId}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
@@ -59,21 +60,21 @@ public sealed class LoggerMessageFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """"
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = """Processing {|AASL0009:{orderId}|}""")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """",
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = """Processing {|AASL0009:{orderId}|}""")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """",
             /*lang=csharp*/ """"
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = """Processing {OrderId}""")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """",
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = """Processing {OrderId}""")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """",
             "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
@@ -83,21 +84,21 @@ public sealed class LoggerMessageFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {OrderId}{|AASL0011:.|}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {OrderId}{|AASL0011:.|}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {OrderId}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {OrderId}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             "AASL0011",
             typeof(RemoveTrailingPeriodCodeFixProvider));
     }
@@ -107,21 +108,21 @@ public sealed class LoggerMessageFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0008:{0}|}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {|AASL0008:{0}|}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {OrderId}")]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing {OrderId}")]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             "AASL0008",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
@@ -131,25 +132,25 @@ public sealed class LoggerMessageFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                const string Msg = "Processing {|AASL0009:{orderId}|}.";
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                const string Msg = "Processing {|AASL0009:{orderId}|}.";
 
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = Msg)]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = Msg)]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            public static partial class Log
-            {
-                const string Msg = "Processing {OrderId}.";
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                const string Msg = "Processing {OrderId}.";
 
-                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = Msg)]
-                public static partial void ProcessingOrder(ILogger logger, int orderId);
-            }
-            """,
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = Msg)]
+                                public static partial void ProcessingOrder(ILogger logger, int orderId);
+                            }
+                            """,
             "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }

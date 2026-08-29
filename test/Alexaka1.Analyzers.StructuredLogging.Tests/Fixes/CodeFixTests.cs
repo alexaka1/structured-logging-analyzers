@@ -1,5 +1,6 @@
 using Alexaka1.Analyzers.StructuredLogging.CodeFixes;
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Fixes;
@@ -11,25 +12,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0001:{MyProperty}|}", new { Test = 1 });
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0001:{MyProperty}|}", new { Test = 1 });
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{@MyProperty}", new { Test = 1 });
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{@MyProperty}", new { Test = 1 });
+                                }
+                            }
+                            """,
             "AASL0001",
             typeof(AddDestructuringCodeFixProvider));
     }
@@ -39,25 +40,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Escaped \r\n {|AASL0001:{MyProperty}|} \r\n string", new { Test = 1 });
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Escaped \r\n {|AASL0001:{MyProperty}|} \r\n string", new { Test = 1 });
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Escaped \r\n {@MyProperty} \r\n string", new { Test = 1 });
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Escaped \r\n {@MyProperty} \r\n string", new { Test = 1 });
+                                }
+                            }
+                            """,
             "AASL0001",
             typeof(AddDestructuringCodeFixProvider));
     }
@@ -67,27 +68,27 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0002:{MyProperty}|}", new Random());
-                }
-            }
-            """,
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0002:{MyProperty}|}", new Random());
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{@MyProperty}", new Random());
-                }
-            }
-            """,
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{@MyProperty}", new Random());
+                                }
+                            }
+                            """,
             "AASL0002",
             typeof(AddDestructuringCodeFixProvider));
     }
@@ -97,25 +98,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Test {|AASL0009:{myProperty}|} prop", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Test {|AASL0009:{myProperty}|} prop", 1);
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Test {MyProperty} prop", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Test {MyProperty} prop", 1);
+                                }
+                            }
+                            """,
             "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
@@ -125,25 +126,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Test {|AASL0009:{@myProperty}|} prop", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Test {|AASL0009:{@myProperty}|} prop", 1);
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Test {@MyProperty} prop", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Test {@MyProperty} prop", 1);
+                                }
+                            }
+                            """,
             "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
@@ -153,25 +154,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Test" + " {|AASL0009:{myProperty}|} prop", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Test" + " {|AASL0009:{myProperty}|} prop", 1);
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Test" + " {MyProperty} prop", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Test" + " {MyProperty} prop", 1);
+                                }
+                            }
+                            """,
             "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider));
     }
@@ -181,25 +182,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    LogContext.PushProperty({|AASL0010:"test"|}, 1);
-                }
-            }
-            """,
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    LogContext.PushProperty({|AASL0010:"test"|}, 1);
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    LogContext.PushProperty("Test", 1);
-                }
-            }
-            """,
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    LogContext.PushProperty("Test", 1);
+                                }
+                            }
+                            """,
             "AASL0010",
             typeof(RenameContextPropertyCodeFixProvider));
     }
@@ -209,25 +210,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    LogContext.PushProperty({|AASL0010:"OrderId"|}, 1);
-                }
-            }
-            """,
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    LogContext.PushProperty({|AASL0010:"OrderId"|}, 1);
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Serilog.Context;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    LogContext.PushProperty("order_id", 1);
-                }
-            }
-            """,
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    LogContext.PushProperty("order_id", 1);
+                                }
+                            }
+                            """,
             "AASL0010",
             typeof(RenameContextPropertyCodeFixProvider),
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
@@ -238,25 +239,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{|AASL0009:{http.response.StatusCode}|}", 200);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{http.response.StatusCode}|}", 200);
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{http.response.status_code}", 200);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{http.response.status_code}", 200);
+                                }
+                            }
+                            """,
             "AASL0009",
             typeof(RenameTemplatePropertyCodeFixProvider),
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
@@ -267,25 +268,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Test {Property} prop{|AASL0011:.|}", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Test {Property} prop{|AASL0011:.|}", 1);
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("Test {Property} prop", 1);
-                }
-            }
-            """,
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("Test {Property} prop", 1);
+                                }
+                            }
+                            """,
             "AASL0011",
             typeof(RemoveTrailingPeriodCodeFixProvider));
     }
@@ -295,27 +296,27 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation({|AASL0007:$"Processed {order.Id}"|});
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation({|AASL0007:$"Processed {order.Id}"|});
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation("Processed {Id}", order.Id);
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation("Processed {Id}", order.Id);
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider),
             expectedActionCount: 2);
@@ -326,27 +327,27 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation({|AASL0007:$"Processed {order.Id}"|});
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation({|AASL0007:$"Processed {order.Id}"|});
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation("Processed {OrderId}", order.Id);
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation("Processed {OrderId}", order.Id);
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider),
             codeActionIndex: 1,
@@ -358,27 +359,27 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation({|AASL0007:$"Processed {order?.Id}"|});
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation({|AASL0007:$"Processed {order?.Id}"|});
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation("Processed {Id}", order?.Id);
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation("Processed {Id}", order?.Id);
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider),
             expectedActionCount: 2);
@@ -389,27 +390,27 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation({|AASL0007:$"Processed {order?.Id}"|});
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation({|AASL0007:$"Processed {order?.Id}"|});
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation("Processed {OrderId}", order?.Id);
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation("Processed {OrderId}", order?.Id);
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider),
             codeActionIndex: 1,
@@ -421,25 +422,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, string name)
-                {
-                    logger.LogInformation({|AASL0007:$"User {name}"|});
-                }
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string name)
+                                {
+                                    logger.LogInformation({|AASL0007:$"User {name}"|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, string name)
-                {
-                    logger.LogInformation("User {Name}", name);
-                }
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string name)
+                                {
+                                    logger.LogInformation("User {Name}", name);
+                                }
+                            }
+                            """,
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider),
             expectedActionCount: 1);
@@ -450,27 +451,27 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation(/* keep */ {|AASL0007:$"Processed {order.Id}"|});
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation(/* keep */ {|AASL0007:$"Processed {order.Id}"|});
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Order order)
-                {
-                    logger.LogInformation(/* keep */ "Processed {Id}", order.Id);
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Order order)
+                                {
+                                    logger.LogInformation(/* keep */ "Processed {Id}", order.Id);
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider));
     }
@@ -480,29 +481,29 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex, Order order)
-                {
-                    logger.LogError(ex, {|AASL0007:$"Processed {order.Id}"|});
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex, Order order)
+                                {
+                                    logger.LogError(ex, {|AASL0007:$"Processed {order.Id}"|});
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             /*lang=csharp*/ """
-            using System;
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, Exception ex, Order order)
-                {
-                    logger.LogError(ex, "Processed {Id}", order.Id);
-                }
-            }
-            class Order { public int Id { get; set; } }
-            """,
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex, Order order)
+                                {
+                                    logger.LogError(ex, "Processed {Id}", order.Id);
+                                }
+                            }
+                            class Order { public int Id { get; set; } }
+                            """,
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider));
     }
@@ -512,25 +513,25 @@ public sealed class CodeFixTests
     {
         return AnalyzerTestHost.VerifyFixAsync(
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, string name)
-                {
-                    logger.LogInformation({|AASL0007:$"User '{name}'"|});
-                }
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string name)
+                                {
+                                    logger.LogInformation({|AASL0007:$"User '{name}'"|});
+                                }
+                            }
+                            """,
             /*lang=csharp*/ """
-            using Microsoft.Extensions.Logging;
-            class C
-            {
-                void M(ILogger logger, string name)
-                {
-                    logger.LogInformation("User '{Name}'", name);
-                }
-            }
-            """,
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string name)
+                                {
+                                    logger.LogInformation("User '{Name}'", name);
+                                }
+                            }
+                            """,
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider),
             expectedActionCount: 1);

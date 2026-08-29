@@ -38,10 +38,15 @@ public sealed class PackageAndPerformanceTests
         var nupkg = Pack();
         using var zip = ZipFile.OpenRead(nupkg);
         var entries = zip.Entries.Select(e => e.FullName.Replace('\\', '/')).ToArray();
-        Assert.Contains(entries, e => e.Equals("analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.dll", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(entries, e => e.Equals("analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(entries,
+            e => e.Equals("analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.dll",
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(entries,
+            e => e.Equals("analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll",
+                StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(entries, e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(entries, e => e.EndsWith("Microsoft.CodeAnalysis.dll", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(entries,
+            e => e.EndsWith("Microsoft.CodeAnalysis.dll", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -91,32 +96,32 @@ public sealed class PackageAndPerformanceTests
     public async Task Analyzer_concurrent_runs_are_deterministic()
     {
         var source = /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{myProperty}", 1);
-                    Log.Logger.Information("{Value}", 1);
-                    Log.Logger.Information("Done.");
-                    Log.Logger.Information("{0}", 1);
-                }
-            }
-            """;
+                                     using Serilog;
+                                     public static class Program
+                                     {
+                                         public static void Main()
+                                         {
+                                             Log.Logger.Information("{myProperty}", 1);
+                                             Log.Logger.Information("{Value}", 1);
+                                             Log.Logger.Information("Done.");
+                                             Log.Logger.Information("{0}", 1);
+                                         }
+                                     }
+                                     """;
         var additional = Enumerable.Range(0, 8)
             .Select(i => (
                 $"/0/File{i}.cs",
                 $$"""
-                using Serilog;
-                public static class C{{i}}
-                {
-                    public static void M()
-                    {
-                        Log.Logger.Information("{myProperty}", {{i}});
-                        Log.Logger.Information("Done.");
-                    }
-                }
-                """))
+                  using Serilog;
+                  public static class C{{i}}
+                  {
+                      public static void M()
+                      {
+                          Log.Logger.Information("{myProperty}", {{i}});
+                          Log.Logger.Information("Done.");
+                      }
+                  }
+                  """))
             .ToArray();
 
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -148,15 +153,15 @@ public sealed class PackageAndPerformanceTests
     public async Task Invalid_editorconfig_does_not_throw()
     {
         var source = /*lang=csharp*/ """
-            using Serilog;
-            public static class Program
-            {
-                public static void Main()
-                {
-                    Log.Logger.Information("{myProperty}", 1);
-                }
-            }
-            """;
+                                     using Serilog;
+                                     public static class Program
+                                     {
+                                         public static void Main()
+                                         {
+                                             Log.Logger.Information("{myProperty}", 1);
+                                         }
+                                     }
+                                     """;
         var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(
             source,
             editorConfig: "dotnet_code_quality.AASL.ignored_properties_regex = (unclosed");
@@ -164,10 +169,14 @@ public sealed class PackageAndPerformanceTests
     }
 
     [Theory]
-    [InlineData("samples/Net10Example/Net10Example.csproj", "samples/Net10Example/bin/Release/net10.0", "Net10Example.dll")]
-    [InlineData("samples/Net10BlazorExample/Net10BlazorExample.csproj", "samples/Net10BlazorExample/bin/Release/net10.0", "Net10BlazorExample.dll")]
-    [InlineData("samples/NetStandard20Example/NetStandard20Example.csproj", "samples/NetStandard20Example/bin/Release/netstandard2.0", "NetStandard20Example.dll")]
-    [InlineData("samples/Net472Example/Net472Example.csproj", "samples/Net472Example/bin/Release/net472", "Net472Example.dll")]
+    [InlineData("samples/Net10Example/Net10Example.csproj", "samples/Net10Example/bin/Release/net10.0",
+        "Net10Example.dll")]
+    [InlineData("samples/Net10BlazorExample/Net10BlazorExample.csproj",
+        "samples/Net10BlazorExample/bin/Release/net10.0", "Net10BlazorExample.dll")]
+    [InlineData("samples/NetStandard20Example/NetStandard20Example.csproj",
+        "samples/NetStandard20Example/bin/Release/netstandard2.0", "NetStandard20Example.dll")]
+    [InlineData("samples/Net472Example/Net472Example.csproj", "samples/Net472Example/bin/Release/net472",
+        "Net472Example.dll")]
     public void Sample_build_reports_aasl_diagnostics_and_does_not_copy_analyzer_assemblies(
         string relativeProject,
         string relativeOutput,
@@ -198,9 +207,14 @@ public sealed class PackageAndPerformanceTests
         var output = Path.Combine(repo, relativeOutput.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(Directory.Exists(output), "Sample build did not produce output directory: " + output);
         var dlls = Directory.GetFiles(output, "*.dll");
-        Assert.Contains(dlls, path => string.Equals(Path.GetFileName(path), outputAssembly, StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(dlls, path => string.Equals(Path.GetFileName(path), "Alexaka1.Analyzers.StructuredLogging.dll", StringComparison.OrdinalIgnoreCase));
-        Assert.DoesNotContain(dlls, path => string.Equals(Path.GetFileName(path), "Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(dlls,
+            path => string.Equals(Path.GetFileName(path), outputAssembly, StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(dlls,
+            path => string.Equals(Path.GetFileName(path), "Alexaka1.Analyzers.StructuredLogging.dll",
+                StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(dlls,
+            path => string.Equals(Path.GetFileName(path), "Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll",
+                StringComparison.OrdinalIgnoreCase));
     }
 
     private async Task<AnalysisOutcome> RunPerformanceGateAsync(
@@ -278,41 +292,43 @@ public sealed class PackageAndPerformanceTests
 
     private static string[] DiagnosticKeys(IEnumerable<Diagnostic> diagnostics) =>
         AaslDiagnostics(diagnostics)
-            .Select(d => $"{d.Id}:{d.Location.GetLineSpan().Path}:{d.Location.SourceSpan.Start}:{d.Location.SourceSpan.Length}:{d.GetMessage()}")
+            .Select(d =>
+                $"{d.Id}:{d.Location.GetLineSpan().Path}:{d.Location.SourceSpan.Start}:{d.Location.SourceSpan.Length}:{d.GetMessage()}")
             .OrderBy(key => key, StringComparer.Ordinal)
             .ToArray();
 
-    private static readonly Dictionary<string, SarifDiagnostic[]> ExpectedSampleDiagnostics = new(StringComparer.Ordinal)
-    {
-        ["samples/Net10Example/Net10Example.csproj"] =
-        [
-            new("AASL0009", "LogMessages.cs", 14, 31),
-            new("AASL0011", "LogMessages.cs", 14, 40),
-            new("AASL0009", "LogMessages.cs", 17, 48),
-            new("AASL0009", "LogMessages.cs", 20, 29),
-            new("AASL0009", "LogMessages.cs", 26, 78),
-            new("AASL0009", "LogMessages.cs", 36, 81),
-            new("AASL0009", "LogMessages.cs", 42, 83),
-            new("AASL0009", "LogMessages.cs", 49, 82),
-            new("AASL0011", "LogMessages.cs", 49, 91),
-            new("AASL0009", "LogMessages.cs", 52, 50),
-            new("AASL0009", "Program.cs", 7, 27)
-        ],
-        ["samples/Net10BlazorExample/Net10BlazorExample.csproj"] =
-        [
-            new("AASL0009", "Counter.razor.cs", 17, 40),
-            new("AASL0011", "Counter.razor.cs", 17, 47),
-            new("AASL0009", "Home.razor", 17, 38)
-        ],
-        ["samples/NetStandard20Example/NetStandard20Example.csproj"] =
-        [
-            new("AASL0009", "Sample.cs", 9, 39)
-        ],
-        ["samples/Net472Example/Net472Example.csproj"] =
-        [
-            new("AASL0009", "Sample.cs", 9, 39)
-        ]
-    };
+    private static readonly Dictionary<string, SarifDiagnostic[]> ExpectedSampleDiagnostics =
+        new(StringComparer.Ordinal)
+        {
+            ["samples/Net10Example/Net10Example.csproj"] =
+            [
+                new("AASL0009", "LogMessages.cs", 14, 31),
+                new("AASL0011", "LogMessages.cs", 14, 40),
+                new("AASL0009", "LogMessages.cs", 17, 48),
+                new("AASL0009", "LogMessages.cs", 20, 29),
+                new("AASL0009", "LogMessages.cs", 26, 78),
+                new("AASL0009", "LogMessages.cs", 36, 81),
+                new("AASL0009", "LogMessages.cs", 42, 83),
+                new("AASL0009", "LogMessages.cs", 49, 82),
+                new("AASL0011", "LogMessages.cs", 49, 91),
+                new("AASL0009", "LogMessages.cs", 52, 50),
+                new("AASL0009", "Program.cs", 8, 27)
+            ],
+            ["samples/Net10BlazorExample/Net10BlazorExample.csproj"] =
+            [
+                new("AASL0009", "Counter.razor.cs", 16, 40),
+                new("AASL0011", "Counter.razor.cs", 16, 47),
+                new("AASL0009", "Home.razor", 18, 38)
+            ],
+            ["samples/NetStandard20Example/NetStandard20Example.csproj"] =
+            [
+                new("AASL0009", "Sample.cs", 9, 39)
+            ],
+            ["samples/Net472Example/Net472Example.csproj"] =
+            [
+                new("AASL0009", "Sample.cs", 9, 39)
+            ]
+        };
 
     private readonly record struct SarifDiagnostic(string RuleId, string FileName, int Line, int Column);
 

@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+
 using Alexaka1.Analyzers.StructuredLogging.Mapping;
 using Alexaka1.Analyzers.StructuredLogging.Parsing;
 using Alexaka1.Analyzers.StructuredLogging.Recognition;
@@ -133,6 +134,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
                 }
             }
         }
+
         if (root is null || model is null || invocation is null)
         {
             return document;

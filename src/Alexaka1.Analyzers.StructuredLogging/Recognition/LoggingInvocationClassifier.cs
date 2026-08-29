@@ -10,6 +10,7 @@ internal sealed class LoggingInvocationClassifier
     private const string ZLoggerExtensions = "ZLogger.ZLoggerExtensions";
 
     private readonly KnownSymbols _known;
+
     private readonly ConcurrentDictionary<IMethodSymbol, string?> _templateParameterNames =
         new(SymbolEqualityComparer.Default);
 
@@ -66,7 +67,8 @@ internal sealed class LoggingInvocationClassifier
         return false;
     }
 
-    public static IMethodSymbol? ResolveMethod(SemanticModel model, InvocationExpressionSyntax invocation, CancellationToken cancellationToken)
+    public static IMethodSymbol? ResolveMethod(SemanticModel model, InvocationExpressionSyntax invocation,
+        CancellationToken cancellationToken)
     {
         var info = model.GetSymbolInfo(invocation, cancellationToken);
         if (info.Symbol is IMethodSymbol method)
@@ -147,7 +149,7 @@ internal sealed class LoggingInvocationClassifier
     {
         var containing = method.ContainingType?.ToDisplayString();
         return containing == ZLoggerExtensions ||
-            (containing != null && containing.StartsWith("ZLogger.", StringComparison.Ordinal) &&
-             method.Name.StartsWith("ZLog", StringComparison.Ordinal));
+               (containing != null && containing.StartsWith("ZLogger.", StringComparison.Ordinal) &&
+                method.Name.StartsWith("ZLog", StringComparison.Ordinal));
     }
 }

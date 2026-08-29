@@ -5,8 +5,7 @@ namespace Net10BlazorExample.Components.Pages;
 
 public partial class Counter
 {
-    [Inject]
-    private ILogger<Counter> Logger { get; set; } = default!;
+    [Inject] private ILogger<Counter> Logger { get; set; } = default!;
 
     private int count = 1;
 

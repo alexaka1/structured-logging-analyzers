@@ -26,7 +26,8 @@ public sealed class ReplaceContextualLoggerTypeCodeFixProvider : CodeFixProvider
 
         foreach (var diagnostic in context.Diagnostics)
         {
-            if (!TryGetReplacement(root, model, diagnostic.Location.SourceSpan, context.CancellationToken, out _, out var containingName))
+            if (!TryGetReplacement(root, model, diagnostic.Location.SourceSpan, context.CancellationToken, out _,
+                    out var containingName))
             {
                 continue;
             }
@@ -113,7 +114,8 @@ public sealed class ReplaceContextualLoggerTypeCodeFixProvider : CodeFixProvider
         }
 
         var reportedType = node as TypeSyntax ?? node.FirstAncestorOrSelf<TypeSyntax>();
-        if (reportedType is null || !TryGetLoggerCategory(model, reportedType, cancellationToken, out var wrongCategory))
+        if (reportedType is null ||
+            !TryGetLoggerCategory(model, reportedType, cancellationToken, out var wrongCategory))
         {
             return false;
         }
