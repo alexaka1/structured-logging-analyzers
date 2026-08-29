@@ -52,11 +52,3 @@ it warns when `semantic_conventions` naming is configured and the code uses
 can work there.
 
 See the [source-generator diagnostic index](https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/source-generator-overview).
-
-## Optional extra for MEL `ILogger<T>`
-
-[Meziantou.Analyzer](https://github.com/meziantou/Meziantou.Analyzer) `MA0180`
-can rewrite a mismatched `ILogger<T>` category. This package’s `AASL0004`
-flags the same class of mistake and now includes a containing-type rewrite
-for `ILogger<T>` declarations (primary-constructor parameters, constructor
-parameters, fields, and properties) and `ForContext<T>()`.
