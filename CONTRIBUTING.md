@@ -1,5 +1,16 @@
 # Contributing
 
+This repository is in a finished state for its intended scope. The
+structured-logging inspections from the ReSharper/Rider plugin are
+available as Roslyn analyzers (`AASL0001`–`AASL0012`), with additional
+coverage and fixes beyond that parity. I do not plan to maintain the
+project actively.
+
+If you need something, please open an issue and a matching pull request.
+I may look at them, but I make no commitment to review or merge either.
+
+## If you send a change
+
 Please:
 
 - Keep analyzer assemblies free of Workspaces references.
