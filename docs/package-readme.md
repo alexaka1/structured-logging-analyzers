@@ -96,15 +96,3 @@ apply to both and win when set.
 | AASL0010 | Context property naming |
 | AASL0011 | Log messages should not end with a period |
 | AASL0012 | Generated logging cannot use Semantic Conventions property names |
-
-`[LoggerMessage]` declarations and `LoggerMessage.Define` / `DefineScope` are
-included. Blazor `.razor` `@code` and `.razor.cs` code-behind are analyzed and
-fixed. When template naming is `semantic_conventions`, AASL0012 warns on
-`[LoggerMessage]`. `LoggerMessage.Define` / `DefineScope` bind by position and
-are not reported. Destructure (`@`) and
-exception-placement rules are not applied there; use the recommended
-.NET SDK `CA*` / `SYSLIB10xx` rules in
-[Recommended Microsoft analyzers](#recommended-microsoft-analyzers).
-
-See [compatibility notes](https://github.com/alexaka1/structured-logging-analyzers/blob/main/docs/compatibility.md)
-for trigger, span, and intentional-difference details.
