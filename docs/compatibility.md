@@ -159,14 +159,18 @@ The parser follows the public message-template grammar for:
 - `@` destructure and `$` stringify
 - Alignment with an optional leading `-` followed by one or more digits,
   including zero and widths larger than `Int32.MaxValue`
-- A non-empty format containing any character except `}`
+- A non-empty format containing any character except `}`, including extra `:`
+  or `,` (`{Timestamp:HH:mm:ss}`, `{Value:#,0}`). `{Bad: {Good}}` is one hole
+  whose format is ` {Good`, not a nested property.
 - malformed holes become text; a later or nested valid hole is still parsed
+- A hole is positional only when its name parses as a non-negative `Int32`.
+  `{00}` is positional; `{ 0}` and `{999999999999}` are named
 - all-positional vs named vs mixed classification as above
 
 For recovery and naming diagnostics, the parser also recognizes property names
-containing `.` or spaces. These names extend the public grammar so rules can
-report and safely rewrite library-specific or invalid names instead of treating
-the whole hole as text.
+containing `.`, spaces, or non-ASCII letters. These names extend the public
+grammar so rules can report and safely rewrite library-specific or invalid
+names instead of treating the whole hole as text.
 
 ## Literal mapping
 
