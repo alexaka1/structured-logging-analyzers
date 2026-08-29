@@ -92,6 +92,12 @@ Read `docs/compatibility.md` before changing rule behavior and `docs/ide-compile
 - `docs/rules` - public documentation for each diagnostic.
 - `.changeset` - pending user-facing release notes.
 
+## Formatting
+
+```sh
+node --run fmt
+```
+
 ## Verifying
 
 Start with the smallest proof that the change works. Run the focused test class or method while iterating. Before calling a behavior change complete, run the full test executable:
@@ -155,8 +161,6 @@ Performance and package assertions are ordinary product tests, not optional benc
 - Delete obsolete paths. Do not leave forwarding wrappers, compatibility branches, or "temporary" duplicate implementations.
 - Keep components modular, but do not turn every concept into an interface.
 - If a rule here fights the task in front of you, say so loudly and get human sign-off before breaking it.
-
-Follow `.editorconfig`: file-scoped namespaces, `PascalCase` types and members, and `camelCase` locals and parameters.
 
 ## Pull requests and releases
 

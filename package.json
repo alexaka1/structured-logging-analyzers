@@ -3,6 +3,7 @@
   "version": "0.1.0-preview.8",
   "private": true,
   "scripts": {
+    "fmt": "dotnet jb cleanupcode Alexaka1.Analyzers.StructuredLogging.slnx --profile=\"Built-in: Reformat Code\" --properties:Configuration=Release --no-updates",
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:tag": "changeset git-tag",
