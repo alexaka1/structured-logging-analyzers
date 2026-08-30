@@ -1,5 +1,11 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.9
+
+### Patch Changes
+
+- [#61](https://github.com/alexaka1/structured-logging-analyzers/pull/61) [`ab47e6d`](https://github.com/alexaka1/structured-logging-analyzers/commit/ab47e6dc184380f79d6948520c34ee1f4e455c1a) Thanks [@alexaka1](https://github.com/alexaka1)! - Follow the public message-template format and alignment grammar, and map diagnostics and fixes to exact spans in indentation-trimmed multiline raw strings.
+
 ## 0.1.0-preview.8
 
 ### Patch Changes
