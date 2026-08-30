@@ -59,20 +59,9 @@ static int Run(string fileName, params string[] arguments)
 {
     var psi = new ProcessStartInfo
     {
+        FileName = fileName,
         UseShellExecute = false,
     };
-
-    if (OperatingSystem.IsWindows())
-    {
-        psi.FileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe";
-        psi.ArgumentList.Add("/c");
-        psi.ArgumentList.Add(fileName);
-    }
-    else
-    {
-        psi.FileName = fileName;
-    }
-
     foreach (var argument in arguments)
     {
         psi.ArgumentList.Add(argument);
