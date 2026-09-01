@@ -1,7 +1,9 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+using System.Xml.Linq;
 
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 
@@ -35,18 +37,116 @@ public sealed class PackageAndPerformanceTests
     [Fact]
     public void Packed_nupkg_has_analyzers_and_no_lib()
     {
-        var nupkg = Pack();
-        using var zip = ZipFile.OpenRead(nupkg);
+        using var package = Pack();
+        using var zip = ZipFile.OpenRead(package.PackagePath);
         var entries = zip.Entries.Select(e => e.FullName.Replace('\\', '/')).ToArray();
-        Assert.Contains(entries,
-            e => e.Equals("analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.dll",
-                StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(entries,
-            e => e.Equals("analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll",
-                StringComparison.OrdinalIgnoreCase));
+
+        var analyzerEntries = entries
+            .Where(e => e.StartsWith("analyzers/", StringComparison.Ordinal))
+            .OrderBy(e => e, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(
+            [
+                "analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll",
+                "analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.dll"
+            ],
+            analyzerEntries);
         Assert.DoesNotContain(entries, e => e.StartsWith("lib/", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(entries,
-            e => e.EndsWith("Microsoft.CodeAnalysis.dll", StringComparison.OrdinalIgnoreCase));
+            e => e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) &&
+                 Path.GetFileNameWithoutExtension(e)
+                     .StartsWith("Microsoft.CodeAnalysis", StringComparison.OrdinalIgnoreCase));
+
+        var metadata = ReadPackageMetadata(zip);
+        var dependencies = metadata.Element(NuspecNamespace + "dependencies");
+        Assert.True(
+            dependencies is null || !dependencies.Elements().Any(),
+            "The analyzer-only package must not declare NuGet dependencies.");
+        Assert.Equal(
+            "true",
+            metadata.Element(NuspecNamespace + "developmentDependency")?.Value,
+            ignoreCase: true);
+    }
+
+    [Fact]
+    public void Packed_package_is_consumed_by_real_package_reference()
+    {
+        using var package = Pack();
+        using var consumer = TemporaryDirectory.Create("sla-consumer-");
+        using var feed = TemporaryDirectory.Create("sla-feed-");
+        using var packages = TemporaryDirectory.Create("sla-packages-");
+
+        var packageFileName = Path.GetFileName(package.PackagePath);
+        File.Copy(package.PackagePath, Path.Combine(feed.DirectoryPath, packageFileName));
+        var metadata = ReadPackageMetadata(package);
+        var packageId = metadata.Element(NuspecNamespace + "id")?.Value
+                        ?? throw new InvalidOperationException("Packed package nuspec has no id.");
+        var packageVersion = metadata.Element(NuspecNamespace + "version")?.Value
+                             ?? throw new InvalidOperationException("Packed package nuspec has no version.");
+        var projectPath = Path.Combine(consumer.DirectoryPath, "Consumer.csproj");
+        var sourcePath = Path.Combine(consumer.DirectoryPath, "Program.cs");
+        var sarifPath = Path.Combine(consumer.DirectoryPath, "consumer.sarif");
+
+        File.WriteAllText(
+            projectPath,
+            $"""
+             <Project Sdk="Microsoft.NET.Sdk">
+               <PropertyGroup>
+                 <OutputType>Exe</OutputType>
+                 <TargetFramework>net10.0</TargetFramework>
+                 <ImplicitUsings>enable</ImplicitUsings>
+                 <Nullable>enable</Nullable>
+                 <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+               </PropertyGroup>
+               <ItemGroup>
+                 <PackageReference Include="{packageId}" Version="{packageVersion}" />
+                 <PackageReference Include="Serilog" Version="4.4.0" />
+               </ItemGroup>
+             </Project>
+             """);
+        File.WriteAllText(
+            sourcePath,
+            /*lang=csharp*/ """
+                            using Serilog;
+
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{myProperty}", 1);
+                                }
+                            }
+                            """);
+
+        try
+        {
+            RunDotNet(
+                $"restore \"{projectPath}\" --source \"{feed.DirectoryPath}\" --source https://api.nuget.org/v3/index.json --packages \"{packages.DirectoryPath}\" --no-cache --nologo --verbosity quiet",
+                packages.DirectoryPath);
+            RunDotNet(
+                $"build \"{projectPath}\" --configuration Release --no-restore --nologo -v:minimal -p:ErrorLog=\"{sarifPath}%2cversion=2.1\"",
+                packages.DirectoryPath);
+
+            Assert.True(File.Exists(sarifPath), $"Expected ErrorLog SARIF at {sarifPath}.");
+            var diagnostics = ParseActiveAaslDiagnostics(sarifPath);
+            Assert.Contains(diagnostics, diagnostic => diagnostic.RuleId == "AASL0009");
+
+            var outputDirectory = Path.Combine(consumer.DirectoryPath, "bin", "Release", "net10.0");
+            Assert.True(Directory.Exists(outputDirectory), "Consumer build did not produce an output directory.");
+            var outputDlls = Directory.GetFiles(outputDirectory, "*.dll", SearchOption.AllDirectories);
+            Assert.Contains(outputDlls, path =>
+                string.Equals(Path.GetFileName(path), "Consumer.dll", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(outputDlls, path =>
+                Path.GetFileName(path).StartsWith("Alexaka1.Analyzers.StructuredLogging",
+                    StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain(outputDlls, path =>
+                Path.GetFileNameWithoutExtension(path)
+                    .StartsWith("Microsoft.CodeAnalysis", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            MoveToTrash(sarifPath);
+        }
     }
 
     [Fact]
@@ -200,7 +300,7 @@ public sealed class PackageAndPerformanceTests
         {
             if (File.Exists(sarif))
             {
-                File.Delete(sarif);
+                MoveToTrash(sarif);
             }
         }
 
@@ -422,17 +522,26 @@ public sealed class PackageAndPerformanceTests
         return suppressions.GetArrayLength() == 0;
     }
 
-    private static string Pack()
+    private static PackedPackage Pack()
     {
         var repo = FindRepoRoot();
         var packProject = Path.Combine(repo, "pack", "Alexaka1.Analyzers.StructuredLogging", "Package.csproj");
         var output = Path.Combine(Path.GetTempPath(), "sla-pack-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(output);
-        RunDotNet($"pack \"{packProject}\" -c Release -o \"{output}\" --nologo");
-        return Directory.GetFiles(output, "Alexaka1.Analyzers.StructuredLogging.*.nupkg").Single();
+        try
+        {
+            RunDotNet($"pack \"{packProject}\" -c Release -o \"{output}\" --nologo");
+            var nupkg = Directory.GetFiles(output, "Alexaka1.Analyzers.StructuredLogging.*.nupkg").Single();
+            return new PackedPackage(output, nupkg);
+        }
+        catch
+        {
+            MoveToTrash(output);
+            throw;
+        }
     }
 
-    private static string RunDotNet(string arguments)
+    private static string RunDotNet(string arguments, string? packagesDirectory = null)
     {
         var psi = new ProcessStartInfo("dotnet", arguments)
         {
@@ -444,14 +553,181 @@ public sealed class PackageAndPerformanceTests
         psi.Environment["MSBUILDDISABLENODEREUSE"] = "1";
         psi.Environment["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1";
         psi.Environment["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1";
-        using var process = Process.Start(psi)!;
+        if (packagesDirectory is not null)
+        {
+            psi.Environment["NUGET_PACKAGES"] = packagesDirectory;
+        }
+
+        using var process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet.");
         var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
-        Task.WaitAll(stdoutTask, stderrTask);
-        process.WaitForExit();
+
+        if (!process.WaitForExit(TimeSpan.FromMinutes(2)))
+        {
+            var killFailure = TryKill(process);
+            _ = process.WaitForExit(TimeSpan.FromSeconds(5));
+            var timeoutOutput = CompletedProcessOutput(stdoutTask, stderrTask);
+            throw new TimeoutException(
+                $"dotnet {arguments} timed out after two minutes.{Environment.NewLine}{timeoutOutput}",
+                killFailure);
+        }
+
+        if (!Task.WaitAll([stdoutTask, stderrTask], TimeSpan.FromSeconds(5)))
+        {
+            throw new TimeoutException($"dotnet {arguments} output did not complete after the process exited.");
+        }
+
         var output = stdoutTask.Result + Environment.NewLine + stderrTask.Result;
         Assert.True(process.ExitCode == 0, output);
         return output;
+    }
+
+    private static Exception? TryKill(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+
+            return null;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or Win32Exception)
+        {
+            return exception;
+        }
+    }
+
+    private static string CompletedProcessOutput(Task<string> stdoutTask, Task<string> stderrTask)
+    {
+        if (!Task.WaitAll([stdoutTask, stderrTask], TimeSpan.FromSeconds(5)))
+        {
+            return "Process output was not available before the timeout.";
+        }
+
+        return stdoutTask.Result + Environment.NewLine + stderrTask.Result;
+    }
+
+    private static readonly XNamespace NuspecNamespace = "http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd";
+
+    private static XElement ReadPackageMetadata(PackedPackage package)
+    {
+        using var zip = ZipFile.OpenRead(package.PackagePath);
+        return ReadPackageMetadata(zip);
+    }
+
+    private static XElement ReadPackageMetadata(ZipArchive zip)
+    {
+        var nuspec = Assert.Single(zip.Entries,
+            entry => entry.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
+        using var stream = nuspec.Open();
+        var document = XDocument.Load(stream);
+        var metadata = document.Root?.Element(NuspecNamespace + "metadata");
+        Assert.NotNull(metadata);
+        return metadata!;
+    }
+
+    private static void MoveToTrash(string path)
+    {
+        if (!File.Exists(path) && !Directory.Exists(path))
+        {
+            return;
+        }
+
+        var candidates = new List<string>();
+        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (!string.IsNullOrWhiteSpace(profile))
+        {
+            candidates.Add(Path.Combine(profile, ".Trash"));
+        }
+
+        candidates.Add(Path.Combine(Path.GetTempPath(), "sla-trash-" + Guid.NewGuid().ToString("N")));
+        foreach (var trashDirectory in candidates)
+        {
+            try
+            {
+                Directory.CreateDirectory(trashDirectory);
+                var destination = Path.Combine(
+                    trashDirectory,
+                    Path.GetFileName(path) + "-" + Guid.NewGuid().ToString("N"));
+                if (Directory.Exists(path))
+                {
+                    Directory.Move(path, destination);
+                }
+                else
+                {
+                    File.Move(path, destination);
+                }
+
+                return;
+            }
+            catch (IOException)
+            {
+                // A cross-volume or already-occupied trash path can be retried in the next location.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Fall back to a recoverable temporary trash location.
+            }
+        }
+
+        throw new IOException($"Could not move temporary path to recoverable trash: {path}");
+    }
+
+    private sealed class PackedPackage : IDisposable
+    {
+        private readonly string _directoryPath;
+        private bool _disposed;
+
+        public PackedPackage(string directoryPath, string packagePath)
+        {
+            _directoryPath = directoryPath;
+            PackagePath = packagePath;
+        }
+
+        public string PackagePath { get; }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            MoveToTrash(_directoryPath);
+        }
+    }
+
+    private sealed class TemporaryDirectory : IDisposable
+    {
+        private bool _disposed;
+
+        private TemporaryDirectory(string directoryPath)
+        {
+            DirectoryPath = directoryPath;
+        }
+
+        public string DirectoryPath { get; }
+
+        public static TemporaryDirectory Create(string prefix)
+        {
+            var directory = Path.Combine(Path.GetTempPath(), prefix + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            return new TemporaryDirectory(directory);
+        }
+
+        public void Dispose()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            MoveToTrash(DirectoryPath);
+        }
     }
 
     private static string FindRepoRoot()

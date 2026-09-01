@@ -98,6 +98,36 @@ public sealed class ExceptionArgumentFixTests
     }
 
     [Fact]
+    public Task AASL0005_microsoft_extensions_logging_two_argument_call()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError("Failed {Error}", {|AASL0005:ex|});
+                                }
+                            }
+                            """,
+            /*lang=csharp*/ """
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(ex, "Failed");
+                                }
+                            }
+                            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
+
+    [Fact]
     public Task AASL0005_preserves_event_id()
     {
         return AnalyzerTestHost.VerifyFixAsync(

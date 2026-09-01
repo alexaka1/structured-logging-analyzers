@@ -25,9 +25,5 @@ internal sealed class RegexCache
         {
             return null;
         }
-        catch (RegexMatchTimeoutException)
-        {
-            return null;
-        }
     }
 }

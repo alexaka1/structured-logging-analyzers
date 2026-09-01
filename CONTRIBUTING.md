@@ -24,7 +24,8 @@ Please:
   `test/Alexaka1.Analyzers.StructuredLogging.Tests/Infrastructure/PackageVersionMatrix.cs`.
   Keep the previous major as a floor if that API must stay covered. Do not
   create another test project. See
-  [docs/package-version-testing.md](docs/package-version-testing.md).
+  [PackageVersionMatrixTests.cs](test/Alexaka1.Analyzers.StructuredLogging.Tests/Frameworks/PackageVersionMatrixTests.cs)
+  and [LatestStablePackageTests.cs](test/Alexaka1.Analyzers.StructuredLogging.Tests/Frameworks/LatestStablePackageTests.cs).
 - Preserve documented compatibility behavior unless a change is called out
   in `docs/compatibility.md`.
 - Do not reimplement .NET SDK `CA*` or `SYSLIB10xx` diagnostics unless the

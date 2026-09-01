@@ -102,6 +102,54 @@ public sealed class ContextualLoggerAnalyzerTests
     }
 
     [Fact]
+    public Task Serilog_wrong_context_type_through_conditional_access()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog;
+                                                             class A
+                                                             {
+                                                                 private static readonly ILogger Logger = Logger?{|AASL0004:.ForContext<B>()|};
+                                                             }
+                                                             class B { }
+                                                             """);
+    }
+
+    [Fact]
+    public Task Serilog_push_property_named_arguments_are_bound_by_parameter()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog.Context;
+                                                             class A
+                                                             {
+                                                                 static void M()
+                                                                 {
+                                                                     LogContext.PushProperty(
+                                                                         value: 1,
+                                                                         name: {|AASL0010:"order_id"|});
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
+    public Task Serilog_push_property_named_value_is_checked_by_parameter()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Serilog.Context;
+                                                             class A
+                                                             {
+                                                                 static void M()
+                                                                 {
+                                                                     {|AASL0003:LogContext.PushProperty(
+                                                                         value: new Random(),
+                                                                         name: "UserId")|};
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
     public Task Primary_constructor_wrong_type()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """

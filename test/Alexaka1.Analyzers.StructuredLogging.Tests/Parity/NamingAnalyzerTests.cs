@@ -167,6 +167,29 @@ public sealed class NamingAnalyzerTests
     }
 
     [Fact]
+    public async Task Timed_out_ignored_regex_does_not_throw()
+    {
+        var propertyName = new string('a', 5_000) + "b";
+        var source = $$"""
+                       using Serilog;
+                       public static class Program
+                       {
+                           public static void Main()
+                           {
+                               Log.Logger.Information("{{{propertyName}}}", 1);
+                           }
+                       }
+                       """;
+
+        var outcome = await AnalyzerTestHost.AnalyzeAsync(
+            source,
+            editorConfig: "dotnet_code_quality.AASL.ignored_properties_regex = (a+)+$",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Contains(outcome.Diagnostics, d => d.Id == "AASL0009");
+    }
+
+    [Fact]
     public Task Camel_case_context_property()
     {
         return AnalyzerTestHost.VerifyAsync(

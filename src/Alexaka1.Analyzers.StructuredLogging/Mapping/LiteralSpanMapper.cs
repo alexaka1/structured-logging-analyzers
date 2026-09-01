@@ -1,3 +1,5 @@
+using System.Text;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -17,11 +19,12 @@ internal readonly struct MappedChar
 
 internal sealed class TemplateSourceMap
 {
-    public TemplateSourceMap(string value, MappedChar[] map, ExpressionSyntax expression)
+    public TemplateSourceMap(string value, MappedChar[] map, ExpressionSyntax expression, bool allowRewrite)
     {
         Value = value;
         Map = map;
         Expression = expression;
+        AllowRewrite = allowRewrite;
     }
 
     public string Value { get; }
@@ -29,6 +32,8 @@ internal sealed class TemplateSourceMap
     public MappedChar[] Map { get; }
 
     public ExpressionSyntax Expression { get; }
+
+    public bool AllowRewrite { get; }
 
     public TextSpan? TryGetSpan(int logicalStart, int length)
     {
@@ -69,7 +74,7 @@ internal static class LiteralSpanMapper
     public static bool TryMap(SemanticModel model, ExpressionSyntax expression, CancellationToken cancellationToken,
         out TemplateSourceMap map)
     {
-        var fragments = new List<(string Value, MappedChar[] Chars)>();
+        var fragments = new List<(string Value, MappedChar[] Chars, bool AllowRewrite)>();
         if (!TryCollect(model, expression, fragments, cancellationToken))
         {
             map = null!;
@@ -85,15 +90,17 @@ internal static class LiteralSpanMapper
         var builder = new MappedChar[total];
         var text = new char[total];
         var offset = 0;
+        var allowRewrite = true;
         for (var i = 0; i < fragments.Count; i++)
         {
             var fragment = fragments[i];
             fragment.Value.CopyTo(0, text, offset, fragment.Value.Length);
             Array.Copy(fragment.Chars, 0, builder, offset, fragment.Chars.Length);
             offset += fragment.Value.Length;
+            allowRewrite &= fragment.AllowRewrite;
         }
 
-        map = new TemplateSourceMap(new string(text), builder, expression);
+        map = new TemplateSourceMap(new string(text), builder, expression, allowRewrite);
         return true;
     }
 
@@ -114,7 +121,7 @@ internal static class LiteralSpanMapper
     private static bool TryCollect(
         SemanticModel model,
         ExpressionSyntax expression,
-        List<(string, MappedChar[])> fragments,
+        List<(string Value, MappedChar[] Chars, bool AllowRewrite)> fragments,
         CancellationToken cancellationToken)
     {
         expression = Unwrap(expression);
@@ -156,12 +163,15 @@ internal static class LiteralSpanMapper
         }
     }
 
-    private static bool TryMapLiteral(SyntaxToken token, List<(string, MappedChar[])> fragments)
+    private static bool TryMapLiteral(
+        SyntaxToken token,
+        List<(string Value, MappedChar[] Chars, bool AllowRewrite)> fragments)
     {
         var value = token.ValueText;
         var source = token.Text;
         var spanStart = token.SpanStart;
         MappedChar[] map;
+        var allowRewrite = true;
 
         if (IsRaw(source))
         {
@@ -182,31 +192,57 @@ internal static class LiteralSpanMapper
         if (map.Length != value.Length)
         {
             map = FallbackMap(token.Span, value);
+            allowRewrite = false;
         }
 
-        fragments.Add((value, map));
+        fragments.Add((value, map, allowRewrite));
         return true;
     }
 
     private static bool TryMapConstantInterpolation(
         SemanticModel model,
         InterpolatedStringExpressionSyntax interpolated,
-        List<(string, MappedChar[])> fragments,
+        List<(string Value, MappedChar[] Chars, bool AllowRewrite)> fragments,
         CancellationToken cancellationToken)
     {
         var constant = model.GetConstantValue(interpolated, cancellationToken);
-        if (!constant.HasValue || constant.Value is not string)
+        if (!constant.HasValue || constant.Value is not string constantText)
         {
             return false;
         }
 
+        if (IsRawInterpolated(interpolated))
+        {
+            var onlyText = true;
+            foreach (var content in interpolated.Contents)
+            {
+                if (content is not InterpolatedStringTextSyntax)
+                {
+                    onlyText = false;
+                    break;
+                }
+            }
+
+            if (onlyText &&
+                TryMapRaw(interpolated.ToString(), interpolated.SpanStart, constantText, out var rawMap))
+            {
+                fragments.Add((constantText, rawMap, true));
+                return true;
+            }
+        }
+
+        var values = new StringBuilder();
         foreach (var content in interpolated.Contents)
         {
             if (content is InterpolatedStringTextSyntax text)
             {
-                var value = text.TextToken.ValueText;
-                var map = FallbackMap(text.TextToken.Span, value);
-                fragments.Add((value, map));
+                if (!TryMapInterpolatedText(interpolated, text.TextToken, out var value, out var map))
+                {
+                    return false;
+                }
+
+                values.Append(value);
+                fragments.Add((value, map, true));
             }
             else
             {
@@ -214,7 +250,219 @@ internal static class LiteralSpanMapper
             }
         }
 
+        return string.Equals(values.ToString(), constantText, StringComparison.Ordinal);
+    }
+
+    private static bool TryMapInterpolatedText(
+        InterpolatedStringExpressionSyntax interpolated,
+        SyntaxToken token,
+        out string value,
+        out MappedChar[] map)
+    {
+        var source = token.Text;
+        var builder = new StringBuilder(source.Length);
+        var chars = new List<MappedChar>(source.Length);
+        var spanStart = token.SpanStart;
+        var raw = IsRawInterpolated(interpolated);
+        var verbatim = IsVerbatimInterpolated(interpolated);
+        var decodeBraces = !raw || CountDollarSigns(interpolated.StringStartToken.Text) == 1;
+        for (var i = 0; i < source.Length; i++)
+        {
+            var current = source[i];
+            if (!raw && !verbatim && current == '\\')
+            {
+                var escapeStart = i;
+                i++;
+                if (!TryReadInterpolatedEscape(source, ref i, out var escaped))
+                {
+                    value = null!;
+                    map = Array.Empty<MappedChar>();
+                    return false;
+                }
+
+                builder.Append(escaped);
+                var span = new TextSpan(spanStart + escapeStart, i - escapeStart);
+                for (var j = 0; j < escaped.Length; j++)
+                {
+                    chars.Add(new MappedChar(span));
+                }
+
+                i--;
+                continue;
+            }
+
+            if (verbatim && current == '"' &&
+                i + 1 < source.Length &&
+                source[i + 1] == '"')
+            {
+                builder.Append('"');
+                chars.Add(new MappedChar(new TextSpan(spanStart + i, 2)));
+                i++;
+                continue;
+            }
+
+            if (decodeBraces && (current == '{' || current == '}') &&
+                i + 1 < source.Length &&
+                source[i + 1] == current)
+            {
+                builder.Append(current);
+                chars.Add(new MappedChar(new TextSpan(spanStart + i, 2)));
+                i++;
+                continue;
+            }
+
+            builder.Append(current);
+            chars.Add(new MappedChar(new TextSpan(spanStart + i, 1)));
+        }
+
+        value = builder.ToString();
+        map = chars.ToArray();
         return true;
+    }
+
+    private static bool TryReadInterpolatedEscape(
+        string source,
+        ref int index,
+        out string value)
+    {
+        value = string.Empty;
+        if (index >= source.Length)
+        {
+            return false;
+        }
+
+        var c = source[index++];
+        switch (c)
+        {
+            case '\'':
+                value = "'";
+                return true;
+            case '"':
+                value = "\"";
+                return true;
+            case '\\':
+                value = "\\";
+                return true;
+            case '0':
+                value = "\0";
+                return true;
+            case 'a':
+                value = "\a";
+                return true;
+            case 'b':
+                value = "\b";
+                return true;
+            case 'e':
+                value = "\x1B";
+                return true;
+            case 'f':
+                value = "\f";
+                return true;
+            case 'n':
+                value = "\n";
+                return true;
+            case 'r':
+                value = "\r";
+                return true;
+            case 't':
+                value = "\t";
+                return true;
+            case 'v':
+                value = "\v";
+                return true;
+            case 'x':
+                return TryReadHexEscape(source, ref index, 1, 4, out value);
+            case 'u':
+                return TryReadHexEscape(source, ref index, 4, 4, out value);
+            case 'U':
+                if (!TryReadHexCode(source, ref index, 8, 8, out var code) ||
+                    code > 0x10FFFF)
+                {
+                    return false;
+                }
+
+                try
+                {
+                    value = char.ConvertFromUtf32(code);
+                    return true;
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    return false;
+                }
+            default:
+                return false;
+        }
+    }
+
+    private static bool TryReadHexEscape(
+        string source,
+        ref int index,
+        int minimumDigits,
+        int maximumDigits,
+        out string value)
+    {
+        value = string.Empty;
+        if (!TryReadHexCode(source, ref index, minimumDigits, maximumDigits, out var code))
+        {
+            return false;
+        }
+
+        value = ((char)code).ToString();
+        return true;
+    }
+
+    private static bool TryReadHexCode(
+        string source,
+        ref int index,
+        int minimumDigits,
+        int maximumDigits,
+        out int value)
+    {
+        value = 0;
+        var digits = 0;
+        while (digits < maximumDigits && index < source.Length && IsHex(source[index]))
+        {
+            value = (value << 4) + HexValue(source[index]);
+            index++;
+            digits++;
+        }
+
+        return digits >= minimumDigits;
+    }
+
+    private static bool IsVerbatimInterpolated(InterpolatedStringExpressionSyntax interpolated)
+    {
+        return interpolated.StringStartToken.Text.IndexOf('@') >= 0;
+    }
+
+    private static bool IsRawInterpolated(InterpolatedStringExpressionSyntax interpolated)
+    {
+        var source = interpolated.StringStartToken.Text;
+        var quoteCount = 0;
+        for (var i = 0; i < source.Length; i++)
+        {
+            if (source[i] == '"')
+            {
+                quoteCount++;
+            }
+        }
+
+        return quoteCount >= 3;
+    }
+
+    private static int CountDollarSigns(string source)
+    {
+        var count = 0;
+        for (var i = 0; i < source.Length; i++)
+        {
+            if (source[i] == '$')
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static bool IsVerbatim(string source)
@@ -243,16 +491,6 @@ internal static class LiteralSpanMapper
         var map = new MappedChar[value.Length];
         var logical = 0;
         var i = 0;
-        if (i < source.Length && source[i] == 'u')
-        {
-            i++;
-        }
-
-        if (i < source.Length && source[i] == '8')
-        {
-            i++;
-        }
-
         if (i < source.Length && source[i] == '"')
         {
             i++;
@@ -407,6 +645,11 @@ internal static class LiteralSpanMapper
     {
         var i = 0;
         if (i < source.Length && source[i] == '@')
+        {
+            i++;
+        }
+
+        while (i < source.Length && source[i] == '$')
         {
             i++;
         }

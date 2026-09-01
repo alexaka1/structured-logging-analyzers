@@ -99,6 +99,34 @@ internal static class AnalyzerTestHost
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync().ConfigureAwait(false);
     }
 
+    public static async Task<ImmutableArray<Diagnostic>> GetWorkspaceDiagnosticsAsync(
+        string source,
+        string editorConfig,
+        string? sourcePath = null,
+        IReadOnlyList<(string Path, string Text)>? additionalSources = null)
+    {
+        var document = CreateDocument(source, editorConfig, sourcePath);
+        var solution = document.Project.Solution;
+        if (additionalSources is not null)
+        {
+            foreach (var (path, text) in additionalSources)
+            {
+                var documentId = DocumentId.CreateNewId(document.Project.Id);
+                solution = solution.AddDocument(
+                    documentId,
+                    Path.GetFileName(path),
+                    text,
+                    filePath: path);
+            }
+        }
+
+        var project = solution.GetProject(document.Project.Id);
+        Assert.NotNull(project);
+        var updatedDocument = project!.GetDocument(document.Id);
+        Assert.NotNull(updatedDocument);
+        return await GetAnalyzerDiagnosticsAsync(updatedDocument!).ConfigureAwait(false);
+    }
+
     public static async Task<AnalysisOutcome> AnalyzeAsync(
         string source,
         string? editorConfig = null,
@@ -210,8 +238,7 @@ internal static class AnalyzerTestHost
         var (source, expected) = Markup.Parse(markedSource);
         var diagnostics = await GetDiagnosticsAsync(source, editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
         var matching = diagnostics.FirstOrDefault(d =>
-                           d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan))
-                       ?? diagnostics.FirstOrDefault(d => d.Id == diagnosticId);
+            d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan));
         Assert.NotNull(matching);
 
         var document = CreateDocument(source, editorConfig, sourcePath);
@@ -244,8 +271,7 @@ internal static class AnalyzerTestHost
         var (source, expected) = Markup.Parse(markedSource);
         var diagnostics = await GetDiagnosticsAsync(source, editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
         var matching = diagnostics.FirstOrDefault(d =>
-                           d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan))
-                       ?? diagnostics.FirstOrDefault(d => d.Id == diagnosticId);
+            d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan));
         Assert.NotNull(matching);
 
         var document = CreateDocument(source, editorConfig, sourcePath);

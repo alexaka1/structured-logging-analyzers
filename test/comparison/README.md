@@ -33,3 +33,8 @@ The script:
    not load, the script falls back to InspectCode **2025.1.9**.
 3. Builds the corpus.
 4. Writes `test/comparison/reports/comparison.md`.
+
+The committed reports are a frozen snapshot of source commit
+[`e59964669bbc1dbe84d945eb815be499709eb1bc`](https://github.com/alexaka1/structured-logging-analyzers/commit/e59964669bbc1dbe84d945eb815be499709eb1bc),
+not a current parity guarantee. Run the comparison when updated evidence is
+needed.
