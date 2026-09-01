@@ -48,8 +48,6 @@ See `test/comparison/README.md` and `test/comparison/reports/comparison.md`.
 | *(no plugin equivalent)* | [AASL0012](rules/AASL0012.md) |
 
 The comparison runner uses the same map in `test/comparison/runner/RuleMap.cs`.
-Each rule page owns the message, span, exclusions, and
-noncompliant / compliant examples.
 
 ## Host differences (not portable)
 
