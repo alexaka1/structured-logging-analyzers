@@ -48,6 +48,8 @@ See `test/comparison/README.md` and `test/comparison/reports/comparison.md`.
 | *(no plugin equivalent)* | [AASL0012](rules/AASL0012.md) |
 
 The comparison runner uses the same map in `test/comparison/runner/RuleMap.cs`.
+Each rule page owns the message, span, exclusions, and
+noncompliant / compliant examples.
 
 ## Host differences (not portable)
 
@@ -98,6 +100,11 @@ named templates. `AASL0008` is not reported for mixed templates.
 **Preserved / combined pipeline.** Most template-parsing rules skip dynamic
 templates. Exception placement (`AASL0005`) still runs. The analyzer does not
 return early after `AASL0007`.
+
+## Exception placement
+
+**Preserved quirk.** An exception *before* the template suppresses
+[AASL0005](rules/AASL0005.md) for later exceptions.
 
 ## Complex-type classification
 
@@ -187,18 +194,18 @@ source spans for diagnostics and fixes. It maps:
 
 | Diagnostic | Fix | Notes |
 |---|---|---|
-| AASL0001, AASL0002 | Insert `@` after `{` | Full; Serilog-like invocations only (not MEL, ZLogger, or `LoggerMessage.Define` / `DefineScope`) |
-| AASL0003 | Add `destructureObjects: true` | `LogContext.PushProperty` with exactly two arguments |
-| AASL0004 | Replace logger category with the containing type | `ILogger<T>` constructor / primary-constructor parameters and matching fields/properties in that type. `ForContext<T>()` type argument only. Nested types are left alone. |
-| AASL0005 | Move exception before the template | Inserts the exception argument immediately before the message template (after EventId/LogLevel) and removes the aligned hole when the template is a mappable constant. Interpolated templates move the argument only. |
-| AASL0006 | Rename duplicate holes to unique names | Invocations only. Subsequent holes are uniquified (`{Test}` `{Test2}`), or renamed from argument identifiers when those can be derived. Leaf and qualified primary suggestions share one used-name set. Qualified names are a second action when they differ. Not offered for `[LoggerMessage]` (renaming a hole would not add a C# parameter). |
-| AASL0008 | Rename positional hole | `[LoggerMessage]` when the remaining parameters match the holes. Invocations when the aligned argument has a derivable identifier (`order.Id` → `{Id}`). Qualified names as a second action when they differ. Not offered for literals, anonymous objects, `LoggerMessage.Define` / `DefineScope`, or a params array passed as a single variable. |
-| AASL0009 | Rename hole to suggested name | Full; also `[LoggerMessage]` attribute strings |
-| AASL0010 | Replace `PushProperty` name | Full |
-| AASL0011 | Remove trailing `.` | Full; span is the period |
-| AASL0007 | Convert interpolation | Partial: deterministic leaf names; extra action uses qualified names when they differ. No hotspots |
+| [AASL0001](rules/AASL0001.md), [AASL0002](rules/AASL0002.md) | Insert `@` after `{` | Full; Serilog-like invocations only (not MEL, ZLogger, or `LoggerMessage.Define` / `DefineScope`) |
+| [AASL0003](rules/AASL0003.md) | Add `destructureObjects: true` | `LogContext.PushProperty` with exactly two arguments |
+| [AASL0004](rules/AASL0004.md) | Replace logger category with the containing type | `ILogger<T>` constructor / primary-constructor parameters and matching fields/properties in that type. `ForContext<T>()` type argument only. Nested types are left alone. |
+| [AASL0005](rules/AASL0005.md) | Move exception before the template | Inserts the exception argument immediately before the message template (after EventId/LogLevel) and removes the aligned hole when the template is a mappable constant. Interpolated templates move the argument only. |
+| [AASL0006](rules/AASL0006.md) | Rename duplicate holes to unique names | Invocations only. Subsequent holes are uniquified (`{Test}` `{Test2}`), or renamed from argument identifiers when those can be derived. Leaf and qualified primary suggestions share one used-name set. Qualified names are a second action when they differ. Not offered for `[LoggerMessage]` (renaming a hole would not add a C# parameter). |
+| [AASL0008](rules/AASL0008.md) | Rename positional hole | `[LoggerMessage]` when the remaining parameters match the holes. Invocations when the aligned argument has a derivable identifier (`order.Id` → `{Id}`). Qualified names as a second action when they differ. Not offered for literals, anonymous objects, `LoggerMessage.Define` / `DefineScope`, or a params array passed as a single variable. |
+| [AASL0009](rules/AASL0009.md) | Rename hole to suggested name | Full; also `[LoggerMessage]` attribute strings |
+| [AASL0010](rules/AASL0010.md) | Replace `PushProperty` name | Full |
+| [AASL0011](rules/AASL0011.md) | Remove trailing `.` | Full; span is the period |
+| [AASL0007](rules/AASL0007.md) | Convert interpolation | Partial: deterministic leaf names; extra action uses qualified names when they differ. No hotspots |
 
-No code fix for AASL0012: the diagnostic fires on `[LoggerMessage]` whenever template naming is `semantic_conventions`, so a template rewrite cannot clear it. Converting the method to `LoggerMessage.Define` or a `Log*` call is an API choice (and fights CA1848).
+No code fix for [AASL0012](rules/AASL0012.md): the diagnostic fires on `[LoggerMessage]` whenever template naming is `semantic_conventions`, so a template rewrite cannot clear it. Converting the method to `LoggerMessage.Define` or a `Log*` call is an API choice (and fights CA1848).
 
 ## Source-generated logging (`[LoggerMessage]`)
 
@@ -228,16 +235,16 @@ such as `{Value:E}` are preserved.
 
 | Rule | `[LoggerMessage]` / `Define` |
 |---|---|
-| AASL0006 duplicate properties | Apply (exact names; case-only duplicates are SYSLIB1021) |
-| AASL0008 positional properties | Apply; rename fix when parameters are unambiguous |
-| AASL0009 property naming | Apply |
-| AASL0011 trailing period | Apply |
-| AASL0012 generated logging vs Semantic Conventions | Apply to `[LoggerMessage]` when template naming is `semantic_conventions`. Not applied to `Define` / `DefineScope`. |
-| AASL0001 / AASL0002 destructuring | **Not applied.** MEL templates do not accept Serilog `@`. |
-| AASL0004 contextual logger | Still applied to the containing type / injected `ILogger<T>` |
-| AASL0007 compile-time constant | Not applied to attribute arguments. Applied to `Define`/`DefineScope` when the format is not constant. |
-| AASL0005 exception placement | **Not applied.** Use SYSLIB1013 and related generator diagnostics. |
-| AASL0010 context properties | Not applicable |
+| [AASL0006](rules/AASL0006.md) duplicate properties | Apply (exact names; case-only duplicates are SYSLIB1021) |
+| [AASL0008](rules/AASL0008.md) positional properties | Apply; rename fix when parameters are unambiguous |
+| [AASL0009](rules/AASL0009.md) property naming | Apply |
+| [AASL0011](rules/AASL0011.md) trailing period | Apply |
+| [AASL0012](rules/AASL0012.md) generated logging vs Semantic Conventions | Apply to `[LoggerMessage]` when template naming is `semantic_conventions`. Not applied to `Define` / `DefineScope`. |
+| [AASL0001](rules/AASL0001.md) / [AASL0002](rules/AASL0002.md) destructuring | **Not applied.** MEL templates do not accept Serilog `@`. |
+| [AASL0004](rules/AASL0004.md) contextual logger | Still applied to the containing type / injected `ILogger<T>` |
+| [AASL0007](rules/AASL0007.md) compile-time constant | Not applied to attribute arguments. Applied to `Define`/`DefineScope` when the format is not constant. |
+| [AASL0005](rules/AASL0005.md) exception placement | **Not applied.** Use SYSLIB1013 and related generator diagnostics. |
+| [AASL0010](rules/AASL0010.md) context properties | Not applicable |
 
 Holes that match the first logger, level, or exception parameter are skipped
 so they are not double-reported with SYSLIB1002 / 1013 / 1018.
@@ -262,89 +269,3 @@ map the resulting text changes back to `.razor`. Code-behind `.razor.cs`
 files are ordinary C# and are analyzed and fixed the same way as other
 compilations. `LoggerMessage.g.cs` and other non-Razor-generated files are
 still skipped.
-
-## Diagnostic catalog
-
-| ID | Default | Message |
-|---|---|---|
-| AASL0001 | Warning | Anonymous objects must be destructured |
-| AASL0002 | Warning | Complex objects with default ToString() implementation probably need to be destructured |
-| AASL0003 | Warning | Complex objects with default ToString() implementation probably need to be destructured |
-| AASL0004 | Warning | Incorrect type is used for contextual logger |
-| AASL0005 | Warning | Exception should be passed to the exception argument |
-| AASL0006 | Warning | Duplicate properties in message template |
-| AASL0007 | Warning | Message template should be compile time constant |
-| AASL0008 | Warning | Prefer named properties over positional ones |
-| AASL0009 | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
-| AASL0010 | Warning | Property name '{0}' does not match naming rules. Suggested name is '{1}'. |
-| AASL0011 | Warning | Log event messages should be fragments, not sentences. Avoid a trailing period/full stop. |
-| AASL0012 | Warning | Generated logging cannot use Semantic Conventions property names. [LoggerMessage] binds template holes to C# parameter names, which cannot contain '.'. |
-
-### AASL0001 Anonymous object must be destructured
-
-- Trigger: logging invocation whose template is constant; a later argument is an anonymous-object creation; the aligned named hole uses default destructuring.
-- Span: the hole in the template.
-- Exclusions: positional-only templates; non-constant templates; holes with `@` or `$`.
-
-### AASL0002 Complex object must be destructured
-
-- Trigger: aligned named hole with default destructuring whose argument needs destructuring.
-- Span: the hole.
-- Exclusions: stringify/destructure holes; types classified as adequate `ToString()`.
-
-### AASL0003 Complex object in log context
-
-- Trigger: `Serilog.Context.LogContext.PushProperty` with exactly two arguments and a value that needs destructuring.
-- Span: the invocation.
-- Exclusions: explicit `destructureObjects` argument present.
-
-### AASL0004 Contextual logger mismatch
-
-- Trigger: constructor (including primary) parameter of type `ILogger<T>` where `T` is not the containing type; or `ILogger.ForContext<T>()` where `T` is not the containing type.
-- Span: the `ILogger<T>` type usage, or the `ForContext<T>()` invocation.
-
-### AASL0005 Exception passed as template argument
-
-- Trigger: an argument whose type is `Exception` or a subtype appears at or after the template argument, and an overload exists with an exception parameter before that argument index.
-- Span: the exception argument.
-- Preserved quirk: an exception *before* the template suppresses the diagnostic for later exceptions.
-
-### AASL0006 Duplicate template properties
-
-- Trigger: two or more named holes with the same property name.
-- Span: each duplicate hole.
-- Exclusions: positional-only templates.
-
-### AASL0007 Template is not compile-time constant
-
-- Trigger: the template argument's expression is not a compile-time constant.
-- Span: the template expression.
-- Other rules still run.
-
-### AASL0008 Positional properties
-
-- Trigger: every hole is positional.
-- Span: each positional hole.
-- Exclusions: mixed templates.
-
-### AASL0009 Template property naming
-
-- Trigger: named hole whose name does not match the configured convention and is not ignored by regex.
-- Span: the hole.
-
-### AASL0010 Context property naming
-
-- Trigger: `LogContext.PushProperty` with a constant name that does not match the convention.
-- Span: the name argument.
-
-### AASL0011 Message ends with a period
-
-- Trigger: last constant template fragment matches `(?<!\.)\.$`.
-- Span: the trailing period (more precise than the plugin's whole-literal span).
-- Exclusions: ellipses (`...`).
-
-### AASL0012 Generated logging cannot use Semantic Conventions property names
-
-- Trigger: `[LoggerMessage]` when template property naming (`AASL0009`) is `semantic_conventions` (prefix `AASL` or rule-scoped `AASL0009`).
-- Span: the attribute name.
-- Exclusions: `LoggerMessage.Define` / `DefineScope` (positional binding); PascalCase, camelCase, snake_case, and Elastic naming; `semantic_conventions` scoped only to `AASL0010` (context property naming). AASL0009 still reports hole names on the same templates.
