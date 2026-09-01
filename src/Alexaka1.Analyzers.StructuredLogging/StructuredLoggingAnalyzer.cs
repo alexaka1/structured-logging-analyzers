@@ -498,19 +498,20 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         BoundTemplateArgument template,
         INamedTypeSymbol exceptionType)
     {
-        var templateIndex = invocation.ArgumentList.Arguments.IndexOf(template.Argument);
-        foreach (var argument in invocation.ArgumentList.Arguments)
+        var arguments = invocation.ArgumentList.Arguments;
+        var templateIndex = arguments.IndexOf(template.Argument);
+        for (var i = 0; i < arguments.Count; i++)
         {
+            var argument = arguments[i];
             var type = context.SemanticModel.GetTypeInfo(argument.Expression, context.CancellationToken).Type;
             if (type is null || !IsOrDerivedFrom(type, exceptionType))
             {
                 continue;
             }
 
-            var argumentIndex = invocation.ArgumentList.Arguments.IndexOf(argument);
-            if (templateIndex > argumentIndex)
+            if (i < templateIndex)
             {
-                return null;
+                continue;
             }
 
             return argument;
