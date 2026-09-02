@@ -29,6 +29,9 @@ characterization corpus under `test/comparison/corpus`.
   whole literal. Comparison is by file and rule id, not span.
 
 See `test/comparison/README.md` and `test/comparison/reports/comparison.md`.
+The committed report is a frozen snapshot of source commit
+[`e59964669bbc1dbe84d945eb815be499709eb1bc`](https://github.com/alexaka1/structured-logging-analyzers/commit/e59964669bbc1dbe84d945eb815be499709eb1bc),
+not a current parity guarantee.
 
 ## Diagnostic ID mapping
 
@@ -57,6 +60,15 @@ The comparison runner uses the same map in `test/comparison/runner/RuleMap.cs`.
 | ReSharper options page | `.editorconfig` keys below |
 | Inspection wiki / PSI highlighting | Diagnostic descriptors and rule docs |
 | Live-template hotspots for interpolation conversion | Deterministic names; extra names as separate code actions |
+
+## Package consumption
+
+The NuGet package is analyzer-only. It contains exactly the analyzer and
+CodeFixes assemblies under `analyzers/dotnet/cs`, no `lib/` assets, no Roslyn
+assemblies, and no package dependencies. A real `PackageReference` consumer
+restored from a local package feed must load the analyzer during `dotnet build`
+and must not copy either analyzer or Roslyn assemblies to application output.
+This compiler check does not emulate an IDE CodeFixes host.
 
 ## Configuration
 
@@ -87,6 +99,14 @@ Invalid configuration is ignored; analyzers do not throw.
 **Correction.** Template properties are paired with arguments using semantic
 parameter binding (named, optional, `params`, and reordered arguments). The
 plugin used source position after the template argument.
+
+This includes named and reordered arguments to
+`Serilog.Context.LogContext.PushProperty`; its `name`, `value`, and
+`destructureObjects` parameters are identified by parameter name. Microsoft
+`ILogger` extension methods are also bound by their reduced or static form,
+so exception placement is checked consistently for both
+`logger.LogError(template, value)` and
+`LoggerExtensions.LogError(logger, template, value)`.
 
 ## Mixed templates
 
@@ -188,20 +208,31 @@ source spans for diagnostics and fixes. It maps:
 - constant concatenations
 - escaped braces, quotes, backslashes, and Unicode escapes
 
+Interpolated strings that contain only constant text are mapped from their
+runtime value. For example, `$"user {{UserId}}"` is analyzed as the template
+`user {UserId}`, while the diagnostic span still points into the escaped source
+text. Constant regular, verbatim, and raw interpolated text follows the same
+runtime-value rule.
+
+Diagnostics can still be reported when source text cannot be mapped exactly,
+including a constant field or a concatenation containing a constant fragment.
+Source-rewriting fixes are withheld in those cases; shared constants also
+remain diagnostic-only unless their use is exclusive to the logging method.
+
 ## Fixes
 
 | Diagnostic | Fix | Notes |
 |---|---|---|
-| [AASL0001](rules/AASL0001.md), [AASL0002](rules/AASL0002.md) | Insert `@` after `{` | Full; Serilog-like invocations only (not MEL, ZLogger, or `LoggerMessage.Define` / `DefineScope`) |
-| [AASL0003](rules/AASL0003.md) | Add `destructureObjects: true` | `LogContext.PushProperty` with exactly two arguments |
-| [AASL0004](rules/AASL0004.md) | Replace logger category with the containing type | `ILogger<T>` constructor / primary-constructor parameters and matching fields/properties in that type. `ForContext<T>()` type argument only. Nested types are left alone. |
-| [AASL0005](rules/AASL0005.md) | Move exception before the template | Inserts the exception argument immediately before the message template (after EventId/LogLevel) and removes the aligned hole when the template is a mappable constant. Interpolated templates move the argument only. |
+| [AASL0001](rules/AASL0001.md), [AASL0002](rules/AASL0002.md) | Insert `@` after `{` | Full for safely mappable Serilog-like invocations only (not MEL, ZLogger, or `LoggerMessage.Define` / `DefineScope`). Constant fields and concatenations with unmappable fragments keep the diagnostic but have no fix. |
+| [AASL0003](rules/AASL0003.md) | Add `destructureObjects: true` | `LogContext.PushProperty` with exactly two arguments; named and reordered `name` / `value` arguments are bound by parameter. |
+| [AASL0004](rules/AASL0004.md) | Replace logger category with the containing type | `ILogger<T>` constructor / primary-constructor parameters and matching fields/properties in that type. `ForContext<T>()` type argument only; conditional-access calls are diagnosed, but the type-argument fix is offered for direct member-access calls. Nested types are left alone. |
+| [AASL0005](rules/AASL0005.md) | Move exception before the template | Inserts the exception argument immediately before the message template (after EventId/LogLevel) and removes the aligned hole when the template is a mappable constant. Interpolated or otherwise unmappable templates move the argument only. Reduced and explicit static MEL extension calls are both supported. |
 | [AASL0006](rules/AASL0006.md) | Rename duplicate holes to unique names | Invocations only. Subsequent holes are uniquified (`{Test}` `{Test2}`), or renamed from argument identifiers when those can be derived. Leaf and qualified primary suggestions share one used-name set. Qualified names are a second action when they differ. Not offered for `[LoggerMessage]` (renaming a hole would not add a C# parameter). |
 | [AASL0008](rules/AASL0008.md) | Rename positional hole | `[LoggerMessage]` when the remaining parameters match the holes. Invocations when the aligned argument has a derivable identifier (`order.Id` → `{Id}`). Qualified names as a second action when they differ. Not offered for literals, anonymous objects, `LoggerMessage.Define` / `DefineScope`, or a params array passed as a single variable. |
-| [AASL0009](rules/AASL0009.md) | Rename hole to suggested name | Full; also `[LoggerMessage]` attribute strings |
-| [AASL0010](rules/AASL0010.md) | Replace `PushProperty` name | Full |
-| [AASL0011](rules/AASL0011.md) | Remove trailing `.` | Full; span is the period |
-| [AASL0007](rules/AASL0007.md) | Convert interpolation | Partial: deterministic leaf names; extra action uses qualified names when they differ. No hotspots |
+| [AASL0009](rules/AASL0009.md) | Rename hole to suggested name | Full when the source map is rewriteable; also `[LoggerMessage]` attribute strings. Unmappable and shared-constant templates remain diagnostic-only. |
+| [AASL0010](rules/AASL0010.md) | Replace `PushProperty` name | Full for a constant `name` argument, including named/reordered calls |
+| [AASL0011](rules/AASL0011.md) | Remove trailing `.` | Full when the diagnostic span contains exactly the period; unmappable and shared-constant templates remain diagnostic-only. |
+| [AASL0007](rules/AASL0007.md) | Convert interpolation | Partial: deterministic leaf names; extra action uses qualified names when they differ. Escaped braces remain escaped. No fix is offered when an interpolation value is ref-like or a pointer, because the generated object argument would not compile. |
 
 No code fix for [AASL0012](rules/AASL0012.md): the diagnostic fires on `[LoggerMessage]` whenever template naming is `semantic_conventions`, so a template rewrite cannot clear it. Converting the method to `LoggerMessage.Define` or a `Log*` call is an API choice (and fights CA1848).
 
@@ -251,6 +282,13 @@ A fix does not rewrite a `const string` message unless that constant is
 declared on the same type and referenced only by the logging method.
 Shared constants still produce diagnostics; the rename and trailing-period
 fixes are withheld.
+
+## Microsoft logging scopes
+
+`ILogger.BeginScope` is a supported Microsoft logging entry point. Its
+`messageFormat` argument receives the same named-property, positional,
+trailing-period, and compile-time-constant checks as other `LoggerExtensions`
+templates. Serilog-only destructuring rules do not apply to scopes.
 
 This package recommends enabling the .NET SDK `CA*` / `SYSLIB10xx`
 logging rules if they are not already on; see

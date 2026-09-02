@@ -1,4 +1,10 @@
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
+using Alexaka1.Analyzers.StructuredLogging.Recognition;
+
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 using Xunit;
 
@@ -185,5 +191,102 @@ public sealed class ComplexObjectAnalyzerTests
                                                                  }
                                                              }
                                                              """);
+    }
+
+    [Fact]
+    public void Expanded_params_array_element_maps_to_the_whole_expression()
+    {
+        var source = /*lang=csharp*/ """
+                                     using System;
+                                     class C
+                                     {
+                                         static void Write(string template, params object[] args) { }
+
+                                         static void M()
+                                         {
+                                             Write("{Numbers}", new[] { 1, 2 });
+                                         }
+                                     }
+                                     """;
+        var (compilation, tree, _) = AnalyzerTestHost.CreateCompilation(
+            source,
+            editorConfig: null,
+            languageVersion: LanguageVersion.Latest);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var model = compilation.GetSemanticModel(tree);
+        var invocation = tree.GetRoot(cancellationToken).DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Single();
+        var method = model.GetSymbolInfo(invocation, cancellationToken).Symbol as IMethodSymbol;
+        Assert.NotNull(method);
+
+        var arguments = TemplateArgumentResolver.MapArguments(model, invocation, method, cancellationToken);
+        var template = arguments.Single(a => a.Argument == invocation.ArgumentList.Arguments[0]);
+        var mapped = PropertyArgumentMapper.ArgumentForHole(arguments, template, 0);
+
+        Assert.Equal("new[] { 1, 2 }", mapped?.ToString());
+    }
+
+    [Fact]
+    public Task Fallback_params_mapping_keeps_all_expanded_arguments()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             class Complex { }
+                                                             class C
+                                                             {
+                                                                 [MessageTemplateFormatMethod("template")]
+                                                                 static void Write(string template, params object[] args) { }
+
+                                                                 static void M(Complex first, Complex second)
+                                                                 {
+                                                                     Write("{|AASL0002:{First}|} {|AASL0002:{Second}|}", first, second, invalid: 1);
+                                                                 }
+                                                             }
+
+                                                             [AttributeUsage(AttributeTargets.Method)]
+                                                             sealed class MessageTemplateFormatMethodAttribute : Attribute
+                                                             {
+                                                                 public MessageTemplateFormatMethodAttribute(string name) { }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
+    public void Fallback_params_mapping_is_exercised_for_an_invalid_invocation_operation()
+    {
+        var source = /*lang=csharp*/ """
+                                     using System;
+                                     class Complex { }
+                                     class C
+                                     {
+                                         static void Write(string template, params object[] args) { }
+
+                                         static void M(Complex first, Complex second)
+                                         {
+                                             Write("{First} {Second}", first, second, invalid: 1);
+                                         }
+                                     }
+                                     """;
+        var (compilation, tree, _) = AnalyzerTestHost.CreateCompilation(
+            source,
+            editorConfig: null,
+            languageVersion: LanguageVersion.Latest);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var model = compilation.GetSemanticModel(tree);
+        var invocation = tree.GetRoot(cancellationToken).DescendantNodes().OfType<InvocationExpressionSyntax>()
+            .Single();
+        var operation = model.GetOperation(invocation, cancellationToken);
+
+        Assert.NotNull(operation);
+        Assert.True(operation is IInvalidOperation);
+        Assert.False(operation is IInvocationOperation);
+
+        var method = LoggingInvocationClassifier.ResolveMethod(model, invocation, cancellationToken);
+        Assert.NotNull(method);
+        var arguments = TemplateArgumentResolver.MapArguments(model, invocation, method, cancellationToken);
+        var template = arguments.Single(a => a.Argument == invocation.ArgumentList.Arguments[0]);
+
+        Assert.Equal("first", PropertyArgumentMapper.ArgumentForHole(arguments, template, 0)?.ToString());
+        Assert.Equal("second", PropertyArgumentMapper.ArgumentForHole(arguments, template, 1)?.ToString());
     }
 }

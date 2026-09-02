@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -44,13 +45,32 @@ internal static class TemplateArgumentResolver
         string templateParameterName,
         CancellationToken cancellationToken)
     {
+        return FindTemplate(
+            model,
+            invocation,
+            method,
+            templateParameterName,
+            cancellationToken,
+            out _);
+    }
+
+    public static BoundTemplateArgument? FindTemplate(
+        SemanticModel model,
+        InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        string templateParameterName,
+        CancellationToken cancellationToken,
+        out List<BoundTemplateArgument> arguments)
+    {
         var parameter = FindParameter(method, templateParameterName);
         if (parameter is null)
         {
+            arguments = new List<BoundTemplateArgument>(0);
             return null;
         }
 
-        foreach (var mapped in MapArguments(model, invocation, method, cancellationToken))
+        arguments = MapArguments(model, invocation, method, cancellationToken);
+        foreach (var mapped in arguments)
         {
             if (SymbolEqualityComparer.Default.Equals(mapped.Parameter, parameter) ||
                 mapped.Parameter.Name == templateParameterName)
@@ -107,6 +127,7 @@ internal static class TemplateArgumentResolver
         {
             var argument = arguments[i];
             IParameterSymbol? parameter = null;
+            var expandedParamsElement = false;
             if (argument.NameColon != null)
             {
                 var name = argument.NameColon.Name.Identifier.ValueText;
@@ -134,9 +155,14 @@ internal static class TemplateArgumentResolver
 
                 if (parameter != null &&
                     parameter.IsParams &&
-                    results.Count >= parameter.Ordinal)
+                    results.Count >= parameter.Ordinal &&
+                    !IsExplicitParamsArrayArgument(model, argument.Expression, parameter, cancellationToken))
                 {
-                    // keep params parameter
+                    // A positional argument after the fixed parameters belongs
+                    // to the same params parameter. Keep it available for the
+                    // following arguments and retain each argument as an
+                    // expanded element.
+                    expandedParamsElement = true;
                 }
             }
 
@@ -145,11 +171,32 @@ internal static class TemplateArgumentResolver
                 continue;
             }
 
-            used.Add(parameter.Ordinal);
-            results.Add(new BoundTemplateArgument(parameter, argument, argument.Expression, parameter.Ordinal));
+            if (!expandedParamsElement)
+            {
+                used.Add(parameter.Ordinal);
+            }
+
+            results.Add(new BoundTemplateArgument(
+                parameter,
+                argument,
+                argument.Expression,
+                parameter.Ordinal,
+                expandedParamsElement));
         }
 
         return results;
+    }
+
+    private static bool IsExplicitParamsArrayArgument(
+        SemanticModel model,
+        ExpressionSyntax expression,
+        IParameterSymbol parameter,
+        CancellationToken cancellationToken)
+    {
+        var sourceType = model.GetTypeInfo(expression, cancellationToken).Type;
+        return sourceType is not null &&
+               model.Compilation is CSharpCompilation compilation &&
+               compilation.ClassifyConversion(sourceType, parameter.Type).IsImplicit;
     }
 
     private static void AddImplicitParamsElements(

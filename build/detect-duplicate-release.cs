@@ -45,6 +45,7 @@ http.DefaultRequestHeaders.UserAgent.ParseAdd("structured-logging-analyzers-rele
 
 var apiUrl = (Environment.GetEnvironmentVariable("GITHUB_API_URL") ?? "https://api.github.com").TrimEnd('/');
 var releaseUrl = $"{apiUrl}/repos/{repository}/releases/tags/{Uri.EscapeDataString(tag)}";
+var releaseExists = false;
 using (var request = new HttpRequestMessage(HttpMethod.Get, releaseUrl))
 {
     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -54,10 +55,9 @@ using (var request = new HttpRequestMessage(HttpMethod.Get, releaseUrl))
     using var response = await http.SendAsync(request);
     if (response.StatusCode == HttpStatusCode.OK)
     {
-        return Fail($"Error: GitHub release '{tag}' already exists.");
+        releaseExists = true;
     }
-
-    if (response.StatusCode != HttpStatusCode.NotFound)
+    else if (response.StatusCode != HttpStatusCode.NotFound)
     {
         var body = await response.Content.ReadAsStringAsync();
         Console.Error.WriteLine($"Error: Failed to query GitHub release '{tag}'.");
@@ -80,6 +80,12 @@ catch (Exception ex) when (ex is HttpRequestException or JsonException or Invali
 if (exists)
 {
     return Fail($"Error: NuGet package {packageId} {version} already exists on {nugetSource}.");
+}
+
+if (releaseExists)
+{
+    Console.WriteLine(
+        $"GitHub release '{tag}' already exists, but NuGet package {packageId} {version} is absent; continuing for a publish retry.");
 }
 
 return 0;

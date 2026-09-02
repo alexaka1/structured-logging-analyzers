@@ -2,6 +2,10 @@
 
 Generated (UTC): 2026-08-20T08:02:25.7280343Z
 
+> Frozen snapshot of source commit
+> [`e59964669bbc1dbe84d945eb815be499709eb1bc`](https://github.com/alexaka1/structured-logging-analyzers/commit/e59964669bbc1dbe84d945eb815be499709eb1bc).
+> This report is historical parity evidence, not a current behavior guarantee.
+
 Corpus: characterization fixtures in `test/comparison/corpus`.
 
 ## Tools

@@ -7,6 +7,22 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Parity;
 public sealed class NamingAnalyzerTests
 {
     [Fact]
+    public Task Constant_interpolated_text_reports_template_hole()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information($"user {|AASL0009:{{userId}}|}");
+                                }
+                            }
+                            """);
+    }
+
+    [Fact]
     public Task Pascal_invalid()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
@@ -164,6 +180,29 @@ public sealed class NamingAnalyzerTests
                             }
                             """,
             editorConfig: "dotnet_code_quality.AASL.ignored_properties_regex = MY_.*");
+    }
+
+    [Fact]
+    public async Task Timed_out_ignored_regex_does_not_throw()
+    {
+        var propertyName = new string('a', 5_000) + "b";
+        var source = $$"""
+                       using Serilog;
+                       public static class Program
+                       {
+                           public static void Main()
+                           {
+                               Log.Logger.Information("{{{propertyName}}}", 1);
+                           }
+                       }
+                       """;
+
+        var outcome = await AnalyzerTestHost.AnalyzeAsync(
+            source,
+            editorConfig: "dotnet_code_quality.AASL.ignored_properties_regex = (a+)+$",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Contains(outcome.Diagnostics, d => d.Id == "AASL0009");
     }
 
     [Fact]

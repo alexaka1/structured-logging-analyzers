@@ -7,6 +7,22 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Parity;
 public sealed class TemplateRuleAnalyzerTests
 {
     [Fact]
+    public Task Escaped_constant_interpolated_text_reports_trailing_period()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information($"line\n done{|AASL0011:.|}");
+                                }
+                            }
+                            """);
+    }
+
+    [Fact]
     public Task Duplicate_named_properties()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
