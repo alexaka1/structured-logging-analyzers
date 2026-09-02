@@ -45,7 +45,6 @@ public sealed class AnalyzerConfigPipelineTests
             editorConfig,
             additionalSources: new[] { ("/0/Other.cs", source) });
 
-        Assert.Contains(expected, item => item.Id == "AASL0009");
         Assert.DoesNotContain(
             diagnostics,
             diagnostic => diagnostic.Id == "AASL0009" &&
@@ -55,6 +54,8 @@ public sealed class AnalyzerConfigPipelineTests
                                                                             diagnostic.Location.SourceTree?.FilePath
                                                                                 .EndsWith("/Other.cs",
                                                                                     StringComparison.Ordinal) == true));
+        var expectedSpan = Assert.Single(expected, item => item.Id == "AASL0009").Span;
+        Assert.Equal(expectedSpan, otherDiagnostic.Location.SourceSpan);
         Assert.Equal("Property name 'myProperty' does not match naming rules. Suggested name is 'my_property'.",
             otherDiagnostic.GetMessage());
     }

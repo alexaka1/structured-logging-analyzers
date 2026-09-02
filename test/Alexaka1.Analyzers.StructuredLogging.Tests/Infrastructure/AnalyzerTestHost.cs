@@ -122,9 +122,9 @@ internal static class AnalyzerTestHost
 
         var project = solution.GetProject(document.Project.Id);
         Assert.NotNull(project);
-        var updatedDocument = project!.GetDocument(document.Id);
+        var updatedDocument = project.GetDocument(document.Id);
         Assert.NotNull(updatedDocument);
-        return await GetAnalyzerDiagnosticsAsync(updatedDocument!).ConfigureAwait(false);
+        return await GetAnalyzerDiagnosticsAsync(updatedDocument).ConfigureAwait(false);
     }
 
     public static async Task<AnalysisOutcome> AnalyzeAsync(

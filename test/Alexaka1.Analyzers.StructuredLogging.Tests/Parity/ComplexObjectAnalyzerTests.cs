@@ -219,7 +219,7 @@ public sealed class ComplexObjectAnalyzerTests
         var method = model.GetSymbolInfo(invocation, cancellationToken).Symbol as IMethodSymbol;
         Assert.NotNull(method);
 
-        var arguments = TemplateArgumentResolver.MapArguments(model, invocation, method!, cancellationToken);
+        var arguments = TemplateArgumentResolver.MapArguments(model, invocation, method, cancellationToken);
         var template = arguments.Single(a => a.Argument == invocation.ArgumentList.Arguments[0]);
         var mapped = PropertyArgumentMapper.ArgumentForHole(arguments, template, 0);
 
@@ -283,7 +283,7 @@ public sealed class ComplexObjectAnalyzerTests
 
         var method = LoggingInvocationClassifier.ResolveMethod(model, invocation, cancellationToken);
         Assert.NotNull(method);
-        var arguments = TemplateArgumentResolver.MapArguments(model, invocation, method!, cancellationToken);
+        var arguments = TemplateArgumentResolver.MapArguments(model, invocation, method, cancellationToken);
         var template = arguments.Single(a => a.Argument == invocation.ArgumentList.Arguments[0]);
 
         Assert.Equal("first", PropertyArgumentMapper.ArgumentForHole(arguments, template, 0)?.ToString());

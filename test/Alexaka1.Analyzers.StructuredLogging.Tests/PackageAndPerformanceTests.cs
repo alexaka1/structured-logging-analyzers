@@ -145,7 +145,7 @@ public sealed class PackageAndPerformanceTests
         }
         finally
         {
-            MoveToTrash(sarifPath);
+            TryMoveToTrash(sarifPath);
         }
     }
 
@@ -300,7 +300,7 @@ public sealed class PackageAndPerformanceTests
         {
             if (File.Exists(sarif))
             {
-                MoveToTrash(sarif);
+                TryMoveToTrash(sarif);
             }
         }
 
@@ -536,7 +536,7 @@ public sealed class PackageAndPerformanceTests
         }
         catch
         {
-            MoveToTrash(output);
+            TryMoveToTrash(output);
             throw;
         }
     }
@@ -625,7 +625,19 @@ public sealed class PackageAndPerformanceTests
         var document = XDocument.Load(stream);
         var metadata = document.Root?.Element(NuspecNamespace + "metadata");
         Assert.NotNull(metadata);
-        return metadata!;
+        return metadata;
+    }
+
+    private static void TryMoveToTrash(string path)
+    {
+        try
+        {
+            MoveToTrash(path);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"Could not clean up '{path}': {exception.Message}");
+        }
     }
 
     private static void MoveToTrash(string path)
@@ -643,6 +655,7 @@ public sealed class PackageAndPerformanceTests
         }
 
         candidates.Add(Path.Combine(Path.GetTempPath(), "sla-trash-" + Guid.NewGuid().ToString("N")));
+        Exception? lastError = null;
         foreach (var trashDirectory in candidates)
         {
             try
@@ -662,17 +675,13 @@ public sealed class PackageAndPerformanceTests
 
                 return;
             }
-            catch (IOException)
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                // A cross-volume or already-occupied trash path can be retried in the next location.
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // Fall back to a recoverable temporary trash location.
+                lastError = exception;
             }
         }
 
-        throw new IOException($"Could not move temporary path to recoverable trash: {path}");
+        throw new IOException($"Could not move temporary path to recoverable trash: {path}", lastError);
     }
 
     private sealed class PackedPackage : IDisposable
@@ -696,7 +705,7 @@ public sealed class PackageAndPerformanceTests
             }
 
             _disposed = true;
-            MoveToTrash(_directoryPath);
+            TryMoveToTrash(_directoryPath);
         }
     }
 
@@ -726,7 +735,7 @@ public sealed class PackageAndPerformanceTests
             }
 
             _disposed = true;
-            MoveToTrash(DirectoryPath);
+            TryMoveToTrash(DirectoryPath);
         }
     }
 

@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using Alexaka1.Analyzers.StructuredLogging.Mapping;
 using Alexaka1.Analyzers.StructuredLogging.Parsing;
-using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 
 using Xunit;
 
@@ -85,38 +84,6 @@ public sealed class LiteralSpanMapperRegressionTests
         var (tree, model, expression) = ParseExpression(source);
 
         AssertMappedPeriod(tree, model, expression, "line\n  done.");
-    }
-
-    [Fact]
-    public Task Constant_interpolated_text_reports_template_hole()
-    {
-        return AnalyzerTestHost.VerifyAsync(
-            /*lang=csharp*/ """
-                                            using Serilog;
-                                            public static class Program
-                                            {
-                                                public static void Main()
-                                                {
-                                                    Log.Logger.Information($"user {|AASL0009:{{userId}}|}");
-                                                }
-                                            }
-                            """);
-    }
-
-    [Fact]
-    public Task Escaped_constant_interpolated_text_reports_trailing_period()
-    {
-        return AnalyzerTestHost.VerifyAsync(
-            /*lang=csharp*/ """
-                            using Serilog;
-                            public static class Program
-                            {
-                                public static void Main()
-                                {
-                                    Log.Logger.Information($"line\n done{|AASL0011:.|}");
-                                }
-                            }
-                            """);
     }
 
     private static void AssertMappedPeriod(

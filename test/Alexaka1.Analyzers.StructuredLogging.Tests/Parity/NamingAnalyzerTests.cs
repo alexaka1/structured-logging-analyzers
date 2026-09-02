@@ -7,6 +7,22 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Parity;
 public sealed class NamingAnalyzerTests
 {
     [Fact]
+    public Task Constant_interpolated_text_reports_template_hole()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information($"user {|AASL0009:{{userId}}|}");
+                                }
+                            }
+                            """);
+    }
+
+    [Fact]
     public Task Pascal_invalid()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
