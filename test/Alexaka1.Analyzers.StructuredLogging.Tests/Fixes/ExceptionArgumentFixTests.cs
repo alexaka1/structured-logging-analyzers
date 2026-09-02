@@ -370,4 +370,44 @@ public sealed class ExceptionArgumentFixTests
             "AASL0005",
             typeof(MoveExceptionArgumentCodeFixProvider));
     }
+
+    [Fact]
+    public Task AASL0005_occupied_exception_slot_has_no_fix()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    var ex = new Exception();
+                                    var otherEx = new Exception();
+                                    Log.Logger.Information(ex, "{One} {OtherException}", 1, {|AASL0005:otherEx|});
+                                }
+                            }
+                            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
+
+    [Fact]
+    public Task AASL0005_occupied_microsoft_exception_slot_has_no_fix()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex, Exception otherEx)
+                                {
+                                    logger.LogError(ex, "Failed {Op} {Error}", "save", {|AASL0005:otherEx|});
+                                }
+                            }
+                            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
 }

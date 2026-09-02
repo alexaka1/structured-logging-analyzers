@@ -71,7 +71,7 @@ public sealed class ExceptionAnalyzerTests
     }
 
     [Fact]
-    public Task Exception_before_template_suppresses_later_exception()
+    public Task Exception_before_template_still_reports_later_template_exception()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
                                                              using System;
@@ -80,7 +80,60 @@ public sealed class ExceptionAnalyzerTests
                                                              {
                                                                  public static void Main()
                                                                  {
-                                                                     Log.Logger.Information(new Exception(), "{One} {OtherException}", 1, new Exception());
+                                                                     var ex = new Exception();
+                                                                     var otherEx = new Exception();
+                                                                     Log.Logger.Information(ex, "{One} {OtherException}", 1, {|AASL0005:otherEx|});
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
+    public Task Exception_before_template_still_reports_later_inline_exception()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Serilog;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     Log.Logger.Information(new Exception(), "{One} {OtherException}", 1, {|AASL0005:new Exception()|});
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
+    public Task Named_template_before_exception_slot_is_valid()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Serilog;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     var ex = new Exception();
+                                                                     Log.Logger.Information(messageTemplate: "{One}", exception: ex);
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
+    public Task Named_exception_slot_still_reports_later_template_exception()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Serilog;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     var ex = new Exception();
+                                                                     var otherEx = new InvalidOperationException();
+                                                                     Log.Logger.Information(exception: ex, messageTemplate: "{One} {OtherException}", 1, {|AASL0005:otherEx|});
                                                                  }
                                                              }
                                                              """);

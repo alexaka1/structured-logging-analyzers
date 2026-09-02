@@ -187,7 +187,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                 template.Expression.GetLocation()));
         }
 
-        AnalyzeException(context, invocation, method, template, known,
+        AnalyzeException(context, invocation, method, template, arguments, known,
             skip: LoggerMessageParameterMapper.IsLoggerMessageDefine(method, known));
 
         if (!isConstant)
@@ -456,6 +456,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         IMethodSymbol method,
         BoundTemplateArgument template,
+        List<BoundTemplateArgument> arguments,
         KnownSymbols known,
         bool skip)
     {
@@ -470,7 +471,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var invalid = FindInvalidExceptionArgument(context, invocation, template, exceptionType);
+        var invalid = FindInvalidExceptionArgument(context, arguments, template, exceptionType);
         if (invalid is null)
         {
             return;
@@ -494,26 +495,24 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
     private static ArgumentSyntax? FindInvalidExceptionArgument(
         SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
+        List<BoundTemplateArgument> arguments,
         BoundTemplateArgument template,
         INamedTypeSymbol exceptionType)
     {
-        var templateIndex = invocation.ArgumentList.Arguments.IndexOf(template.Argument);
-        foreach (var argument in invocation.ArgumentList.Arguments)
+        foreach (var bound in arguments)
         {
-            var type = context.SemanticModel.GetTypeInfo(argument.Expression, context.CancellationToken).Type;
+            var type = context.SemanticModel.GetTypeInfo(bound.Expression, context.CancellationToken).Type;
             if (type is null || !IsOrDerivedFrom(type, exceptionType))
             {
                 continue;
             }
 
-            var argumentIndex = invocation.ArgumentList.Arguments.IndexOf(argument);
-            if (templateIndex > argumentIndex)
+            if (bound.Ordinal < template.Ordinal)
             {
-                return null;
+                continue;
             }
 
-            return argument;
+            return bound.Argument;
         }
 
         return null;

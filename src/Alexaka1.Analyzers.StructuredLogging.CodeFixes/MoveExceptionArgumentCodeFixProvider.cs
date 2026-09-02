@@ -25,6 +25,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (root is null)
         {
             return;
@@ -34,6 +35,14 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         {
             var invocation = FindInvocation(root, diagnostic.Location.SourceSpan);
             if (invocation is null)
+            {
+                continue;
+            }
+
+            var exceptionArgument = FindExceptionArgument(invocation, diagnostic.Location.SourceSpan);
+            if (exceptionArgument is null ||
+                (model is not null &&
+                 HasEarlierExceptionArgument(model, invocation, exceptionArgument, context.CancellationToken)))
             {
                 continue;
             }
@@ -91,7 +100,8 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         }
 
         var exceptionArgument = FindExceptionArgument(invocation, diagnostic.Location.SourceSpan);
-        if (exceptionArgument is null)
+        if (exceptionArgument is null ||
+            HasEarlierExceptionArgument(model, invocation, exceptionArgument, cancellationToken))
         {
             return document;
         }
@@ -403,6 +413,35 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         }
 
         return (start, length);
+    }
+
+    private static bool HasEarlierExceptionArgument(
+        SemanticModel model,
+        InvocationExpressionSyntax invocation,
+        ArgumentSyntax exceptionArgument,
+        CancellationToken cancellationToken)
+    {
+        var known = KnownSymbols.Resolve(model.Compilation);
+        if (known.Exception is null)
+        {
+            return false;
+        }
+
+        foreach (var argument in invocation.ArgumentList.Arguments)
+        {
+            if (argument == exceptionArgument)
+            {
+                return false;
+            }
+
+            var type = model.GetTypeInfo(argument.Expression, cancellationToken).Type;
+            if (type is not null && LoggerMessageParameterMapper.IsException(type, known))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static ArgumentSyntax? FindExceptionArgument(InvocationExpressionSyntax invocation, TextSpan span)

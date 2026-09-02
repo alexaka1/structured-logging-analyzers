@@ -127,6 +127,55 @@ public sealed class FrameworkInvocationTests
     }
 
     [Fact]
+    public Task Microsoft_extensions_logging_reports_later_template_exception()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Microsoft.Extensions.Logging;
+                                                             class C
+                                                             {
+                                                                 void M(ILogger logger, Exception ex, Exception otherEx)
+                                                                 {
+                                                                     logger.LogInformation(ex, "{One} {OtherException}", 1, {|AASL0005:otherEx|});
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
+    public Task NLog_reports_later_template_exception()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using NLog;
+                                                             class C
+                                                             {
+                                                                 void M(Logger logger, Exception ex, Exception otherEx)
+                                                                 {
+                                                                     logger.Info(ex, "{One} {OtherException}", 1, {|AASL0005:otherEx|});
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
+    public Task ZLogger_reports_later_template_exception()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Microsoft.Extensions.Logging;
+                                                             using ZLogger;
+                                                             class A
+                                                             {
+                                                                 public A(ILogger<A> log, Exception ex, Exception otherEx)
+                                                                 {
+                                                                     log.ZLogInformation(ex, "{One} {OtherException}", 1, {|AASL0005:otherEx|});
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
     public Task Unrelated_invocation_is_ignored()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
