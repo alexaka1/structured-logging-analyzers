@@ -1,5 +1,11 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.10
+
+### Patch Changes
+
+- [#67](https://github.com/alexaka1/structured-logging-analyzers/pull/67) [`d79db0c`](https://github.com/alexaka1/structured-logging-analyzers/commit/d79db0c176ab63c627ee1cc7ed552cbdea997ab9) Thanks [@alexaka1](https://github.com/alexaka1)! - Improve structured-logging diagnostics and code fixes across Microsoft.Extensions.Logging and Serilog calls, including exception placement, named arguments, contextual loggers, constant interpolated templates, and logging scopes. Escaped braces keep their runtime meaning, invalid regex settings no longer interrupt analysis, and source rewrites are withheld when the original text cannot be mapped safely.
+
 ## 0.1.0-preview.9
 
 ### Patch Changes
