@@ -14,12 +14,19 @@ public sealed class RemoveTrailingPeriodCodeFixProvider : CodeFixProvider
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
-    public override Task RegisterCodeFixesAsync(CodeFixContext context)
+    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
+        var text = await context.Document.GetTextAsync(context.CancellationToken).ConfigureAwait(false);
         foreach (var diagnostic in context.Diagnostics)
         {
             if (diagnostic.Properties.TryGetValue(FixProperties.AllowRewrite, out var allow) &&
                 string.Equals(allow, "false", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var span = diagnostic.Location.SourceSpan;
+            if (span.Length != 1 || text.ToString(span) != ".")
             {
                 continue;
             }
@@ -31,8 +38,6 @@ public sealed class RemoveTrailingPeriodCodeFixProvider : CodeFixProvider
                     nameof(RemoveTrailingPeriodCodeFixProvider)),
                 diagnostic);
         }
-
-        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyAsync(Document document, Diagnostic diagnostic,
@@ -40,7 +45,7 @@ public sealed class RemoveTrailingPeriodCodeFixProvider : CodeFixProvider
     {
         var text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
         var span = diagnostic.Location.SourceSpan;
-        if (span.Length == 0)
+        if (span.Length != 1 || text.ToString(span) != ".")
         {
             return document;
         }

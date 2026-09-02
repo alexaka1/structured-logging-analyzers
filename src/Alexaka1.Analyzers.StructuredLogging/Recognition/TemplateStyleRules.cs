@@ -23,6 +23,7 @@ internal static class TemplateStyleRules
         IReadOnlyList<ExpressionSyntax?>? argumentExpressions = null,
         bool uniquifyDuplicates = false)
     {
+        allowRewrite &= map.AllowRewrite;
         AnalyzeDuplicates(
             context,
             map,
@@ -44,6 +45,7 @@ internal static class TemplateStyleRules
         AnalyzerSettings settings,
         bool allowRewrite)
     {
+        allowRewrite &= map.AllowRewrite;
         var style = settings.GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
         string?[]? leafNames = null;
         string?[]? qualifiedNames = null;
@@ -165,7 +167,7 @@ internal static class TemplateStyleRules
         }
 
         var span = map.TryGetSpan(text.Length - 1, 1) ?? last.Span;
-        var properties = allowRewrite
+        var properties = allowRewrite && map.AllowRewrite
             ? ImmutableDictionary<string, string?>.Empty
             : ImmutableDictionary<string, string?>.Empty.Add(FixProperties.AllowRewrite, "false");
         context.ReportDiagnostic(Diagnostic.Create(

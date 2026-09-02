@@ -1,7 +1,9 @@
 # Supported IDE and compiler policy
 
 This is the host contract for `Alexaka1.Analyzers.StructuredLogging`. Logging-library
-version coverage lives in [package-version-testing.md](package-version-testing.md).
+version coverage is exercised by
+[PackageVersionMatrixTests.cs](../test/Alexaka1.Analyzers.StructuredLogging.Tests/Frameworks/PackageVersionMatrixTests.cs)
+and [LatestStablePackageTests.cs](../test/Alexaka1.Analyzers.StructuredLogging.Tests/Frameworks/LatestStablePackageTests.cs).
 Analyzer allocation, telemetry, and concurrency gates live in
 [performance-policy.md](performance-policy.md).
 
@@ -73,11 +75,14 @@ analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll
 ```
 
 No `lib/` assets. Analyzer dependencies stay `PrivateAssets="all"`. The
-packed nupkg must not contain `Microsoft.CodeAnalysis.dll`. Sample builds
-must not copy the analyzer assemblies into application output.
-`PackageAndPerformanceTests` asserts the package-entry and sample-output
-invariants (`lib/`, `Microsoft.CodeAnalysis.dll`, analyzer DLLs in output).
-It does not inspect `PrivateAssets` metadata.
+packed nupkg contains exactly the two expected `analyzers/dotnet/cs` files and
+must not contain `Microsoft.CodeAnalysis*` or `lib/` assets. A package
+consumption test restores a temporary `PackageReference` consumer from a local
+feed, verifies an AASL diagnostic during `dotnet build`, and checks that the
+consumer output contains neither analyzer nor Roslyn assemblies. These checks
+prove compiler analyzer loading and output isolation. They do not prove that an
+IDE host loads the CodeFixes assembly; that requires a host-specific integration
+test.
 
 ## Renovate
 

@@ -77,7 +77,6 @@ jobs:
     environment: release
     permissions:
       contents: read
-      id-token: write
     steps:
       - name: Generate GitHub App token to create releases
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -139,6 +138,23 @@ jobs:
             extra_args+=(--prerelease)
           else
             extra_args+=(--latest)
+          fi
+
+          release_state="$(gh release view "${tag}" --json isDraft --jq '.isDraft' 2>/dev/null || true)"
+          if [[ "${release_state}" == "false" ]]; then
+            echo "GitHub release ${tag} is already published; retaining it for this publish retry."
+            exit 0
+          fi
+
+          if [[ "${release_state}" == "true" ]]; then
+            echo "GitHub release ${tag} is a draft; refreshing its assets and publishing it."
+            gh release upload "${tag}" "${files[@]}" --clobber
+            gh release edit "${tag}" \
+              --title "${title}" \
+              --notes-file "${NOTES_FILE}" \
+              --draft=false \
+              "${extra_args[@]}"
+            exit 0
           fi
 
           # Draft first, attach assets, then publish. Immutable releases lock

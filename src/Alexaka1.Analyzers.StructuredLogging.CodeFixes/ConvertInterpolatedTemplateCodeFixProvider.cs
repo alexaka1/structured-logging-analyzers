@@ -31,6 +31,13 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
             return;
         }
 
+        var model = await context.Document.GetSemanticModelAsync(context.CancellationToken)
+            .ConfigureAwait(false);
+        if (model is null)
+        {
+            return;
+        }
+
         foreach (var diagnostic in context.Diagnostics)
         {
             var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
@@ -45,7 +52,8 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                 context.Document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider,
                 interpolated.SyntaxTree).GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
 
-            if (!TryBuild(interpolated, style, ExpressionPropertyName.Kind.Leaf, out var leafTemplate, out _))
+            if (!TryBuild(interpolated, model, style, ExpressionPropertyName.Kind.Leaf,
+                    out var leafTemplate, out _, context.CancellationToken))
             {
                 continue;
             }
@@ -57,8 +65,8 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                     LeafEquivalenceKey),
                 diagnostic);
 
-            if (TryBuild(interpolated, style, ExpressionPropertyName.Kind.Qualified, out var qualifiedTemplate,
-                    out _) &&
+            if (TryBuild(interpolated, model, style, ExpressionPropertyName.Kind.Qualified,
+                    out var qualifiedTemplate, out _, context.CancellationToken) &&
                 !string.Equals(qualifiedTemplate, leafTemplate, StringComparison.Ordinal))
             {
                 context.RegisterCodeFix(
@@ -83,6 +91,12 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        var model = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (model is null)
+        {
+            return document;
+        }
+
         var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
         var interpolated = node as InterpolatedStringExpressionSyntax ??
                            node.FirstAncestorOrSelf<InterpolatedStringExpressionSyntax>();
@@ -97,7 +111,8 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
             document.Project.AnalyzerOptions.AnalyzerConfigOptionsProvider,
             interpolated.SyntaxTree).GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
 
-        if (!TryBuild(interpolated, style, nameKind, out var template, out var valueExpressions))
+        if (!TryBuild(interpolated, model, style, nameKind, out var template, out var valueExpressions,
+                cancellationToken))
         {
             return document;
         }
@@ -142,10 +157,12 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
 
     private static bool TryBuild(
         InterpolatedStringExpressionSyntax interpolated,
+        SemanticModel model,
         PropertyNamingStyle style,
         ExpressionPropertyName.Kind nameKind,
         out string template,
-        out List<ExpressionSyntax> values)
+        out List<ExpressionSyntax> values,
+        CancellationToken cancellationToken)
     {
         var builder = new StringBuilder();
         values = new List<ExpressionSyntax>();
@@ -160,6 +177,13 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                     AppendEscaped(builder, text.TextToken.ValueText);
                     break;
                 case InterpolationSyntax interpolation:
+                    var type = model.GetTypeInfo(interpolation.Expression, cancellationToken).Type;
+                    if (type is { IsRefLikeType: true } ||
+                        type?.TypeKind is TypeKind.Pointer or TypeKind.FunctionPointer)
+                    {
+                        return false;
+                    }
+
                     var name = ExpressionPropertyName.Uniquify(
                         ExpressionPropertyName.TrySuggest(interpolation.Expression, style, nameKind)
                         ?? ExpressionPropertyName.Fallback(style),
@@ -192,15 +216,6 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
 
     private static void AppendEscaped(StringBuilder builder, string text)
     {
-        for (var i = 0; i < text.Length; i++)
-        {
-            var c = text[i];
-            if (c is '{' or '}')
-            {
-                builder.Append(c);
-            }
-
-            builder.Append(c);
-        }
+        builder.Append(text);
     }
 }

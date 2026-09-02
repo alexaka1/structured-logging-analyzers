@@ -28,6 +28,7 @@ internal static class ConstTemplateMapper
         SemanticModel model,
         ExpressionSyntax? expression,
         ISymbol loggingMethod,
+        ConcurrentDictionary<ISymbol, bool> exclusivityCache,
         CancellationToken cancellationToken)
     {
         if (expression is null)
@@ -37,7 +38,7 @@ internal static class ConstTemplateMapper
 
         if (LiteralSpanMapper.TryMap(model, expression, cancellationToken, out var map))
         {
-            return new ResolvedTemplateSource(map, expression, allowRewrite: true);
+            return new ResolvedTemplateSource(map, expression, map.AllowRewrite);
         }
 
         if (!TryGetConstLiteral(model, expression, cancellationToken, out var constSymbol, out var literal))
@@ -50,8 +51,20 @@ internal static class ConstTemplateMapper
             return new ResolvedTemplateSource(null, expression, allowRewrite: false);
         }
 
-        var exclusive = IsExclusiveToMethod(model.Compilation, constSymbol, loggingMethod, cancellationToken);
-        return new ResolvedTemplateSource(constMap, literal, exclusive);
+        var containingType = constSymbol.ContainingType;
+        if (containingType is null ||
+            !SymbolEqualityComparer.Default.Equals(containingType, loggingMethod.ContainingType))
+        {
+            return new ResolvedTemplateSource(constMap, literal, allowRewrite: false);
+        }
+
+        if (!exclusivityCache.TryGetValue(constSymbol, out var exclusive))
+        {
+            exclusive = IsExclusiveToMethod(model.Compilation, constSymbol, loggingMethod, cancellationToken);
+            exclusivityCache.TryAdd(constSymbol, exclusive);
+        }
+
+        return new ResolvedTemplateSource(constMap, literal, exclusive && constMap.AllowRewrite);
     }
 
     private static bool TryGetConstLiteral(

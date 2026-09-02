@@ -32,12 +32,16 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         var classifier = new LoggingInvocationClassifier(known);
         var regexCache = new RegexCache();
         var settingsCache = new ConcurrentDictionary<SyntaxTree, AnalyzerSettings>();
-        var generatedTrees = new ConcurrentDictionary<SyntaxTree, byte>();
+        var generatedTrees = new ConcurrentDictionary<SyntaxTree, bool>();
+        var analyzerOptions = context.Options;
+        var generatedTreeDetector =
+            new Func<SyntaxTree, bool>(tree => GeneratedCode.IsGenerated(tree, analyzerOptions));
+        var constTemplateExclusivity = new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
 
         context.RegisterSyntaxNodeAction(
             ctx =>
             {
-                if (IsGeneratedTree(ctx, generatedTrees))
+                if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
                 {
                     return;
                 }
@@ -49,19 +53,19 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(
             ctx =>
             {
-                if (IsGeneratedTree(ctx, generatedTrees))
+                if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
                 {
                     return;
                 }
 
-                AnalyzeLoggerMessageMethod(ctx, known, regexCache, settingsCache);
+                AnalyzeLoggerMessageMethod(ctx, known, regexCache, settingsCache, constTemplateExclusivity);
             },
             SyntaxKind.MethodDeclaration);
 
         context.RegisterSyntaxNodeAction(
             ctx =>
             {
-                if (IsGeneratedTree(ctx, generatedTrees))
+                if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
                 {
                     return;
                 }
@@ -73,7 +77,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(
             ctx =>
             {
-                if (IsGeneratedTree(ctx, generatedTrees))
+                if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
                 {
                     return;
                 }
@@ -88,21 +92,10 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
     private static bool IsGeneratedTree(
         SyntaxNodeAnalysisContext context,
-        ConcurrentDictionary<SyntaxTree, byte> generatedTrees)
+        ConcurrentDictionary<SyntaxTree, bool> generatedTrees,
+        Func<SyntaxTree, bool> generatedTreeDetector)
     {
-        var tree = context.Node.SyntaxTree;
-        if (generatedTrees.ContainsKey(tree))
-        {
-            return true;
-        }
-
-        if (!GeneratedCode.IsGenerated(tree, context.Options))
-        {
-            return false;
-        }
-
-        generatedTrees.TryAdd(tree, 0);
-        return true;
+        return generatedTrees.GetOrAdd(context.Node.SyntaxTree, generatedTreeDetector);
     }
 
     private static AnalyzerSettings GetSettings(
@@ -173,7 +166,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             invocation,
             method,
             templateParameterName,
-            context.CancellationToken);
+            context.CancellationToken,
+            out var arguments);
         if (templateOpt is null)
         {
             return;
@@ -184,12 +178,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         {
             return;
         }
-
-        var arguments = TemplateArgumentResolver.MapArguments(
-            context.SemanticModel,
-            invocation,
-            method,
-            context.CancellationToken);
 
         var isConstant = IsCompileTimeConstant(context.SemanticModel, template.Expression, context.CancellationToken);
         if (!isConstant)
@@ -216,7 +204,11 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            map = new TemplateSourceMap(constantText, Array.Empty<MappedChar>(), template.Expression);
+            map = new TemplateSourceMap(
+                constantText,
+                Array.Empty<MappedChar>(),
+                template.Expression,
+                allowRewrite: false);
         }
 
         var parsed = MessageTemplateParser.Parse(map.Value);
@@ -291,7 +283,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         SyntaxNodeAnalysisContext context,
         KnownSymbols known,
         RegexCache regexCache,
-        ConcurrentDictionary<SyntaxTree, AnalyzerSettings> settingsCache)
+        ConcurrentDictionary<SyntaxTree, AnalyzerSettings> settingsCache,
+        ConcurrentDictionary<ISymbol, bool> constTemplateExclusivity)
     {
         if (known.LoggerMessageAttribute is null && known.Logger is null)
         {
@@ -299,6 +292,11 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         }
 
         var methodDecl = (MethodDeclarationSyntax)context.Node;
+        if (methodDecl.AttributeLists.Count == 0)
+        {
+            return;
+        }
+
         var method = context.SemanticModel.GetDeclaredSymbol(methodDecl, context.CancellationToken);
         if (method is null)
         {
@@ -329,6 +327,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             context.SemanticModel,
             template.Expression,
             method,
+            constTemplateExclusivity,
             context.CancellationToken);
 
         if (source.Map is null)
@@ -536,9 +535,15 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
+            // A reduced extension invocation omits the receiver from its
+            // argument list, while members returned from the containing type
+            // retain the extension's `this` parameter at ordinal zero. An
+            // explicit static call includes that receiver in its arguments.
+            var parameterOffset = method.ReducedFrom is null ? 0 : 1;
+
             foreach (var parameter in candidate.Parameters)
             {
-                if (invalidArgumentIndex <= parameter.Ordinal)
+                if (invalidArgumentIndex + parameterOffset <= parameter.Ordinal)
                 {
                     break;
                 }
@@ -560,10 +565,33 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         AnalyzerSettings settings,
         RegexCache regexCache)
     {
-        var arguments = invocation.ArgumentList.Arguments;
-        if (arguments.Count >= 1)
+        var boundArguments = TemplateArgumentResolver.MapArguments(
+            context.SemanticModel,
+            invocation,
+            method,
+            context.CancellationToken);
+        BoundTemplateArgument? nameArgument = null;
+        BoundTemplateArgument? valueArgument = null;
+        var hasDestructureArgument = false;
+        foreach (var bound in boundArguments)
         {
-            var nameExpression = arguments[0].Expression;
+            if (bound.Parameter.Name == "name")
+            {
+                nameArgument = bound;
+            }
+            else if (bound.Parameter.Name == "value")
+            {
+                valueArgument = bound;
+            }
+            else if (bound.Parameter.Name == "destructureObjects")
+            {
+                hasDestructureArgument = true;
+            }
+        }
+
+        if (nameArgument is { } name)
+        {
+            var nameExpression = name.Expression;
             var constant = context.SemanticModel.GetConstantValue(nameExpression, context.CancellationToken);
             if (constant.HasValue && constant.Value is string propertyName && !string.IsNullOrEmpty(propertyName))
             {
@@ -578,7 +606,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                             .Add(FixProperties.SuggestedName, suggested);
                         context.ReportDiagnostic(Diagnostic.Create(
                             Descriptors.InconsistentContextPropertyNaming,
-                            arguments[0].GetLocation(),
+                            name.Expression.GetLocation(),
                             properties,
                             propertyName,
                             suggested));
@@ -587,12 +615,12 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (arguments.Count != 2)
+        if (valueArgument is not { } value || hasDestructureArgument)
         {
             return;
         }
 
-        var valueType = context.SemanticModel.GetTypeInfo(arguments[1].Expression, context.CancellationToken).Type;
+        var valueType = context.SemanticModel.GetTypeInfo(value.Expression, context.CancellationToken).Type;
         if (!TypeClassifier.NeedsDestructuring(valueType))
         {
             return;
@@ -601,7 +629,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(
             Descriptors.ComplexObjectInContextShouldBeDestructured,
             invocation.GetLocation()));
-        _ = method;
     }
 
     private static void AnalyzeForContext(
@@ -653,11 +680,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
     {
         var typeDecl = (TypeDeclarationSyntax)context.Node;
         if (typeDecl.ParameterList is null)
-        {
-            return;
-        }
-
-        if (typeDecl.ParameterList.Parent is ConstructorDeclarationSyntax)
         {
             return;
         }
@@ -754,6 +776,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             case GenericNameSyntax generic:
                 return generic.TypeArgumentList;
             case MemberAccessExpressionSyntax { Name: GenericNameSyntax genericName }:
+                return genericName.TypeArgumentList;
+            case MemberBindingExpressionSyntax { Name: GenericNameSyntax genericName }:
                 return genericName.TypeArgumentList;
             default:
                 return null;

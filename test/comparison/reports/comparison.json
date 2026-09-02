@@ -1,5 +1,7 @@
 {
   "generatedUtc": "2026-08-20T08:02:25.7062689Z",
+  "snapshot": "frozen",
+  "sourceCommit": "e59964669bbc1dbe84d945eb815be499709eb1bc",
   "inspectCode": "2025.3.5",
   "plugin": "ReSharper.Structured.Logging 2025.1.0.373",
   "inspectcodePluginLoaded": true,

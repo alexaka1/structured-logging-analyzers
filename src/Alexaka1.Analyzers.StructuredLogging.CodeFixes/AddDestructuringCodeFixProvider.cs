@@ -28,6 +28,12 @@ public sealed class AddDestructuringCodeFixProvider : CodeFixProvider
 
         foreach (var diagnostic in context.Diagnostics)
         {
+            if (await ResolveInsertPositionAsync(context.Document, diagnostic, context.CancellationToken)
+                    .ConfigureAwait(false) is null)
+            {
+                continue;
+            }
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     "Add destructuring to property",
@@ -60,23 +66,19 @@ public sealed class AddDestructuringCodeFixProvider : CodeFixProvider
             var mapped =
                 await TryMapContainingTemplateAsync(document, diagnostic.Location.SourceSpan, cancellationToken)
                     .ConfigureAwait(false);
-            var source = mapped?.TryGetSourceStart(logicalIndex);
+            if (mapped is null || !mapped.AllowRewrite)
+            {
+                return null;
+            }
+
+            var source = mapped.TryGetSourceStart(logicalIndex);
             if (source is not null)
             {
                 return source;
             }
         }
 
-        var span = diagnostic.Location.SourceSpan;
-        var sourceText = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
-        var snippet = sourceText.ToString(span);
-        var brace = snippet.IndexOf('{');
-        if (brace >= 0)
-        {
-            return span.Start + brace + 1;
-        }
-
-        return span.Start + 1;
+        return null;
     }
 
     internal static async Task<TemplateSourceMap?> TryMapContainingTemplateAsync(

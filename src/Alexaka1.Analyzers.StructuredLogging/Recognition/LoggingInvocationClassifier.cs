@@ -26,10 +26,21 @@ internal sealed class LoggingInvocationClassifier
 
     public static bool IsSerilogPushProperty(IMethodSymbol method)
     {
+        if (method.Name != "PushProperty")
+        {
+            return false;
+        }
+
         var containing = method.ContainingType;
-        return containing != null &&
-               containing.ToDisplayString() == "Serilog.Context.LogContext" &&
-               method.Name == "PushProperty";
+        if (containing is null || containing.Name != "LogContext")
+        {
+            return false;
+        }
+
+        var contextNamespace = containing.ContainingNamespace;
+        return contextNamespace.Name == "Context" &&
+               contextNamespace.ContainingNamespace is
+                   { Name: "Serilog", ContainingNamespace.IsGlobalNamespace: true };
     }
 
     public static bool IsSerilogForContext(IMethodSymbol method)

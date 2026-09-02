@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -82,7 +84,20 @@ internal readonly struct AnalyzerSettings
         }
 
         var regex = cache.Get(pattern!);
-        return regex != null && regex.IsMatch(propertyName);
+        if (regex is null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return regex.IsMatch(propertyName);
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            // A user-supplied pattern must not be able to abort analysis.
+            return false;
+        }
     }
 
     private static PropertyNamingStyle? TryGetNaming(AnalyzerConfigOptions options, string scope)

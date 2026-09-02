@@ -83,7 +83,9 @@ internal static class PropertyArgumentMapper
 
     private static ExpressionSyntax? ArgumentAt(List<BoundTemplateArgument> later, int holeIndex)
     {
-        if (later.Count == 1 && later[0].Parameter.IsParams)
+        if (later.Count == 1 &&
+            later[0].Parameter.IsParams &&
+            !later[0].ExpandedParamsElement)
         {
             var elements = GetArrayElements(later[0].Expression);
             if (elements.Count > 0)

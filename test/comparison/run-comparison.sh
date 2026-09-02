@@ -111,12 +111,3 @@ cp "$CHOSEN_XML" "$REPORTS_DIR/inspectcode.xml"
 
 dotnet run --project "$ROOT/test/comparison/runner/ComparisonRunner.csproj" -c Release --nologo -- \
   --inspectcode "$REPORTS_DIR/inspectcode.xml"
-
-if [[ -d /opt/cursor/artifacts ]]; then
-  cp -f "$REPORTS_DIR/comparison.md" /opt/cursor/artifacts/resharper_vs_roslyn.md
-  cp -f "$REPORTS_DIR/comparison.json" /opt/cursor/artifacts/resharper_vs_roslyn.json
-  cp -f "$REPORTS_DIR/inspectcode.xml" /opt/cursor/artifacts/inspectcode.xml
-  if [[ -f "$REPORTS_DIR/inspectcode-${CHOSEN_LABEL}.log" ]]; then
-    cp -f "$REPORTS_DIR/inspectcode-${CHOSEN_LABEL}.log" /opt/cursor/artifacts/inspectcode.log
-  fi
-fi

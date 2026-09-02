@@ -22,7 +22,7 @@ Use the latest version from [NuGet](https://www.nuget.org/packages/Alexaka1.Anal
 ```
 
 ```shell
-dotnet add package Alexaka1.Analyzers.StructuredLogging
+dotnet package add Alexaka1.Analyzers.StructuredLogging
 ```
 
 ## Recommended Microsoft analyzers
@@ -57,11 +57,12 @@ dotnet_code_quality.AASL.ignored_properties_regex = ^Legacy\.
 ```
 
 Naming values: `pascal_case` (default), `camel_case`, `snake_case`,
-`elastic_naming`, and `semantic_conventions` (for `service.name`,
-`http.response.status_code` on template and context properties).
-Prefix-level `AASL` or `AASL0009` covers template properties.
-`dotnet_code_quality.AASL0010.property_naming` scopes the style to
-context properties only.
+`elastic_naming`, and `semantic_conventions` (alias `semconv`).
+Use `semantic_conventions` for Semantic Conventions names such as
+`service.name` and `http.response.status_code`. The same options can be
+scoped to `AASL0009` or `AASL0010` (for example
+`dotnet_code_quality.AASL0009.property_naming`). A rule-scoped key applies
+only to that diagnostic. Prefix-level keys apply to both and win when set.
 
 Build and test:
 
@@ -76,7 +77,9 @@ SDK-style `net472`. The compile-time Roslyn API floor is 4.8.0 (Visual Studio
 2022 17.8); see [docs/ide-compiler-policy.md](docs/ide-compiler-policy.md).
 Allocation, telemetry, and concurrency gates are in
 [docs/performance-policy.md](docs/performance-policy.md). Logging-library version
-coverage is documented in [docs/package-version-testing.md](docs/package-version-testing.md).
+coverage is exercised by
+[PackageVersionMatrixTests.cs](test/Alexaka1.Analyzers.StructuredLogging.Tests/Frameworks/PackageVersionMatrixTests.cs)
+and [LatestStablePackageTests.cs](test/Alexaka1.Analyzers.StructuredLogging.Tests/Frameworks/LatestStablePackageTests.cs).
 
 ## Diagnostics
 
