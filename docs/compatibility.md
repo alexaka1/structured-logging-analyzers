@@ -124,10 +124,11 @@ return early after `AASL0007`.
 
 ## Exception placement
 
-**Correction.** An exception *before* the template (the dedicated exception
-slot) does not suppress [AASL0005](rules/AASL0005.md) for later exceptions
-that are still template arguments. The plugin returns on the first
-`Exception` argument.
+**Correction.** An exception bound to a parameter before the template (the
+dedicated exception slot) does not suppress [AASL0005](rules/AASL0005.md)
+for later exceptions that are still template arguments, including when
+named arguments put `messageTemplate` before `exception`. The plugin
+returns on the first `Exception` argument in source order.
 
 ## Complex-type classification
 

@@ -105,6 +105,23 @@ public sealed class ExceptionAnalyzerTests
     }
 
     [Fact]
+    public Task Named_template_before_exception_slot_is_valid()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Serilog;
+                                                             public static class Program
+                                                             {
+                                                                 public static void Main()
+                                                                 {
+                                                                     var ex = new Exception();
+                                                                     Log.Logger.Information(messageTemplate: "{One}", exception: ex);
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
     public Task Named_exception_slot_still_reports_later_template_exception()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
