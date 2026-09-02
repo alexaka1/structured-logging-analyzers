@@ -1,6 +1,6 @@
 {
   "name": "Alexaka1.Analyzers.StructuredLogging",
-  "version": "0.1.0-preview.9",
+  "version": "0.1.0-preview.10",
   "private": true,
   "scripts": {
     "fmt": "dotnet jb cleanupcode Alexaka1.Analyzers.StructuredLogging.slnx --profile=\"Built-in: Reformat Code\" --properties:Configuration=Release --no-updates && dotnet jb cleanupcode --profile=\"Built-in: Reformat Code\" --no-updates build/detect-duplicate-release.cs build/extract-changelog.cs build/resolve-release-version.cs build/version.cs",
