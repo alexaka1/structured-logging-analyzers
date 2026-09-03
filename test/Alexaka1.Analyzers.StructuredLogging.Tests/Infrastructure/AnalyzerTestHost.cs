@@ -134,10 +134,16 @@ internal static class AnalyzerTestHost
         IReadOnlyList<(string Path, string Text)>? additionalSources = null,
         bool concurrentAnalysis = true,
         bool measureAllocations = false,
+        ImmutableArray<MetadataReference>? references = null,
         CancellationToken cancellationToken = default)
     {
         var analyzer = new StructuredLoggingAnalyzer();
-        var (compilation, _, options) = CreateCompilation(source, editorConfig, languageVersion, additionalSources);
+        var (compilation, _, options) = CreateCompilation(
+            source,
+            editorConfig,
+            languageVersion,
+            additionalSources,
+            references);
         var exceptions = new List<Exception>();
         var analysisOptions = new CompilationWithAnalyzersOptions(
             options,
@@ -266,15 +272,21 @@ internal static class AnalyzerTestHost
         string diagnosticId,
         Type codeFixType,
         string? editorConfig = null,
-        string? sourcePath = null)
+        string? sourcePath = null,
+        IReadOnlyList<(string Path, string Text)>? additionalSources = null)
     {
         var (source, expected) = Markup.Parse(markedSource);
-        var diagnostics = await GetDiagnosticsAsync(source, editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
+        var diagnostics = await GetDiagnosticsAsync(
+                source,
+                editorConfig,
+                additionalSources: additionalSources,
+                sourcePath: sourcePath)
+            .ConfigureAwait(false);
         var matching = diagnostics.FirstOrDefault(d =>
             d.Id == diagnosticId && expected.Any(e => e.Id == d.Id && e.Span == d.Location.SourceSpan));
         Assert.NotNull(matching);
 
-        var document = CreateDocument(source, editorConfig, sourcePath);
+        var document = CreateDocument(source, editorConfig, sourcePath, additionalSources);
         var provider = (CodeFixProvider)Activator.CreateInstance(codeFixType)!;
         // Hosts only invoke a provider for IDs it advertises. Providers that do not
         // filter internally would still register actions if called directly.
@@ -550,7 +562,11 @@ internal static class AnalyzerTestHost
         return (compilation, tree, options);
     }
 
-    private static Document CreateDocument(string source, string? editorConfig, string? sourcePath = null)
+    private static Document CreateDocument(
+        string source,
+        string? editorConfig,
+        string? sourcePath = null,
+        IReadOnlyList<(string Path, string Text)>? additionalSources = null)
     {
         var path = sourcePath ?? "/0/Test.cs";
         var name = Path.GetFileName(path);
@@ -568,6 +584,18 @@ internal static class AnalyzerTestHost
             .WithProjectParseOptions(projectId, new CSharpParseOptions(LanguageVersion.Latest))
             .AddMetadataReferences(projectId, References)
             .AddDocument(documentId, name, source, filePath: path);
+
+        if (additionalSources is not null)
+        {
+            foreach (var (additionalPath, text) in additionalSources)
+            {
+                solution = solution.AddDocument(
+                    DocumentId.CreateNewId(projectId),
+                    Path.GetFileName(additionalPath),
+                    text,
+                    filePath: additionalPath);
+            }
+        }
 
         if (!string.IsNullOrEmpty(editorConfig))
         {

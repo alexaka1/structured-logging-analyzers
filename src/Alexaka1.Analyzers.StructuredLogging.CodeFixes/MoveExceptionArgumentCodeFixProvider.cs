@@ -81,7 +81,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var classifier = new LoggingInvocationClassifier(KnownSymbols.Resolve(compilation));
+        var classifier = new LoggingInvocationClassifier(KnownSymbols.Resolve(compilation, cancellationToken));
         var templateParameterName = classifier.GetTemplateParameterName(method);
         if (templateParameterName is null)
         {
@@ -156,7 +156,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var classifier = new LoggingInvocationClassifier(KnownSymbols.Resolve(model.Compilation));
+        var classifier = new LoggingInvocationClassifier(KnownSymbols.Resolve(model.Compilation, cancellationToken));
         var templateParameterName = classifier.GetTemplateParameterName(method);
         if (templateParameterName is null)
         {
@@ -421,7 +421,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         ArgumentSyntax exceptionArgument,
         CancellationToken cancellationToken)
     {
-        var known = KnownSymbols.Resolve(model.Compilation);
+        var known = KnownSymbols.Resolve(model.Compilation, cancellationToken);
         if (known.Exception is null)
         {
             return false;

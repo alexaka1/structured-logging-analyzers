@@ -39,10 +39,13 @@ internal static class GeneratedCode
         }
 
         var fileName = Path.GetFileName(filePath);
-        return fileName.EndsWith("_razor.g.cs", StringComparison.OrdinalIgnoreCase) ||
-               fileName.EndsWith(".razor.g.cs", StringComparison.OrdinalIgnoreCase) ||
-               fileName.EndsWith("_cshtml.g.cs", StringComparison.OrdinalIgnoreCase) ||
-               fileName.EndsWith(".cshtml.g.cs", StringComparison.OrdinalIgnoreCase);
+        var hasRazorName = fileName.IndexOf(".razor", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                           fileName.IndexOf(".cshtml", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                           fileName.IndexOf("_razor", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                           fileName.IndexOf("_cshtml", StringComparison.OrdinalIgnoreCase) >= 0;
+        return hasRazorName &&
+               (fileName.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase) ||
+                fileName.EndsWith("__virtual.cs", StringComparison.OrdinalIgnoreCase));
     }
 
     public static bool IsGeneratedFilePath(string? filePath)

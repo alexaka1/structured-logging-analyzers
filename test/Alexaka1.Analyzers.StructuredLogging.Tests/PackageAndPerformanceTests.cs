@@ -161,6 +161,18 @@ public sealed class PackageAndPerformanceTests
     }
 
     [Fact]
+    public async Task Analyzer_registers_no_node_actions_without_logging_references()
+    {
+        var outcome = await AnalyzerTestHost.AnalyzeAsync(
+            CreateNoLoggingLibrarySource(4000),
+            references: NuGetPackageResolver.GetReferences(),
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        AssertTelemetryShape(outcome.Telemetry, expectedSyntaxNodeActions: 0);
+        Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
+    }
+
+    [Fact]
     public async Task Analyzer_handles_many_logging_calls()
     {
         var outcome = await RunPerformanceGateAsync(
@@ -168,6 +180,30 @@ public sealed class PackageAndPerformanceTests
             CreateLoggingSource(500),
             LoggingAllocationLimitBytes,
             TestContext.Current.CancellationToken);
+        Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
+    }
+
+    [Fact]
+    public async Task Analyzer_handles_many_logger_message_constants()
+    {
+        const string label = "logger message constants";
+        var source = CreateLoggerMessageConstantSource(300);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        _ = await AnalyzerTestHost.AnalyzeAsync(
+            source,
+            concurrentAnalysis: false,
+            cancellationToken: cancellationToken);
+        var outcome = await AnalyzerTestHost.AnalyzeAsync(
+            source,
+            concurrentAnalysis: false,
+            cancellationToken: cancellationToken);
+
+        AssertTelemetryShape(outcome.Telemetry);
+        _output.WriteLine(
+            $"{label} wall={outcome.WallClock.TotalMilliseconds:F0}ms exec={outcome.Telemetry.ExecutionTime.TotalMilliseconds:F0}ms concurrent={outcome.Telemetry.Concurrent}");
+        Assert.True(
+            outcome.Telemetry.ExecutionTime < MaxAnalyzerExecution,
+            $"{label} analyzer execution took {outcome.Telemetry.ExecutionTime}");
         Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
     }
 
@@ -346,11 +382,13 @@ public sealed class PackageAndPerformanceTests
         return outcome;
     }
 
-    private static void AssertTelemetryShape(AnalyzerTelemetryInfo telemetry)
+    private static void AssertTelemetryShape(
+        AnalyzerTelemetryInfo telemetry,
+        int expectedSyntaxNodeActions = 4)
     {
         Assert.True(telemetry.Concurrent, "Analyzer must enable concurrent execution.");
         Assert.Equal(1, telemetry.CompilationStartActionsCount);
-        Assert.Equal(4, telemetry.SyntaxNodeActionsCount);
+        Assert.Equal(expectedSyntaxNodeActions, telemetry.SyntaxNodeActionsCount);
         Assert.Equal(0, telemetry.SyntaxTreeActionsCount);
         Assert.Equal(0, telemetry.SemanticModelActionsCount);
         Assert.Equal(0, telemetry.OperationActionsCount);
@@ -369,6 +407,41 @@ public sealed class PackageAndPerformanceTests
         }
 
         builder.AppendLine("}}");
+        return builder.ToString();
+    }
+
+    private static string CreateNoLoggingLibrarySource(int callCount)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("using System;");
+        builder.AppendLine("public static class Program {");
+        builder.AppendLine("public static void Main() {");
+        for (var i = 0; i < callCount; i++)
+        {
+            builder.AppendLine($"Console.WriteLine({i});");
+        }
+
+        builder.AppendLine("}}");
+        return builder.ToString();
+    }
+
+    private static string CreateLoggerMessageConstantSource(int methodCount)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("using Microsoft.Extensions.Logging;");
+        builder.AppendLine("public static partial class Log {");
+        for (var i = 0; i < methodCount; i++)
+        {
+            builder.AppendLine($"private const string Message{i} = \"Value {{Value{i}}}\";");
+        }
+
+        for (var i = 0; i < methodCount; i++)
+        {
+            builder.AppendLine($"[LoggerMessage(EventId = {i}, Level = LogLevel.Information, Message = Message{i})]");
+            builder.AppendLine($"public static partial void Write{i}(ILogger logger, int Value{i});");
+        }
+
+        builder.AppendLine("}");
         return builder.ToString();
     }
 

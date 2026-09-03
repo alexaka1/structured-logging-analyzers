@@ -252,6 +252,22 @@ public sealed class ComplexObjectAnalyzerTests
     }
 
     [Fact]
+    public Task Collection_expression_params_array_elements_are_mapped_to_holes()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog;
+                                                             class P { }
+                                                             class C
+                                                             {
+                                                                 void M(P p)
+                                                                 {
+                                                                     Log.Information("{|AASL0002:{A}|} {|AASL0002:{B}|}", [p, p]);
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
     public void Fallback_params_mapping_is_exercised_for_an_invalid_invocation_operation()
     {
         var source = /*lang=csharp*/ """

@@ -154,4 +154,40 @@ public sealed class ExceptionAnalyzerTests
                                                              }
                                                              """);
     }
+
+    [Fact]
+    public Task Named_arguments_use_parameter_binding_for_exception_placement()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Microsoft.Extensions.Logging;
+                                                             using Serilog;
+                                                             class C
+                                                             {
+                                                                 void M(Microsoft.Extensions.Logging.ILogger logger, Exception ex, object a)
+                                                                 {
+                                                                     Log.Error(messageTemplate: "x {A}", exception: ex, propertyValue: a);
+                                                                     Log.Error(messageTemplate: "x", exception: ex);
+                                                                     logger.LogError(message: "x {A}", args: a, exception: ex);
+                                                                     Log.Error(propertyValue: {|AASL0005:ex|}, messageTemplate: "{P}");
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
+    public Task Constrained_exception_type_parameter_is_invalid_template_argument()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Serilog;
+                                                             class C<TEx> where TEx : Exception
+                                                             {
+                                                                 void M(TEx tex)
+                                                                 {
+                                                                     Log.Error("x {E} {F}", 1, {|AASL0005:tex|});
+                                                                 }
+                                                             }
+                                                             """);
+    }
 }

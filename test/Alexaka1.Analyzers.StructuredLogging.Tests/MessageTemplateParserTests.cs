@@ -58,6 +58,18 @@ public sealed class MessageTemplateParserTests
         Assert.Equal("N2", hole.Format);
     }
 
+    [Theory]
+    [InlineData("{Value:}", null)]
+    [InlineData("{Value,10:}", "10")]
+    public void Empty_format_keeps_the_hole(string template, string? alignment)
+    {
+        var parsed = MessageTemplateParser.Parse(template);
+        var hole = Assert.Single(parsed.NamedProperties!);
+        Assert.Equal("Value", hole.PropertyName);
+        Assert.Equal(alignment, hole.Alignment);
+        Assert.Null(hole.Format);
+    }
+
     [Fact]
     public void Escaped_braces_are_not_holes()
     {
@@ -118,8 +130,6 @@ public sealed class MessageTemplateParserTests
         Assert.Empty(MessageTemplateParser.Parse("{@}").Properties);
         Assert.Empty(MessageTemplateParser.Parse("{Name").Properties);
         Assert.Empty(MessageTemplateParser.Parse("{Name,}").Properties);
-        Assert.Empty(MessageTemplateParser.Parse("{Name:}").Properties);
-        Assert.Empty(MessageTemplateParser.Parse("{Name,1:}").Properties);
         Assert.Empty(MessageTemplateParser.Parse("{Name,+1}").Properties);
         Assert.Empty(MessageTemplateParser.Parse("{Name,1-}").Properties);
         Assert.Empty(MessageTemplateParser.Parse("{Value,10,2}").Properties);

@@ -29,6 +29,7 @@ internal static class ConstTemplateMapper
         ExpressionSyntax? expression,
         ISymbol loggingMethod,
         ConcurrentDictionary<ISymbol, bool> exclusivityCache,
+        ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels,
         CancellationToken cancellationToken)
     {
         if (expression is null)
@@ -43,12 +44,17 @@ internal static class ConstTemplateMapper
 
         if (!TryGetConstLiteral(model, expression, cancellationToken, out var constSymbol, out var literal))
         {
-            return new ResolvedTemplateSource(null, expression, allowRewrite: false);
+            return ResolveUnmappedConstant(model, expression, cancellationToken);
+        }
+
+        if (!ReferenceEquals(literal.SyntaxTree, expression.SyntaxTree))
+        {
+            return ResolveUnmappedConstant(model, expression, cancellationToken);
         }
 
         if (!LiteralSpanMapper.TryMap(model, literal, cancellationToken, out var constMap))
         {
-            return new ResolvedTemplateSource(null, expression, allowRewrite: false);
+            return ResolveUnmappedConstant(model, expression, cancellationToken);
         }
 
         var containingType = constSymbol.ContainingType;
@@ -58,13 +64,37 @@ internal static class ConstTemplateMapper
             return new ResolvedTemplateSource(constMap, literal, allowRewrite: false);
         }
 
+        if (constSymbol.DeclaredAccessibility != Accessibility.Private)
+        {
+            return new ResolvedTemplateSource(constMap, literal, allowRewrite: false);
+        }
+
         if (!exclusivityCache.TryGetValue(constSymbol, out var exclusive))
         {
-            exclusive = IsExclusiveToMethod(model.Compilation, constSymbol, loggingMethod, cancellationToken);
+            exclusive = IsExclusiveToMethod(
+                model,
+                constSymbol,
+                loggingMethod,
+                semanticModels,
+                cancellationToken);
             exclusivityCache.TryAdd(constSymbol, exclusive);
         }
 
         return new ResolvedTemplateSource(constMap, literal, exclusive && constMap.AllowRewrite);
+    }
+
+    private static ResolvedTemplateSource ResolveUnmappedConstant(
+        SemanticModel model,
+        ExpressionSyntax expression,
+        CancellationToken cancellationToken)
+    {
+        if (!LiteralSpanMapper.TryGetConstantText(model, expression, cancellationToken, out var text))
+        {
+            return new ResolvedTemplateSource(null, expression, allowRewrite: false);
+        }
+
+        var map = new TemplateSourceMap(text, Array.Empty<MappedChar>(), expression, allowRewrite: false);
+        return new ResolvedTemplateSource(map, expression, allowRewrite: false);
     }
 
     private static bool TryGetConstLiteral(
@@ -100,9 +130,10 @@ internal static class ConstTemplateMapper
     }
 
     private static bool IsExclusiveToMethod(
-        Compilation compilation,
+        SemanticModel callerModel,
         ISymbol constSymbol,
         ISymbol loggingMethod,
+        ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels,
         CancellationToken cancellationToken)
     {
         var containingType = constSymbol.ContainingType;
@@ -112,29 +143,73 @@ internal static class ConstTemplateMapper
             return false;
         }
 
-        var uses = 0;
+        var candidates = new List<SyntaxToken>();
         foreach (var syntaxRef in containingType.DeclaringSyntaxReferences)
         {
-            var tree = syntaxRef.SyntaxTree;
+            cancellationToken.ThrowIfCancellationRequested();
             var root = syntaxRef.GetSyntax(cancellationToken);
-            var model = compilation.GetSemanticModel(tree);
-            foreach (var identifier in root.DescendantNodes().OfType<IdentifierNameSyntax>())
+            foreach (var token in root.DescendantTokens())
             {
-                var symbol = model.GetSymbolInfo(identifier, cancellationToken).Symbol;
-                if (!SymbolEqualityComparer.Default.Equals(symbol, constSymbol))
+                if (!token.IsKind(SyntaxKind.IdentifierToken) ||
+                    token.ValueText != constSymbol.Name ||
+                    IsDeclarationToken(token, constSymbol))
                 {
                     continue;
                 }
 
-                uses++;
-                if (uses > 1)
-                {
-                    return false;
-                }
+                candidates.Add(token);
+            }
+        }
+
+        if (candidates.Count == 1)
+        {
+            return true;
+        }
+
+        var uses = 0;
+        foreach (var token in candidates)
+        {
+            if (token.Parent is not IdentifierNameSyntax identifier)
+            {
+                continue;
+            }
+
+            var tree = identifier.SyntaxTree;
+            var model = ReferenceEquals(tree, callerModel.SyntaxTree)
+                ? callerModel
+                : semanticModels.GetOrAdd(tree, t => callerModel.Compilation.GetSemanticModel(t));
+            var symbol = model.GetSymbolInfo(identifier, cancellationToken).Symbol;
+            if (!SymbolEqualityComparer.Default.Equals(symbol, constSymbol))
+            {
+                continue;
+            }
+
+            uses++;
+            if (uses > 1)
+            {
+                return false;
             }
         }
 
         return uses == 1;
+    }
+
+    private static bool IsDeclarationToken(SyntaxToken token, ISymbol constSymbol)
+    {
+        if (token.Parent is not VariableDeclaratorSyntax declarator)
+        {
+            return false;
+        }
+
+        foreach (var syntaxRef in constSymbol.DeclaringSyntaxReferences)
+        {
+            if (ReferenceEquals(syntaxRef.SyntaxTree, token.SyntaxTree) && syntaxRef.Span == declarator.Span)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static ExpressionSyntax Unwrap(ExpressionSyntax expression)

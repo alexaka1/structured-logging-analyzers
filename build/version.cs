@@ -6,6 +6,10 @@ using System.Text.RegularExpressions;
 
 const string packageJson = "package.json";
 const string versionFile = "pack/Alexaka1.Analyzers.StructuredLogging/Version.props";
+const string unshippedAnalyzerReleases =
+    "src/Alexaka1.Analyzers.StructuredLogging/AnalyzerReleases.Unshipped.md";
+const string shippedAnalyzerReleases =
+    "src/Alexaka1.Analyzers.StructuredLogging/AnalyzerReleases.Shipped.md";
 const string versionElementPattern = @"<Version>[^<]*</Version>";
 
 if (!File.Exists(packageJson))
@@ -16,6 +20,16 @@ if (!File.Exists(packageJson))
 if (!File.Exists(versionFile))
 {
     return Fail($"Error: Missing {versionFile}");
+}
+
+if (!File.Exists(unshippedAnalyzerReleases))
+{
+    return Fail($"Error: Missing {unshippedAnalyzerReleases}");
+}
+
+if (!File.Exists(shippedAnalyzerReleases))
+{
+    return Fail($"Error: Missing {shippedAnalyzerReleases}");
 }
 
 var contents = await File.ReadAllTextAsync(versionFile);
@@ -53,7 +67,76 @@ if (updated == contents && !contents.Contains($"<Version>{version}</Version>", S
 
 await File.WriteAllTextAsync(versionFile, updated);
 Console.WriteLine($"Synced {versionFile} to {version}");
+
+if (await RollOverAnalyzerReleasesAsync(
+        version,
+        unshippedAnalyzerReleases,
+        shippedAnalyzerReleases))
+{
+    Console.WriteLine($"Moved unshipped analyzer releases to {version}");
+}
+
 return 0;
+
+static async Task<bool> RollOverAnalyzerReleasesAsync(
+    string version,
+    string unshippedFile,
+    string shippedFile)
+{
+    if (!Regex.IsMatch(
+            version,
+            @"\A[0-9]+\.[0-9]+\.[0-9]+\z",
+            RegexOptions.CultureInvariant,
+            TimeSpan.FromSeconds(1)))
+    {
+        Console.WriteLine(
+            $"Skipped analyzer release roll-over because {version} is not a stable major.minor.patch version.");
+        return false;
+    }
+
+    var unshipped = await File.ReadAllTextAsync(unshippedFile);
+    var section = Regex.Match(
+        unshipped,
+        @"^### (?:New|Removed|Changed) Rules[ \t]*\r?\n(?:[ \t]*\r?\n)*Rule ID[ \t]*\|",
+        RegexOptions.Multiline | RegexOptions.CultureInvariant,
+        TimeSpan.FromSeconds(1));
+    if (!section.Success)
+    {
+        return false;
+    }
+
+    var unshippedHeader = ReadHeaderComment(unshipped, unshippedFile);
+    var shipped = await File.ReadAllTextAsync(shippedFile);
+    var shippedHeader = ReadHeaderComment(shipped, shippedFile);
+    var releaseTables = unshipped[section.Index..].Trim();
+    var previousReleases = shipped[shippedHeader.Length..].Trim();
+
+    var updatedShipped =
+        $"{shippedHeader.TrimEnd()}\n\n## Release {version}\n\n{releaseTables}";
+    if (previousReleases.Length > 0)
+    {
+        updatedShipped += $"\n\n{previousReleases}";
+    }
+
+    await File.WriteAllTextAsync(shippedFile, updatedShipped + "\n");
+    await File.WriteAllTextAsync(unshippedFile, unshippedHeader.TrimEnd() + "\n");
+    return true;
+}
+
+static string ReadHeaderComment(string contents, string fileName)
+{
+    var match = Regex.Match(
+        contents,
+        @"\A(?:;[^\r\n]*(?:\r?\n|\z))+",
+        RegexOptions.CultureInvariant,
+        TimeSpan.FromSeconds(1));
+    if (!match.Success)
+    {
+        throw new InvalidDataException($"No header comment found in {fileName}.");
+    }
+
+    return match.Value;
+}
 
 static int Run(string fileName, params string[] arguments)
 {

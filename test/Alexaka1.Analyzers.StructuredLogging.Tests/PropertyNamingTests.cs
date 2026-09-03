@@ -12,6 +12,10 @@ public sealed class PropertyNamingTests
     [InlineData("My Property", "MyProperty")]
     [InlineData("test", "Test")]
     [InlineData("user_id", "UserId")]
+    [InlineData("Utf8Bytes", "Utf8Bytes")]
+    [InlineData("User2Id", "User2Id")]
+    [InlineData("Http2Client", "Http2Client")]
+    [InlineData("iOSVersion", "IOsVersion")]
     public void PascalCase(string input, string expected)
     {
         Assert.Equal(expected, PropertyNaming.Suggest(input, PropertyNamingStyle.PascalCase));
@@ -21,6 +25,9 @@ public sealed class PropertyNamingTests
     [InlineData("myProperty", "myProperty")]
     [InlineData("UserId", "userId")]
     [InlineData("test", "test")]
+    [InlineData("Utf8Bytes", "utf8Bytes")]
+    [InlineData("User2Id", "user2Id")]
+    [InlineData("Http2Client", "http2Client")]
     public void CamelCase(string input, string expected)
     {
         Assert.Equal(expected, PropertyNaming.Suggest(input, PropertyNamingStyle.CamelCase));
@@ -29,6 +36,9 @@ public sealed class PropertyNamingTests
     [Theory]
     [InlineData("myProperty", "my_property")]
     [InlineData("UserId", "user_id")]
+    [InlineData("Utf8Bytes", "utf8_bytes")]
+    [InlineData("User2Id", "user2_id")]
+    [InlineData("Http2Client", "http2_client")]
     public void SnakeCase(string input, string expected)
     {
         Assert.Equal(expected, PropertyNaming.Suggest(input, PropertyNamingStyle.SnakeCase));
@@ -38,6 +48,9 @@ public sealed class PropertyNamingTests
     [InlineData("myProperty", "my.property")]
     [InlineData("UserId", "user.id")]
     [InlineData("http.response.status_code", "http.response.status.code")]
+    [InlineData("Utf8Bytes", "utf8.bytes")]
+    [InlineData("User2Id", "user2.id")]
+    [InlineData("Http2Client", "http2.client")]
     public void Elastic(string input, string expected)
     {
         Assert.Equal(expected, PropertyNaming.Suggest(input, PropertyNamingStyle.ElasticNaming));
@@ -60,6 +73,9 @@ public sealed class PropertyNamingTests
     [InlineData("caf\u00e9", "caf")]
     [InlineData("MyCaf\u00e9", "my_caf")]
     [InlineData("1name", "1name")]
+    [InlineData("Utf8Bytes", "utf8_bytes")]
+    [InlineData("User2Id", "user2_id")]
+    [InlineData("Http2Client", "http2_client")]
     public void SemanticConventions(string input, string expected)
     {
         Assert.Equal(expected, PropertyNaming.Suggest(input, PropertyNamingStyle.SemanticConventions));

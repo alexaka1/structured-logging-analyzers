@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis.CSharp;
 
+using Alexaka1.Analyzers.StructuredLogging.CodeFixes;
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 
 using Xunit;
@@ -352,6 +353,30 @@ public sealed class LoggerMessageAnalyzerTests
     }
 
     [Fact]
+    public async Task Public_constant_reports_but_has_no_rename_or_period_fix()
+    {
+        const string source = /*lang=csharp*/ """
+                                              using Microsoft.Extensions.Logging;
+                                              public static partial class Log
+                                              {
+                                                  public const string Msg = "Processing {|AASL0009:{orderId}|}{|AASL0011:.|}";
+
+                                                  [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = Msg)]
+                                                  public static partial void ProcessingOrder(ILogger logger, int orderId);
+                                              }
+                                              """;
+
+        await AnalyzerTestHost.VerifyNoFixAsync(
+            source,
+            "AASL0009",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+        await AnalyzerTestHost.VerifyNoFixAsync(
+            source,
+            "AASL0011",
+            typeof(RemoveTrailingPeriodCodeFixProvider));
+    }
+
+    [Fact]
     public Task String_constructor_argument()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
@@ -377,6 +402,52 @@ public sealed class LoggerMessageAnalyzerTests
                             }
                             """,
             languageVersion: LanguageVersion.CSharp10);
+    }
+
+    [Fact]
+    public Task Named_constructor_arguments_before_positional_message()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Microsoft.Extensions.Logging;
+                                                             public static partial class Log
+                                                             {
+                                                                 [LoggerMessage(eventId: 1, level: LogLevel.Information, "Processing {|AASL0009:{userId}|}{|AASL0011:.|}")]
+                                                                 public static partial void ProcessingOrder(ILogger logger, int userId);
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
+    public async Task Constant_interpolated_message_reports_without_rewrite()
+    {
+        const string markedSource = /*lang=csharp*/ """
+                                                    using Microsoft.Extensions.Logging;
+                                                    public static partial class Log
+                                                    {
+                                                        const string Shared = "{userId}.";
+
+                                                        [LoggerMessage(5, LogLevel.Information, {|AASL0009:$"{Shared}"|})]
+                                                        public static partial void ProcessingOrder(ILogger logger, int userId);
+                                                    }
+                                                    """;
+        var (source, expected) = Markup.Parse(markedSource);
+        var expressionSpan = Assert.Single(expected).Span;
+        var diagnostics = await AnalyzerTestHost.GetDiagnosticsAsync(source);
+        var actual = diagnostics
+            .Where(diagnostic => diagnostic.Id is "AASL0009" or "AASL0011")
+            .OrderBy(diagnostic => diagnostic.Id, StringComparer.Ordinal)
+            .ToList();
+
+        Assert.Collection(
+            actual,
+            diagnostic => Assert.Equal("AASL0009", diagnostic.Id),
+            diagnostic => Assert.Equal("AASL0011", diagnostic.Id));
+        Assert.All(actual, diagnostic =>
+        {
+            Assert.Equal(expressionSpan, diagnostic.Location.SourceSpan);
+            Assert.True(diagnostic.Properties.TryGetValue("AllowRewrite", out var allow));
+            Assert.Equal("false", allow);
+        });
     }
 
     [Fact]
@@ -430,6 +501,75 @@ public sealed class LoggerMessageAnalyzerTests
             {
                 ("Microsoft.Extensions.Logging.Generators/LoggerMessage.g.cs", generated)
             });
+    }
+
+    [Fact]
+    public async Task Cross_tree_constant_interpolated_message_is_analyzed_without_throwing()
+    {
+        const string messages = /*lang=csharp*/ """
+                                                public static partial class Log
+                                                {
+                                                    private const string Msg = $"Processing {{orderId}}.";
+                                                }
+                                                """;
+        const string loggingMethod = /*lang=csharp*/ """
+                                                     using Microsoft.Extensions.Logging;
+                                                     public static partial class Log
+                                                     {
+                                                         [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = Msg)]
+                                                         public static partial void ProcessingOrder(ILogger logger, int orderId);
+                                                     }
+                                                     """;
+
+        var outcome = await AnalyzerTestHost.AnalyzeAsync(
+            loggingMethod,
+            additionalSources: new[] { ("/0/Log.Messages.cs", messages) },
+            cancellationToken: TestContext.Current.CancellationToken);
+        var diagnostics = outcome.Diagnostics.Where(d => d.Id.StartsWith("AASL", StringComparison.Ordinal)).ToList();
+
+        Assert.Collection(
+            diagnostics.OrderBy(d => d.Id, StringComparer.Ordinal),
+            diagnostic => Assert.Equal("AASL0009", diagnostic.Id),
+            diagnostic => Assert.Equal("AASL0011", diagnostic.Id));
+    }
+
+    [Fact]
+    public async Task Cross_tree_constant_reports_on_attribute_reference_without_fix()
+    {
+        const string messages = /*lang=csharp*/ """
+                                                public static partial class Log
+                                                {
+                                                    private const string Msg = "Processing {orderId}.";
+                                                }
+                                                """;
+        const string markedLoggingMethod = /*lang=csharp*/ """
+                                                           using Microsoft.Extensions.Logging;
+                                                           public static partial class Log
+                                                           {
+                                                               [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = {|AASL0009:Msg|})]
+                                                               public static partial void ProcessingOrder(ILogger logger, int orderId);
+                                                           }
+                                                           """;
+        var (loggingMethod, expected) = Markup.Parse(markedLoggingMethod);
+        var expectedSpan = Assert.Single(expected).Span;
+        var additionalSources = new[] { ("/0/Log.Messages.cs", messages) };
+
+        var diagnostics = await AnalyzerTestHost.GetWorkspaceDiagnosticsAsync(
+            loggingMethod,
+            editorConfig: "",
+            sourcePath: "/0/Log.cs",
+            additionalSources: additionalSources);
+        var naming = Assert.Single(diagnostics.Where(diagnostic => diagnostic.Id == "AASL0009"));
+        Assert.Equal("/0/Log.cs", naming.Location.SourceTree?.FilePath);
+        Assert.Equal(expectedSpan, naming.Location.SourceSpan);
+        Assert.Equal("false", naming.Properties["AllowRewrite"]);
+
+        await AnalyzerTestHost.VerifyNoFixAsync(
+            markedLoggingMethod,
+            "AASL0009",
+            typeof(RenameTemplatePropertyCodeFixProvider),
+            sourcePath: "/0/Log.cs",
+            additionalSources: additionalSources);
     }
 
     [Fact]

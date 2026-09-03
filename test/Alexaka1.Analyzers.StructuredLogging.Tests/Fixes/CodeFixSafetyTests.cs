@@ -28,6 +28,26 @@ public sealed class CodeFixSafetyTests
     }
 
     [Fact]
+    public Task Remove_trailing_period_does_not_offer_fix_for_const_identifier_tail()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            class C
+                            {
+                                const string Dot = ".";
+
+                                void M(object a)
+                                {
+                                    Log.Information("{A}" + {|AASL0011:Dot|}, a);
+                                }
+                            }
+                            """,
+            "AASL0011",
+            typeof(RemoveTrailingPeriodCodeFixProvider));
+    }
+
+    [Fact]
     public Task Remove_trailing_period_rewrites_constant_interpolated_text()
     {
         return AnalyzerTestHost.VerifyFixAsync(

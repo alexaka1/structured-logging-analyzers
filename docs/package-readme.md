@@ -2,6 +2,8 @@
 
 Roslyn analyzers and code fixes for structured logging message templates.
 Supports Serilog, NLog, Microsoft.Extensions.Logging, and ZLogger.
+ZLogger support covers the 1.x string-template overloads. ZLogger 2.x
+interpolated-string-handler APIs have no message template and are not analyzed.
 
 This package is analyzer-only. It adds no runtime or compile-time assembly
 reference to consuming applications. The compile-time Roslyn API floor is
@@ -91,7 +93,7 @@ apply to both and win when set.
 | AASL0005 | Exception passed as a template argument |
 | AASL0006 | Duplicate template properties |
 | AASL0007 | Template is not a compile-time constant |
-| AASL0008 | Prefer named properties over positional ones |
+| AASL0008 | Prefer named properties instead of positional ones |
 | AASL0009 | Template property naming |
 | AASL0010 | Context property naming |
 | AASL0011 | Log messages should not end with a period |

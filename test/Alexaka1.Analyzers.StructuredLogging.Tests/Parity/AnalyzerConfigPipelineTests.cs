@@ -7,6 +7,26 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Parity;
 public sealed class AnalyzerConfigPipelineTests
 {
     [Fact]
+    public Task Invalid_prefix_naming_does_not_override_valid_rule_value()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            static class C
+                            {
+                                static void M()
+                                {
+                                    Log.Information("{|AASL0009:{UserId}|}", 1);
+                                }
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.property_naming = bogus
+                                                dotnet_code_quality.AASL0009.property_naming = snake_case
+                                                """);
+    }
+
+    [Fact]
     public async Task Editorconfig_sections_scope_naming_per_source_tree()
     {
         const string editorConfig = /*lang=editorconfig*/ """

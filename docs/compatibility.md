@@ -73,6 +73,15 @@ restored from a local package feed must load the analyzer during `dotnet build`
 and must not copy either analyzer or Roslyn assemblies to application output.
 This compiler check does not emulate an IDE CodeFixes host.
 
+## Invocation registration
+
+The invocation analyzer runs when the compilation references a supported
+logging library or declares any type named
+`MessageTemplateFormatMethodAttribute`. The attribute may be declared in any
+namespace. If it exists only in a referenced assembly and the compilation
+does not reference a supported logging library, attributed wrappers are not
+analyzed.
+
 ## Configuration
 
 ```editorconfig
@@ -95,7 +104,8 @@ The same options can be scoped to `AASL0009` or `AASL0010`, for example
 `dotnet_code_quality.AASL0009.property_naming`. A rule-scoped key applies
 only to that diagnostic. Prefix-level keys apply to both and win when set.
 
-Invalid configuration is ignored; analyzers do not throw.
+Invalid configuration is ignored; analyzers do not throw. An invalid
+prefix-level naming value does not mask a valid rule-scoped value.
 
 ## Argument mapping
 
@@ -110,6 +120,23 @@ This includes named and reordered arguments to
 so exception placement is checked consistently for both
 `logger.LogError(template, value)` and
 `LoggerExtensions.LogError(logger, template, value)`.
+
+Serilog `ILogger.ForContext(string propertyName, object value, bool
+destructureObjects)`, the instance-method twin of `PushProperty`, is not
+covered by AASL0003 or AASL0010.
+
+When overload resolution fails in half-written code, candidate methods are
+only used when their bound template expression is clearly a string. This
+keeps diagnostics on a recognizable string template without treating an
+unresolved value argument as the template.
+
+Explicit `params` arrays are unpacked when their elements are available in
+source, including C# collection expressions without spread elements. Each
+element is paired with its template hole.
+
+ZLogger 1.x value overloads name the template parameter `format`, while
+zero-value overloads name it `message`. Both forms receive template rules
+when the selected parameter is a string.
 
 ## Mixed templates
 
@@ -129,6 +156,10 @@ dedicated exception slot) does not suppress [AASL0005](rules/AASL0005.md)
 for later exceptions that are still template arguments, including when
 named arguments put `messageTemplate` before `exception`. The plugin
 returns on the first `Exception` argument in source order.
+
+"Before" and "after" refer to parameter binding, not source argument order.
+Named and reordered arguments therefore behave like their positional forms.
+Type parameters constrained to `Exception` are treated as exception types.
 
 ## Complex-type classification
 
@@ -151,7 +182,9 @@ with these exceptions:
 
 Replacement for JetBrains `StringUtil` naming:
 
-- Split on non-alphanumeric separators and camelCase / acronym boundaries.
+- Split on non-alphanumeric separators, camelCase and acronym boundaries,
+  and a digit followed by an uppercase letter (`Utf8Bytes` is `Utf8` +
+  `Bytes`). A letter followed by a digit stays in the same word.
 - `pascal_case`: capitalize each word; remaining letters in a word are
   lowercased (`MY_IGNORED` → `MyIgnored`). JetBrains `StringUtil` keeps
   some all-caps prefixes (`MYIgnored`). This only shows up when such a
@@ -174,6 +207,8 @@ Replacement for JetBrains `StringUtil` naming:
 ## Contextual loggers
 
 **Improvement.** Primary constructors are analyzed (upstream issue #130).
+Unresolved category and `ForContext<T>` type arguments are skipped until the
+compiler can bind the type.
 
 ## Parser
 
@@ -191,8 +226,9 @@ The parser follows the public message-template grammar for:
 - Alignment with an optional leading `-` followed by one or more digits,
   including zero and widths larger than `Int32.MaxValue`
 - A non-empty format containing any character except `}`, including extra `:`
-  or `,` (`{Timestamp:HH:mm:ss}`, `{Value:#,0}`). `{Bad: {Good}}` is one hole
-  whose format is ` {Good`, not a nested property.
+  or `,` (`{Timestamp:HH:mm:ss}`, `{Value:#,0}`). A trailing `:` means no
+  format, so `{Value:}` and `{Value,10:}` remain holes. `{Bad: {Good}}` is one
+  hole whose format is ` {Good`, not a nested property.
 - malformed holes become text; a later or nested valid hole is still parsed
 - A hole is positional only when its name parses as a non-negative `Int32`.
   `{00}` is positional; `{ 0}` and `{999999999999}` are named
@@ -224,6 +260,8 @@ Diagnostics can still be reported when source text cannot be mapped exactly,
 including a constant field or a concatenation containing a constant fragment.
 Source-rewriting fixes are withheld in those cases; shared constants also
 remain diagnostic-only unless their use is exclusive to the logging method.
+For a concatenation whose unmappable final constant fragment ends in one
+period, `AASL0011` points at that fragment and remains diagnostic-only.
 
 ## Fixes
 
@@ -258,7 +296,8 @@ output are therefore not double-reported.
 Recognized forms: static partial methods, `this ILogger` extensions, instance
 methods using an `ILogger` field or primary-constructor parameter, fixed and
 parameterized `LogLevel`, named `Message` / constructor arguments, omitted
-`Message`, generic methods, and `LoggerMessage.Define` / `DefineScope`.
+`Message`, named constructor arguments before a positional message, generic
+methods, and `LoggerMessage.Define` / `DefineScope`.
 Generic methods still receive style diagnostics; the Microsoft generator
 currently reports [SYSLIB1011](https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/syslib1011)
 instead of emitting an implementation.
@@ -285,9 +324,15 @@ Holes that match the first logger, level, or exception parameter are skipped
 so they are not double-reported with SYSLIB1002 / 1013 / 1018.
 
 A fix does not rewrite a `const string` message unless that constant is
-declared on the same type and referenced only by the logging method.
-Shared constants still produce diagnostics; the rename and trailing-period
-fixes are withheld.
+private, declared on the same type and syntax tree, and referenced only by the
+logging method. Non-private, shared, and cross-tree constants still produce
+diagnostics; the rename and trailing-period fixes are withheld. Cross-tree
+diagnostics point at each method's attribute argument instead of the constant
+declaration, so document-scoped IDE analysis can display them without
+duplicating a diagnostic on the declaration.
+Constant attribute expressions that cannot be mapped to literal source, such
+as `$"{Shared}"`, still produce diagnostics on the attribute argument. Their
+rename and trailing-period fixes are withheld.
 
 ## Microsoft logging scopes
 
@@ -302,8 +347,10 @@ logging rules if they are not already on; see
 
 ## Razor / Blazor
 
-Razor source-generated C# (`*_razor.g.cs`, `*.razor.g.cs`, and the `.cshtml`
-equivalents) is analyzed even though the SDK marks those trees as generated.
+Razor source-generated C# is analyzed even though the SDK marks those trees
+as generated. Supported names include build-time `*_razor.g.cs` and
+`*.razor.g.cs`, Visual Studio `*.razor.<hash>.ide.g.cs`, and VS Code or C# Dev
+Kit `*.razor__virtual.cs`, plus the `.cshtml` equivalents.
 Diagnostics from `@code` map back to the `.razor` file through `#line`
 directives. Code fixes that rewrite the C# template apply to those trees
 (including files with `<auto-generated/>` or `generated_code = true`); hosts

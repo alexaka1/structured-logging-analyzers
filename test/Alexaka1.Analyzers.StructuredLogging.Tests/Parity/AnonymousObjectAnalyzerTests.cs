@@ -36,4 +36,21 @@ public sealed class AnonymousObjectAnalyzerTests
                                                              }
                                                              """);
     }
+
+    [Fact]
+    public Task Anonymous_objects_in_explicit_params_arrays_are_mapped_to_holes()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog;
+                                                             class P { }
+                                                             class C
+                                                             {
+                                                                 void M(P p)
+                                                                 {
+                                                                     Log.Information("{|AASL0001:{A}|} {|AASL0002:{B}|}", new object[] { new { X = 1 }, p });
+                                                                     Log.Information("{|AASL0001:{A}|}", propertyValues: new object[] { new { X = 1 } });
+                                                                 }
+                                                             }
+                                                             """);
+    }
 }

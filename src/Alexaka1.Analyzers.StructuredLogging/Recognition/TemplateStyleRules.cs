@@ -145,14 +145,21 @@ internal static class TemplateStyleRules
     {
         var last = LastFragment(expression);
         var map = preferredMap;
+        var mappedLastFragment = ReferenceEquals(map?.Expression, last);
         if (map is null || !ReferenceEquals(map.Expression, last))
         {
             if (!LiteralSpanMapper.TryMap(model, last, cancellationToken, out var fragmentMap))
             {
-                return;
+                if (map is null)
+                {
+                    return;
+                }
             }
-
-            map = fragmentMap;
+            else
+            {
+                map = fragmentMap;
+                mappedLastFragment = true;
+            }
         }
 
         var text = map.Value;
@@ -166,8 +173,10 @@ internal static class TemplateStyleRules
             return;
         }
 
-        var span = map.TryGetSpan(text.Length - 1, 1) ?? last.Span;
-        var properties = allowRewrite && map.AllowRewrite
+        var span = mappedLastFragment
+            ? map.TryGetSpan(text.Length - 1, 1) ?? last.Span
+            : last.Span;
+        var properties = mappedLastFragment && allowRewrite && map.AllowRewrite
             ? ImmutableDictionary<string, string?>.Empty
             : ImmutableDictionary<string, string?>.Empty.Add(FixProperties.AllowRewrite, "false");
         context.ReportDiagnostic(Diagnostic.Create(
@@ -372,7 +381,8 @@ internal static class TemplateStyleRules
             var suggested = PropertyNaming.Suggest(
                 hole.PropertyName,
                 settings.GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming));
-            if (string.Equals(suggested, hole.PropertyName, StringComparison.Ordinal))
+            if (string.Equals(suggested, hole.PropertyName, StringComparison.Ordinal) ||
+                ExpressionPropertyName.IsPositionalName(suggested))
             {
                 continue;
             }

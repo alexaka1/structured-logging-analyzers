@@ -53,6 +53,26 @@ public sealed class FrameworkInvocationTests
     }
 
     [Fact]
+    public Task ZLogger_zero_value_overloads()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using System;
+                                                             using Microsoft.Extensions.Logging;
+                                                             using ZLogger;
+                                                             class A
+                                                             {
+                                                                 void M(ILogger<A> log, Exception ex, int p)
+                                                                 {
+                                                                     log.ZLogInformation("Done{|AASL0011:.|}");
+                                                                     log.ZLogInformation("{|AASL0008:{0}|}");
+                                                                     log.ZLogInformation({|AASL0007:$"{p}"|});
+                                                                     log.ZLogError(ex, "Failed{|AASL0011:.|}");
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
     public Task Custom_attributed_method()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
@@ -74,6 +94,33 @@ public sealed class FrameworkInvocationTests
                                                                  public MessageTemplateFormatMethodAttribute(string name) { }
                                                              }
                                                              """);
+    }
+
+    [Fact]
+    public Task Custom_attributed_method_without_logging_references()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            class C
+                            {
+                                [MessageTemplateFormatMethod("template")]
+                                static void Write(string template, params object[] args) { }
+
+                                static void M()
+                                {
+                                    Write("{|AASL0009:{myProperty}|}", 1);
+                                }
+                            }
+
+                            [AttributeUsage(AttributeTargets.Method)]
+                            sealed class MessageTemplateFormatMethodAttribute : Attribute
+                            {
+                                public MessageTemplateFormatMethodAttribute(string name) { }
+                            }
+                            """,
+            references: NuGetPackageResolver.GetReferences(),
+            requireSuccessfulCompilation: true);
     }
 
     [Fact]

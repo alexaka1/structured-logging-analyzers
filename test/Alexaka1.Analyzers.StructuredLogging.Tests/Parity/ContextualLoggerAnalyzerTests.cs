@@ -161,4 +161,28 @@ public sealed class ContextualLoggerAnalyzerTests
                                                              class B { }
                                                              """);
     }
+
+    [Fact]
+    public Task Unresolved_context_types_do_not_report()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Microsoft.Extensions.Logging;
+                                                             using Serilog;
+                                                             class C
+                                                             {
+                                                                 public C(ILogger<Unknown> logger) { }
+
+                                                                 void M()
+                                                                 {
+                                                                     Log.ForContext<Unknown>();
+                                                                 }
+                                                             }
+
+                                                             class D(ILogger<Unkn> logger);
+                                                             class E
+                                                             {
+                                                                 public E(ILogger<> logger) { }
+                                                             }
+                                                             """);
+    }
 }

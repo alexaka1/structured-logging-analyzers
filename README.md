@@ -4,6 +4,8 @@
 
 Fast Roslyn analyzers and code fixes for structured logging across
 Microsoft.Extensions.Logging, Serilog, NLog, and ZLogger.
+ZLogger support covers the 1.x string-template overloads. ZLogger 2.x
+interpolated-string-handler APIs have no message template and are not analyzed.
 
 This package inspects structured logging templates in any C# IDE or
 `dotnet build`. It is not affiliated with JetBrains or the maintainers of the
@@ -92,7 +94,7 @@ and [LatestStablePackageTests.cs](test/Alexaka1.Analyzers.StructuredLogging.Test
 | [AASL0005](docs/rules/AASL0005.md) | Exception passed as a template argument |
 | [AASL0006](docs/rules/AASL0006.md) | Duplicate template properties |
 | [AASL0007](docs/rules/AASL0007.md) | Template is not a compile-time constant |
-| [AASL0008](docs/rules/AASL0008.md) | Prefer named properties over positional ones |
+| [AASL0008](docs/rules/AASL0008.md) | Prefer named properties instead of positional ones |
 | [AASL0009](docs/rules/AASL0009.md) | Template property naming |
 | [AASL0010](docs/rules/AASL0010.md) | Context property naming |
 | [AASL0011](docs/rules/AASL0011.md) | Log messages should not end with a period |
