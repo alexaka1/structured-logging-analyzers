@@ -26,10 +26,13 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
+        if (root is null || model is null)
         {
             return;
         }
+
+        var classifier = new LoggingInvocationClassifier(
+            KnownSymbols.Resolve(model.Compilation, context.CancellationToken));
 
         foreach (var diagnostic in context.Diagnostics)
         {
@@ -39,10 +42,41 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
                 continue;
             }
 
+            var method = LoggingInvocationClassifier.ResolveMethod(
+                model,
+                invocation,
+                context.CancellationToken);
+            if (method is null)
+            {
+                continue;
+            }
+
+            var templateParameterName = classifier.GetTemplateParameterName(method);
+            if (templateParameterName is null)
+            {
+                continue;
+            }
+
+            var template = TemplateArgumentResolver.FindTemplate(
+                model,
+                invocation,
+                method,
+                templateParameterName,
+                context.CancellationToken);
+            if (template is null)
+            {
+                continue;
+            }
+
             var exceptionArgument = FindExceptionArgument(invocation, diagnostic.Location.SourceSpan);
             if (exceptionArgument is null ||
-                (model is not null &&
-                 HasEarlierExceptionArgument(model, invocation, exceptionArgument, context.CancellationToken)))
+                HasEarlierExceptionArgument(
+                    model,
+                    invocation,
+                    method,
+                    template.Value.Parameter,
+                    exceptionArgument,
+                    context.CancellationToken))
             {
                 continue;
             }
@@ -101,7 +135,13 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
 
         var exceptionArgument = FindExceptionArgument(invocation, diagnostic.Location.SourceSpan);
         if (exceptionArgument is null ||
-            HasEarlierExceptionArgument(model, invocation, exceptionArgument, cancellationToken))
+            HasEarlierExceptionArgument(
+                model,
+                invocation,
+                method,
+                template.Value.Parameter,
+                exceptionArgument,
+                cancellationToken))
         {
             return document;
         }
@@ -418,6 +458,8 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
     private static bool HasEarlierExceptionArgument(
         SemanticModel model,
         InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        IParameterSymbol templateParameter,
         ArgumentSyntax exceptionArgument,
         CancellationToken cancellationToken)
     {
@@ -427,15 +469,20 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return false;
         }
 
-        foreach (var argument in invocation.ArgumentList.Arguments)
+        var arguments = TemplateArgumentResolver.MapArguments(
+            model,
+            invocation,
+            method,
+            cancellationToken);
+        foreach (var argument in arguments)
         {
-            if (argument == exceptionArgument)
+            if (argument.Argument == exceptionArgument)
             {
-                return false;
+                continue;
             }
 
-            var type = model.GetTypeInfo(argument.Expression, cancellationToken).Type;
-            if (type is not null && LoggerMessageParameterMapper.IsException(type, known))
+            if (argument.Parameter.Ordinal < templateParameter.Ordinal &&
+                LoggerMessageParameterMapper.IsException(argument.Parameter.Type, known))
             {
                 return true;
             }
