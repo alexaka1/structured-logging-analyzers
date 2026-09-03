@@ -137,7 +137,7 @@ internal readonly struct AnalyzerSettings
         return false;
     }
 
-    private static PropertyNamingStyle ParseNaming(string value)
+    private static PropertyNamingStyle? ParseNaming(string value)
     {
         switch (value.Trim().ToLowerInvariant())
         {
@@ -155,7 +155,7 @@ internal readonly struct AnalyzerSettings
             case "semconv":
                 return PropertyNamingStyle.SemanticConventions;
             default:
-                return PropertyNamingStyle.PascalCase;
+                return null;
         }
     }
 }

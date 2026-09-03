@@ -81,9 +81,21 @@ internal sealed class LoggingInvocationClassifier
     public static IMethodSymbol? ResolveMethod(SemanticModel model, InvocationExpressionSyntax invocation,
         CancellationToken cancellationToken)
     {
+        return ResolveMethod(model, invocation, cancellationToken, out _, out _);
+    }
+
+    public static IMethodSymbol? ResolveMethod(
+        SemanticModel model,
+        InvocationExpressionSyntax invocation,
+        CancellationToken cancellationToken,
+        out bool isCandidate,
+        out ImmutableArray<ISymbol> candidateSymbols)
+    {
         var info = model.GetSymbolInfo(invocation, cancellationToken);
+        candidateSymbols = info.CandidateSymbols;
         if (info.Symbol is IMethodSymbol method)
         {
+            isCandidate = false;
             return method;
         }
 
@@ -91,10 +103,12 @@ internal sealed class LoggingInvocationClassifier
         {
             if (candidate is IMethodSymbol candidateMethod)
             {
+                isCandidate = true;
                 return candidateMethod;
             }
         }
 
+        isCandidate = false;
         return null;
     }
 
@@ -134,7 +148,23 @@ internal sealed class LoggingInvocationClassifier
 
         if (IsZLogger(method))
         {
-            return "format";
+            var messageIsString = false;
+            foreach (var parameter in method.Parameters)
+            {
+                if (parameter.Type.SpecialType != SpecialType.System_String)
+                {
+                    continue;
+                }
+
+                if (parameter.Name == "format")
+                {
+                    return parameter.Name;
+                }
+
+                messageIsString |= parameter.Name == "message";
+            }
+
+            return messageIsString ? "message" : null;
         }
 
         return null;

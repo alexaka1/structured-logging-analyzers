@@ -53,6 +53,23 @@ public sealed class NamingAnalyzerTests
     }
 
     [Fact]
+    public Task Naming_does_not_suggest_positional_names()
+    {
+        return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """
+                                                             using Serilog;
+                                                             static class C
+                                                             {
+                                                                 static void M()
+                                                                 {
+                                                                     Log.Information("{ 0}", 1);
+                                                                     Log.Information("{_0}", 1);
+                                                                     Log.Information("{0_}", 1);
+                                                                 }
+                                                             }
+                                                             """);
+    }
+
+    [Fact]
     public Task Destructured_valid()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """

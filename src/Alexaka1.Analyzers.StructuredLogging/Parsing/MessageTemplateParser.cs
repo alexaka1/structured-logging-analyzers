@@ -122,14 +122,6 @@ internal static class MessageTemplateParser
             }
         }
 
-        if (format != null)
-        {
-            if (format.Length == 0)
-            {
-                return false;
-            }
-        }
-
         if (alignment != null)
         {
             var digitStart = alignment.Length > 0 && alignment[0] == '-' ? 1 : 0;
@@ -180,13 +172,7 @@ internal static class MessageTemplateParser
         if (comma < 0 || (colon >= 0 && comma > colon))
         {
             nameAndHint = interior.Substring(0, colon);
-            if (colon == interior.Length - 1)
-            {
-                alignment = format = null;
-                return false;
-            }
-
-            format = interior.Substring(colon + 1);
+            format = colon == interior.Length - 1 ? null : interior.Substring(colon + 1);
             alignment = null;
             return true;
         }
@@ -212,13 +198,7 @@ internal static class MessageTemplateParser
         }
 
         alignment = interior.Substring(comma + 1, colon - comma - 1);
-        if (colon == interior.Length - 1)
-        {
-            alignment = format = null;
-            return false;
-        }
-
-        format = interior.Substring(colon + 1);
+        format = colon == interior.Length - 1 ? null : interior.Substring(colon + 1);
         return true;
     }
 

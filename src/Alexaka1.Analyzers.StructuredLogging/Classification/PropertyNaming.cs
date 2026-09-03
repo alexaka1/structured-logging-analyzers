@@ -218,9 +218,10 @@ internal static class PropertyNaming
                 var prev = builder[builder.Length - 1];
                 var next = i + 1 < name.Length ? name[i + 1] : '\0';
                 var lowerToUpper = char.IsLower(prev) && char.IsUpper(c);
+                var digitToUpper = char.IsDigit(prev) && char.IsUpper(c);
                 var acronymBoundary =
                     char.IsUpper(prev) && char.IsUpper(c) && char.IsLetter(next) && char.IsLower(next);
-                if (lowerToUpper || acronymBoundary)
+                if (lowerToUpper || digitToUpper || acronymBoundary)
                 {
                     Flush();
                 }

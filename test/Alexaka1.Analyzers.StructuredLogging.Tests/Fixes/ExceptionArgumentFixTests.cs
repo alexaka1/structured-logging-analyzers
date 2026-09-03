@@ -393,6 +393,85 @@ public sealed class ExceptionArgumentFixTests
     }
 
     [Fact]
+    public Task AASL0005_later_named_serilog_exception_slot_has_no_fix()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    var ex1 = new Exception();
+                                    var ex2 = new Exception();
+                                    Log.Error(messageTemplate: "{P}", propertyValue: {|AASL0005:ex1|}, exception: ex2);
+                                }
+                            }
+                            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
+
+    [Fact]
+    public Task AASL0005_later_named_microsoft_exception_slot_has_no_fix()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex1, Exception ex2)
+                                {
+                                    logger.LogError(message: "{P}", args: {|AASL0005:ex1|}, exception: ex2);
+                                }
+                            }
+                            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
+
+    [Fact]
+    public Task AASL0005_earlier_named_serilog_exception_argument_has_no_fix()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    var ex = new Exception();
+                                    Log.Error(propertyValue: {|AASL0005:ex|}, messageTemplate: "{P}");
+                                }
+                            }
+                            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
+
+    [Fact]
+    public Task AASL0005_earlier_named_microsoft_exception_argument_has_no_fix()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, Exception ex)
+                                {
+                                    logger.LogError(args: {|AASL0005:ex|}, message: "{P}");
+                                }
+                            }
+                            """,
+            "AASL0005",
+            typeof(MoveExceptionArgumentCodeFixProvider));
+    }
+
+    [Fact]
     public Task AASL0005_occupied_microsoft_exception_slot_has_no_fix()
     {
         return AnalyzerTestHost.VerifyNoFixAsync(

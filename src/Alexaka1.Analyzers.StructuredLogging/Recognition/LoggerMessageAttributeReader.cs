@@ -100,8 +100,23 @@ internal static class LoggerMessageAttributeReader
         var positional = 0;
         foreach (var argument in arguments)
         {
-            if (argument.NameEquals is not null || argument.NameColon is not null)
+            if (argument.NameEquals is not null)
             {
+                continue;
+            }
+
+            if (argument.NameColon is not null)
+            {
+                var name = argument.NameColon.Name.Identifier.ValueText;
+                for (var i = 0; i < ctor.Parameters.Length; i++)
+                {
+                    if (ctor.Parameters[i].Name == name && positional <= i)
+                    {
+                        positional = i + 1;
+                        break;
+                    }
+                }
+
                 continue;
             }
 

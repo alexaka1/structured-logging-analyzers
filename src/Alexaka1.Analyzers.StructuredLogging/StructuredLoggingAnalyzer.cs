@@ -28,7 +28,12 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        var known = KnownSymbols.Resolve(context.Compilation);
+        var known = KnownSymbols.Resolve(context.Compilation, context.CancellationToken);
+        if (!known.HasAnyLoggingLibrary && !known.HasGenericMicrosoftLogger)
+        {
+            return;
+        }
+
         var classifier = new LoggingInvocationClassifier(known);
         var regexCache = new RegexCache();
         var settingsCache = new ConcurrentDictionary<SyntaxTree, AnalyzerSettings>();
@@ -37,57 +42,73 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         var generatedTreeDetector =
             new Func<SyntaxTree, bool>(tree => GeneratedCode.IsGenerated(tree, analyzerOptions));
         var constTemplateExclusivity = new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
+        var semanticModels = new ConcurrentDictionary<SyntaxTree, SemanticModel>();
 
-        context.RegisterSyntaxNodeAction(
-            ctx =>
-            {
-                if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
+        if (known.HasAnyLoggingLibrary)
+        {
+            context.RegisterSyntaxNodeAction(
+                ctx =>
                 {
-                    return;
-                }
+                    if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
+                    {
+                        return;
+                    }
 
-                AnalyzeInvocation(ctx, known, classifier, regexCache, settingsCache);
-            },
-            SyntaxKind.InvocationExpression);
+                    AnalyzeInvocation(ctx, known, classifier, regexCache, settingsCache);
+                },
+                SyntaxKind.InvocationExpression);
+        }
 
-        context.RegisterSyntaxNodeAction(
-            ctx =>
-            {
-                if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
+        if (known.HasMicrosoftLogging)
+        {
+            context.RegisterSyntaxNodeAction(
+                ctx =>
                 {
-                    return;
-                }
+                    if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
+                    {
+                        return;
+                    }
 
-                AnalyzeLoggerMessageMethod(ctx, known, regexCache, settingsCache, constTemplateExclusivity);
-            },
-            SyntaxKind.MethodDeclaration);
+                    AnalyzeLoggerMessageMethod(
+                        ctx,
+                        known,
+                        regexCache,
+                        settingsCache,
+                        constTemplateExclusivity,
+                        semanticModels);
+                },
+                SyntaxKind.MethodDeclaration);
+        }
 
-        context.RegisterSyntaxNodeAction(
-            ctx =>
-            {
-                if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
+        if (known.HasGenericMicrosoftLogger)
+        {
+            context.RegisterSyntaxNodeAction(
+                ctx =>
                 {
-                    return;
-                }
+                    if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
+                    {
+                        return;
+                    }
 
-                AnalyzeConstructor(ctx, classifier);
-            },
-            SyntaxKind.ConstructorDeclaration);
+                    AnalyzeConstructor(ctx, classifier);
+                },
+                SyntaxKind.ConstructorDeclaration);
 
-        context.RegisterSyntaxNodeAction(
-            ctx =>
-            {
-                if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
+            context.RegisterSyntaxNodeAction(
+                ctx =>
                 {
-                    return;
-                }
+                    if (IsGeneratedTree(ctx, generatedTrees, generatedTreeDetector))
+                    {
+                        return;
+                    }
 
-                AnalyzeTypePrimaryConstructor(ctx, classifier);
-            },
-            SyntaxKind.ClassDeclaration,
-            SyntaxKind.StructDeclaration,
-            SyntaxKind.RecordDeclaration,
-            SyntaxKind.RecordStructDeclaration);
+                    AnalyzeTypePrimaryConstructor(ctx, classifier);
+                },
+                SyntaxKind.ClassDeclaration,
+                SyntaxKind.StructDeclaration,
+                SyntaxKind.RecordDeclaration,
+                SyntaxKind.RecordStructDeclaration);
+        }
     }
 
     private static bool IsGeneratedTree(
@@ -136,8 +157,12 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var method =
-            LoggingInvocationClassifier.ResolveMethod(context.SemanticModel, invocation, context.CancellationToken);
+        var method = LoggingInvocationClassifier.ResolveMethod(
+            context.SemanticModel,
+            invocation,
+            context.CancellationToken,
+            out var isCandidateMethod,
+            out var candidateSymbols);
         if (method is null)
         {
             return;
@@ -155,20 +180,61 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             AnalyzePushProperty(context, invocation, method, settings, regexCache);
         }
 
-        var templateParameterName = classifier.GetTemplateParameterName(method);
-        if (templateParameterName is null)
+        BoundTemplateArgument? templateOpt = null;
+        List<BoundTemplateArgument>? arguments = null;
+        if (isCandidateMethod)
         {
-            return;
+            foreach (var candidateSymbol in candidateSymbols)
+            {
+                if (candidateSymbol is not IMethodSymbol candidateMethod)
+                {
+                    continue;
+                }
+
+                var candidateTemplateName = classifier.GetTemplateParameterName(candidateMethod);
+                if (candidateTemplateName is null)
+                {
+                    continue;
+                }
+
+                var candidateTemplate = TemplateArgumentResolver.FindTemplate(
+                    context.SemanticModel,
+                    invocation,
+                    candidateMethod,
+                    candidateTemplateName,
+                    context.CancellationToken,
+                    out var candidateArguments);
+                if (candidateTemplate is null ||
+                    !IsClearlyString(context.SemanticModel, candidateTemplate.Value.Expression,
+                        context.CancellationToken))
+                {
+                    continue;
+                }
+
+                method = candidateMethod;
+                templateOpt = candidateTemplate;
+                arguments = candidateArguments;
+                break;
+            }
+        }
+        else
+        {
+            var templateParameterName = classifier.GetTemplateParameterName(method);
+            if (templateParameterName is null)
+            {
+                return;
+            }
+
+            templateOpt = TemplateArgumentResolver.FindTemplate(
+                context.SemanticModel,
+                invocation,
+                method,
+                templateParameterName,
+                context.CancellationToken,
+                out arguments);
         }
 
-        var templateOpt = TemplateArgumentResolver.FindTemplate(
-            context.SemanticModel,
-            invocation,
-            method,
-            templateParameterName,
-            context.CancellationToken,
-            out var arguments);
-        if (templateOpt is null)
+        if (templateOpt is null || arguments is null)
         {
             return;
         }
@@ -187,7 +253,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                 template.Expression.GetLocation()));
         }
 
-        AnalyzeException(context, invocation, method, template, arguments, known,
+        AnalyzeException(context, method, template, arguments, known,
             skip: LoggerMessageParameterMapper.IsLoggerMessageDefine(method, known));
 
         if (!isConstant)
@@ -275,7 +341,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
         if (allowDestructuring)
         {
-            AnalyzeAnonymousAndComplex(context, invocation, template, arguments, named, map);
+            AnalyzeAnonymousAndComplex(context, argumentExpressions, named, map);
         }
     }
 
@@ -284,7 +350,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         KnownSymbols known,
         RegexCache regexCache,
         ConcurrentDictionary<SyntaxTree, AnalyzerSettings> settingsCache,
-        ConcurrentDictionary<ISymbol, bool> constTemplateExclusivity)
+        ConcurrentDictionary<ISymbol, bool> constTemplateExclusivity,
+        ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels)
     {
         if (known.LoggerMessageAttribute is null && known.Logger is null)
         {
@@ -328,6 +395,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             template.Expression,
             method,
             constTemplateExclusivity,
+            semanticModels,
             context.CancellationToken);
 
         if (source.Map is null)
@@ -378,45 +446,10 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeAnonymousAndComplex(
         SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
-        BoundTemplateArgument template,
-        List<BoundTemplateArgument> arguments,
+        ExpressionSyntax?[] argumentExpressions,
         PropertyHole[] named,
         TemplateSourceMap map)
     {
-        foreach (var argument in invocation.ArgumentList.Arguments)
-        {
-            if (argument.Expression is not AnonymousObjectCreationExpressionSyntax)
-            {
-                continue;
-            }
-
-            var bound = FindBound(arguments, argument);
-            if (bound is null || bound.Value.Ordinal <= template.Ordinal)
-            {
-                continue;
-            }
-
-            var holeIndex = IndexAfterTemplate(arguments, template, bound.Value);
-            if (holeIndex < 0 || holeIndex >= named.Length)
-            {
-                continue;
-            }
-
-            var hole = named[holeIndex];
-            if (hole.Destructuring != DestructuringKind.Default)
-            {
-                continue;
-            }
-
-            var properties = ImmutableDictionary<string, string?>.Empty
-                .Add(FixProperties.InsertLogicalIndex, (hole.StartIndex + 1).ToString(CultureInfo.InvariantCulture));
-            context.ReportDiagnostic(Diagnostic.Create(
-                Descriptors.AnonymousObjectMustBeDestructured,
-                TemplateStyleRules.HoleLocation(map, hole),
-                properties));
-        }
-
         for (var i = 0; i < named.Length; i++)
         {
             var hole = named[i];
@@ -425,27 +458,28 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var expression = PropertyArgumentMapper.ArgumentForHole(arguments, template, i);
+            var expression = argumentExpressions[i];
             if (expression is null)
             {
                 continue;
             }
 
-            if (expression is AnonymousObjectCreationExpressionSyntax)
+            var descriptor = Descriptors.AnonymousObjectMustBeDestructured;
+            if (expression is not AnonymousObjectCreationExpressionSyntax)
             {
-                continue;
-            }
+                var type = context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type;
+                if (!TypeClassifier.NeedsDestructuring(type))
+                {
+                    continue;
+                }
 
-            var type = context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type;
-            if (!TypeClassifier.NeedsDestructuring(type))
-            {
-                continue;
+                descriptor = Descriptors.ComplexObjectShouldBeDestructured;
             }
 
             var properties = ImmutableDictionary<string, string?>.Empty
                 .Add(FixProperties.InsertLogicalIndex, (hole.StartIndex + 1).ToString(CultureInfo.InvariantCulture));
             context.ReportDiagnostic(Diagnostic.Create(
-                Descriptors.ComplexObjectShouldBeDestructured,
+                descriptor,
                 TemplateStyleRules.HoleLocation(map, hole),
                 properties));
         }
@@ -453,7 +487,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeException(
         SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
         IMethodSymbol method,
         BoundTemplateArgument template,
         List<BoundTemplateArgument> arguments,
@@ -477,49 +510,43 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var invalidIndex = invocation.ArgumentList.Arguments.IndexOf(invalid);
-        if (invalidIndex < 0)
-        {
-            return;
-        }
-
-        if (!HasExceptionOverload(method, exceptionType, invalidIndex))
+        if (!HasExceptionOverload(method, exceptionType, template.Parameter.Name))
         {
             return;
         }
 
         context.ReportDiagnostic(Diagnostic.Create(
             Descriptors.ExceptionPassedAsTemplateArgument,
-            invalid.Expression.GetLocation()));
+            invalid.Value.Expression.GetLocation()));
     }
 
-    private static ArgumentSyntax? FindInvalidExceptionArgument(
+    private static BoundTemplateArgument? FindInvalidExceptionArgument(
         SyntaxNodeAnalysisContext context,
         List<BoundTemplateArgument> arguments,
         BoundTemplateArgument template,
         INamedTypeSymbol exceptionType)
     {
-        foreach (var bound in arguments)
+        foreach (var argument in arguments)
         {
-            var type = context.SemanticModel.GetTypeInfo(bound.Expression, context.CancellationToken).Type;
+            var type = context.SemanticModel.GetTypeInfo(argument.Expression, context.CancellationToken).Type;
             if (type is null || !IsOrDerivedFrom(type, exceptionType))
             {
                 continue;
             }
 
-            if (bound.Ordinal < template.Ordinal)
+            if (argument.Ordinal <= template.Ordinal)
             {
                 continue;
             }
 
-            return bound.Argument;
+            return argument;
         }
 
         return null;
     }
 
     private static bool HasExceptionOverload(IMethodSymbol method, INamedTypeSymbol exceptionType,
-        int invalidArgumentIndex)
+        string templateParameterName)
     {
         var type = method.ContainingType;
         if (type is null)
@@ -534,15 +561,24 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            // A reduced extension invocation omits the receiver from its
-            // argument list, while members returned from the containing type
-            // retain the extension's `this` parameter at ordinal zero. An
-            // explicit static call includes that receiver in its arguments.
-            var parameterOffset = method.ReducedFrom is null ? 0 : 1;
+            IParameterSymbol? templateParameter = null;
+            foreach (var parameter in candidate.Parameters)
+            {
+                if (parameter.Name == templateParameterName)
+                {
+                    templateParameter = parameter;
+                    break;
+                }
+            }
+
+            if (templateParameter is null)
+            {
+                continue;
+            }
 
             foreach (var parameter in candidate.Parameters)
             {
-                if (invalidArgumentIndex + parameterOffset <= parameter.Ordinal)
+                if (templateParameter.Ordinal <= parameter.Ordinal)
                 {
                     break;
                 }
@@ -649,7 +685,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
         var containingSymbol = context.SemanticModel.GetDeclaredSymbol(containingType, context.CancellationToken);
         var typeArg = context.SemanticModel.GetTypeInfo(typeArguments.Arguments[0], context.CancellationToken).Type;
-        if (containingSymbol is null || typeArg is null)
+        if (containingSymbol is null || typeArg is null || typeArg.TypeKind == TypeKind.Error)
         {
             return;
         }
@@ -707,7 +743,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
             var type = context.SemanticModel.GetTypeInfo(parameter.Type, context.CancellationToken).Type;
             if (type is null || !classifier.IsGenericMicrosoftLogger(type, out var typeArgument) ||
-                typeArgument is null)
+                typeArgument is null || typeArgument.TypeKind == TypeKind.Error)
             {
                 continue;
             }
@@ -731,41 +767,14 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         return constant.HasValue && constant.Value is string;
     }
 
-    private static BoundTemplateArgument? FindBound(List<BoundTemplateArgument> arguments, ArgumentSyntax argument)
+    private static bool IsClearlyString(
+        SemanticModel model,
+        ExpressionSyntax expression,
+        CancellationToken cancellationToken)
     {
-        for (var i = 0; i < arguments.Count; i++)
-        {
-            if (arguments[i].Argument == argument)
-            {
-                return arguments[i];
-            }
-        }
-
-        return null;
-    }
-
-    private static int IndexAfterTemplate(
-        List<BoundTemplateArgument> arguments,
-        BoundTemplateArgument template,
-        BoundTemplateArgument target)
-    {
-        var index = 0;
-        for (var i = 0; i < arguments.Count; i++)
-        {
-            if (arguments[i].Ordinal <= template.Ordinal)
-            {
-                continue;
-            }
-
-            if (arguments[i].Argument == target.Argument)
-            {
-                return index;
-            }
-
-            index++;
-        }
-
-        return -1;
+        var constant = model.GetConstantValue(expression, cancellationToken);
+        return constant is { HasValue: true, Value: string } ||
+               model.GetTypeInfo(expression, cancellationToken).Type?.SpecialType == SpecialType.System_String;
     }
 
     private static TypeArgumentListSyntax? GetTypeArgumentList(InvocationExpressionSyntax invocation)
@@ -785,6 +794,27 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
     private static bool IsOrDerivedFrom(ITypeSymbol type, INamedTypeSymbol baseType)
     {
+        return IsOrDerivedFrom(type, baseType, depth: 0);
+    }
+
+    private static bool IsOrDerivedFrom(ITypeSymbol type, INamedTypeSymbol baseType, int depth)
+    {
+        if (depth >= 16)
+        {
+            return false;
+        }
+
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            foreach (var constraint in typeParameter.ConstraintTypes)
+            {
+                if (IsOrDerivedFrom(constraint, baseType, depth + 1))
+                {
+                    return true;
+                }
+            }
+        }
+
         for (var current = type; current != null; current = current.BaseType)
         {
             if (SymbolEqualityComparer.Default.Equals(current, baseType))

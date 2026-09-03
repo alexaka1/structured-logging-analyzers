@@ -26,23 +26,18 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var model = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-        if (root is null)
+        if (root is null || model is null)
         {
             return;
         }
 
         foreach (var diagnostic in context.Diagnostics)
         {
-            var invocation = FindInvocation(root, diagnostic.Location.SourceSpan);
-            if (invocation is null)
-            {
-                continue;
-            }
-
-            var exceptionArgument = FindExceptionArgument(invocation, diagnostic.Location.SourceSpan);
-            if (exceptionArgument is null ||
-                (model is not null &&
-                 HasEarlierExceptionArgument(model, invocation, exceptionArgument, context.CancellationToken)))
+            if (GetFixCandidate(
+                    root,
+                    model,
+                    diagnostic,
+                    context.CancellationToken) is null)
             {
                 continue;
             }
@@ -68,24 +63,55 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        var candidate = GetFixCandidate(root, model, diagnostic, cancellationToken);
+        if (candidate is null)
+        {
+            return document;
+        }
+
+        var fix = candidate.Value;
+        var arguments = TemplateArgumentResolver.MapArguments(
+            model,
+            fix.Invocation,
+            fix.Method,
+            cancellationToken);
+        var holeIndex = HoleIndexForException(arguments, fix.Template, fix.ExceptionArgument);
+
+        var annotated = fix.MovedInvocation.WithAdditionalAnnotations(InvocationAnnotation);
+        var updatedRoot = root.ReplaceNode(fix.Invocation, annotated);
+        var updatedDocument = document.WithSyntaxRoot(updatedRoot);
+        if (holeIndex < 0)
+        {
+            return updatedDocument;
+        }
+
+        return await RemoveHoleAsync(updatedDocument, holeIndex, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static FixCandidate? GetFixCandidate(
+        SyntaxNode root,
+        SemanticModel model,
+        Diagnostic diagnostic,
+        CancellationToken cancellationToken)
+    {
         var invocation = FindInvocation(root, diagnostic.Location.SourceSpan);
         if (invocation is null)
         {
-            return document;
+            return null;
         }
 
-        var compilation = model.Compilation;
         var method = LoggingInvocationClassifier.ResolveMethod(model, invocation, cancellationToken);
         if (method is null)
         {
-            return document;
+            return null;
         }
 
-        var classifier = new LoggingInvocationClassifier(KnownSymbols.Resolve(compilation));
+        var classifier = new LoggingInvocationClassifier(
+            KnownSymbols.Resolve(model.Compilation, cancellationToken));
         var templateParameterName = classifier.GetTemplateParameterName(method);
         if (templateParameterName is null)
         {
-            return document;
+            return null;
         }
 
         var template = TemplateArgumentResolver.FindTemplate(
@@ -96,33 +122,26 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             cancellationToken);
         if (template is null)
         {
-            return document;
+            return null;
         }
 
         var exceptionArgument = FindExceptionArgument(invocation, diagnostic.Location.SourceSpan);
         if (exceptionArgument is null ||
-            HasEarlierExceptionArgument(model, invocation, exceptionArgument, cancellationToken))
+            HasEarlierExceptionArgument(
+                model,
+                invocation,
+                method,
+                template.Value.Parameter,
+                exceptionArgument,
+                cancellationToken))
         {
-            return document;
+            return null;
         }
 
-        var arguments = TemplateArgumentResolver.MapArguments(model, invocation, method, cancellationToken);
-        var holeIndex = HoleIndexForException(arguments, template.Value, exceptionArgument);
         var moved = MoveException(invocation, template.Value.Argument, exceptionArgument);
-        if (moved is null)
-        {
-            return document;
-        }
-
-        var annotated = moved.WithAdditionalAnnotations(InvocationAnnotation);
-        var updatedRoot = root.ReplaceNode(invocation, annotated);
-        var updatedDocument = document.WithSyntaxRoot(updatedRoot);
-        if (holeIndex < 0)
-        {
-            return updatedDocument;
-        }
-
-        return await RemoveHoleAsync(updatedDocument, holeIndex, cancellationToken).ConfigureAwait(false);
+        return moved is null
+            ? null
+            : new FixCandidate(invocation, method, template.Value, exceptionArgument, moved);
     }
 
     private static async Task<Document> RemoveHoleAsync(
@@ -156,7 +175,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var classifier = new LoggingInvocationClassifier(KnownSymbols.Resolve(model.Compilation));
+        var classifier = new LoggingInvocationClassifier(KnownSymbols.Resolve(model.Compilation, cancellationToken));
         var templateParameterName = classifier.GetTemplateParameterName(method);
         if (templateParameterName is null)
         {
@@ -418,24 +437,31 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
     private static bool HasEarlierExceptionArgument(
         SemanticModel model,
         InvocationExpressionSyntax invocation,
+        IMethodSymbol method,
+        IParameterSymbol templateParameter,
         ArgumentSyntax exceptionArgument,
         CancellationToken cancellationToken)
     {
-        var known = KnownSymbols.Resolve(model.Compilation);
+        var known = KnownSymbols.Resolve(model.Compilation, cancellationToken);
         if (known.Exception is null)
         {
             return false;
         }
 
-        foreach (var argument in invocation.ArgumentList.Arguments)
+        var arguments = TemplateArgumentResolver.MapArguments(
+            model,
+            invocation,
+            method,
+            cancellationToken);
+        foreach (var argument in arguments)
         {
-            if (argument == exceptionArgument)
+            if (argument.Argument == exceptionArgument)
             {
-                return false;
+                continue;
             }
 
-            var type = model.GetTypeInfo(argument.Expression, cancellationToken).Type;
-            if (type is not null && LoggerMessageParameterMapper.IsException(type, known))
+            if (argument.Parameter.Ordinal < templateParameter.Ordinal &&
+                LoggerMessageParameterMapper.IsException(argument.Parameter.Type, known))
             {
                 return true;
             }
@@ -461,5 +487,32 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
     {
         var node = root.FindNode(span, getInnermostNodeForTie: true);
         return node as InvocationExpressionSyntax ?? node.FirstAncestorOrSelf<InvocationExpressionSyntax>();
+    }
+
+    private readonly struct FixCandidate
+    {
+        public FixCandidate(
+            InvocationExpressionSyntax invocation,
+            IMethodSymbol method,
+            BoundTemplateArgument template,
+            ArgumentSyntax exceptionArgument,
+            InvocationExpressionSyntax movedInvocation)
+        {
+            Invocation = invocation;
+            Method = method;
+            Template = template;
+            ExceptionArgument = exceptionArgument;
+            MovedInvocation = movedInvocation;
+        }
+
+        public InvocationExpressionSyntax Invocation { get; }
+
+        public IMethodSymbol Method { get; }
+
+        public BoundTemplateArgument Template { get; }
+
+        public ArgumentSyntax ExceptionArgument { get; }
+
+        public InvocationExpressionSyntax MovedInvocation { get; }
     }
 }

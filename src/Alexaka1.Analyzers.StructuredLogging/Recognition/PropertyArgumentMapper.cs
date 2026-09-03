@@ -128,6 +128,19 @@ internal static class PropertyArgumentMapper
                 }
 
                 break;
+            case CollectionExpressionSyntax collection:
+                foreach (var item in collection.Elements)
+                {
+                    if (item is not ExpressionElementSyntax expressionElement)
+                    {
+                        elements.Clear();
+                        return elements;
+                    }
+
+                    elements.Add(expressionElement.Expression);
+                }
+
+                break;
         }
 
         return elements;
