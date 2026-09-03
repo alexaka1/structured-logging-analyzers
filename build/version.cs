@@ -108,11 +108,21 @@ static async Task<bool> RollOverAnalyzerReleasesAsync(
     var unshippedHeader = ReadHeaderComment(unshipped, unshippedFile);
     var shipped = await File.ReadAllTextAsync(shippedFile);
     var shippedHeader = ReadHeaderComment(shipped, shippedFile);
+    var releaseHeading = $"## Release {version}";
+
+    if (ContainsLine(shipped, releaseHeading))
+    {
+        Console.WriteLine(
+            $"Skipped updating {shippedFile} because {releaseHeading} already existed.");
+        await File.WriteAllTextAsync(unshippedFile, unshippedHeader.TrimEnd() + "\n");
+        return true;
+    }
+
     var releaseTables = unshipped[section.Index..].Trim();
     var previousReleases = shipped[shippedHeader.Length..].Trim();
 
     var updatedShipped =
-        $"{shippedHeader.TrimEnd()}\n\n## Release {version}\n\n{releaseTables}";
+        $"{shippedHeader.TrimEnd()}\n\n{releaseHeading}\n\n{releaseTables}";
     if (previousReleases.Length > 0)
     {
         updatedShipped += $"\n\n{previousReleases}";
@@ -121,6 +131,20 @@ static async Task<bool> RollOverAnalyzerReleasesAsync(
     await File.WriteAllTextAsync(shippedFile, updatedShipped + "\n");
     await File.WriteAllTextAsync(unshippedFile, unshippedHeader.TrimEnd() + "\n");
     return true;
+}
+
+static bool ContainsLine(string contents, string expectedLine)
+{
+    using var reader = new StringReader(contents);
+    while (reader.ReadLine() is { } line)
+    {
+        if (string.Equals(line.Trim(), expectedLine, StringComparison.Ordinal))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 static string ReadHeaderComment(string contents, string fileName)
