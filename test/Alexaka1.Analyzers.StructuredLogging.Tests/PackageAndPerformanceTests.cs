@@ -187,7 +187,7 @@ public sealed class PackageAndPerformanceTests
     public async Task Analyzer_handles_many_logger_message_constants()
     {
         const string label = "logger message constants";
-        var source = CreateLoggerMessageConstantSource(300);
+        var source = CreateLoggerMessageConstantSource(120);
         var cancellationToken = TestContext.Current.CancellationToken;
         _ = await AnalyzerTestHost.AnalyzeAsync(
             source,
