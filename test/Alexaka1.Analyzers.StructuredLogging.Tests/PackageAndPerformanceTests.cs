@@ -107,6 +107,7 @@ public sealed class PackageAndPerformanceTests
         var projectPath = Path.Combine(consumer.DirectoryPath, "Consumer.csproj");
         var sourcePath = Path.Combine(consumer.DirectoryPath, "Program.cs");
         var sarifPath = Path.Combine(consumer.DirectoryPath, "consumer.sarif");
+        var nugetConfigPath = Path.Combine(consumer.DirectoryPath, "nuget.config");
 
         File.WriteAllText(
             projectPath,
@@ -138,11 +139,23 @@ public sealed class PackageAndPerformanceTests
                                 }
                             }
                             """);
+        new XDocument(
+                new XElement("configuration",
+                    new XElement("packageSources",
+                        new XElement("clear"),
+                        new XElement("add",
+                            new XAttribute("key", "packed-package"),
+                            new XAttribute("value", feed.DirectoryPath)),
+                        new XElement("add",
+                            new XAttribute("key", "nuget.org"),
+                            new XAttribute("value", "https://api.nuget.org/v3/index.json"),
+                            new XAttribute("protocolVersion", "3")))))
+            .Save(nugetConfigPath);
 
         try
         {
             RunDotNet(
-                $"restore \"{projectPath}\" --source \"{feed.DirectoryPath}\" --source https://api.nuget.org/v3/index.json --packages \"{packages.DirectoryPath}\" --no-cache --nologo --verbosity quiet",
+                $"restore \"{projectPath}\" --configfile \"{nugetConfigPath}\" --packages \"{packages.DirectoryPath}\" --no-cache --nologo --verbosity quiet",
                 packages.DirectoryPath);
             RunDotNet(
                 $"build \"{projectPath}\" --configuration Release --no-restore --nologo -v:minimal -p:ErrorLog=\"{sarifPath}%2cversion=2.1\"",
