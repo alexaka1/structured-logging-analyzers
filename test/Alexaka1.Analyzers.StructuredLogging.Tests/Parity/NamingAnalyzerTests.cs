@@ -208,6 +208,65 @@ public sealed class NamingAnalyzerTests
     }
 
     [Fact]
+    public Task Pascal_case_rule_scoped_template_naming_wins_over_prefix()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{MyProperty}", 1);
+                                }
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.property_naming = snake_case
+                                                dotnet_code_quality.AASL0009.property_naming = pascal_case
+                                                """);
+    }
+
+    [Fact]
+    public Task Pascal_case_rule_scoped_context_naming_wins_over_prefix()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    LogContext.PushProperty("MyProperty", 1);
+                                }
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.property_naming = snake_case
+                                                dotnet_code_quality.AASL0010.property_naming = pascal_case
+                                                """);
+    }
+
+    [Fact]
+    public Task Pascal_case_prefix_naming_is_honored()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{MyProperty}", 1);
+                                    LogContext.PushProperty("MyProperty", 2);
+                                }
+                            }
+                            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = pascal_case");
+    }
+
+    [Fact]
     public Task Invalid_rule_scoped_naming_falls_back_to_prefix()
     {
         return AnalyzerTestHost.VerifyAsync(

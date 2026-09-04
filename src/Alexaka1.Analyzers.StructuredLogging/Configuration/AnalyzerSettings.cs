@@ -119,6 +119,9 @@ internal readonly struct AnalyzerSettings
     {
         switch (value.Trim().ToLowerInvariant())
         {
+            case "pascal_case":
+            case "pascalcase":
+                return PropertyNamingStyle.PascalCase;
             case "camel_case":
             case "camelcase":
                 return PropertyNamingStyle.CamelCase;
