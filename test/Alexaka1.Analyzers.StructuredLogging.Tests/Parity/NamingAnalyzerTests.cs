@@ -296,6 +296,52 @@ public sealed class NamingAnalyzerTests
     }
 
     [Fact]
+    public Task Invalid_rule_scoped_ignored_regex_falls_through_to_prefix()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{Prefix_name}", 1);
+                                    LogContext.PushProperty("Prefix_name", 2);
+                                }
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.ignored_properties_regex = ^Prefix
+                                                dotnet_code_quality.AASL0009.ignored_properties_regex = (
+                                                dotnet_code_quality.AASL0010.ignored_properties_regex = (
+                                                """);
+    }
+
+    [Fact]
+    public Task Invalid_rule_scoped_and_prefix_ignored_regexes_match_nothing()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{Prefix_name}|}", 1);
+                                    LogContext.PushProperty({|AASL0010:"Prefix_name"|}, 2);
+                                }
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.ignored_properties_regex = *
+                                                dotnet_code_quality.AASL0009.ignored_properties_regex = (
+                                                dotnet_code_quality.AASL0010.ignored_properties_regex = (
+                                                """);
+    }
+
+    [Fact]
     public Task Ignored_regex_still_ignores_repeated_property_names()
     {
         return AnalyzerTestHost.VerifyAsync(
@@ -332,6 +378,32 @@ public sealed class NamingAnalyzerTests
         var outcome = await AnalyzerTestHost.AnalyzeAsync(
             source,
             editorConfig: "dotnet_code_quality.AASL.ignored_properties_regex = (a+)+$",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Contains(outcome.Diagnostics, d => d.Id == "AASL0009");
+    }
+
+    [Fact]
+    public async Task Timed_out_rule_scoped_ignored_regex_does_not_fall_through_to_prefix()
+    {
+        var propertyName = new string('a', 5_000) + "b";
+        var source = $$"""
+                       using Serilog;
+                       public static class Program
+                       {
+                           public static void Main()
+                           {
+                               Log.Logger.Information("{{{propertyName}}}", 1);
+                           }
+                       }
+                       """;
+
+        var outcome = await AnalyzerTestHost.AnalyzeAsync(
+            source,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.ignored_properties_regex = ^a
+                                                dotnet_code_quality.AASL0009.ignored_properties_regex = (a+)+$
+                                                """,
             cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Contains(outcome.Diagnostics, d => d.Id == "AASL0009");

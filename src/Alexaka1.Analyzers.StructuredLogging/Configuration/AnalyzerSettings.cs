@@ -63,16 +63,19 @@ internal readonly struct AnalyzerSettings
 
     public bool IsIgnored(string propertyName, RegexCache cache, string diagnosticId)
     {
-        var pattern = diagnosticId == DiagnosticIds.InconsistentContextPropertyNaming
-            ? _contextIgnored ?? _prefixIgnored
-            : _templateIgnored ?? _prefixIgnored;
+        var rulePattern = diagnosticId == DiagnosticIds.InconsistentContextPropertyNaming
+            ? _contextIgnored
+            : _templateIgnored;
 
-        if (string.IsNullOrEmpty(pattern))
+        if (!string.IsNullOrEmpty(rulePattern) &&
+            cache.TryMatch(rulePattern!, propertyName, out var ruleMatch))
         {
-            return false;
+            return ruleMatch;
         }
 
-        return cache.IsMatch(pattern!, propertyName);
+        return !string.IsNullOrEmpty(_prefixIgnored) &&
+               cache.TryMatch(_prefixIgnored!, propertyName, out var prefixMatch) &&
+               prefixMatch;
     }
 
     private static PropertyNamingStyle? TryGetNaming(AnalyzerConfigOptions options, string scope)
