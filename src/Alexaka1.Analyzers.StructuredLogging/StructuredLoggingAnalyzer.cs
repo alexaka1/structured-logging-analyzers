@@ -42,6 +42,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         var generatedTreeDetector =
             new Func<SyntaxTree, bool>(tree => GeneratedCode.IsGenerated(tree, analyzerOptions));
         var constTemplateExclusivity = new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default);
+        var identifierTokensByType = new ConcurrentDictionary<INamedTypeSymbol,
+            ImmutableDictionary<string, ImmutableArray<SyntaxToken>>>(SymbolEqualityComparer.Default);
         var semanticModels = new ConcurrentDictionary<SyntaxTree, SemanticModel>();
 
         if (known.HasAnyLoggingLibrary)
@@ -75,6 +77,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
                         regexCache,
                         settingsCache,
                         constTemplateExclusivity,
+                        identifierTokensByType,
                         semanticModels);
                 },
                 SyntaxKind.MethodDeclaration);
@@ -172,7 +175,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
         if (LoggingInvocationClassifier.IsSerilogForContext(method))
         {
-            AnalyzeForContext(context, invocation, method);
+            AnalyzeForContext(context, invocation);
         }
 
         if (LoggingInvocationClassifier.IsSerilogPushProperty(method))
@@ -278,7 +281,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         }
 
         var parsed = MessageTemplateParser.Parse(map.Value);
-        var allowDestructuring = LoggingInvocationClassifier.SupportsDestructuringOperator(method);
+        var allowDestructuring = classifier.SupportsDestructuringOperator(method);
         AnalyzeTemplateRules(context, invocation, template, arguments, parsed, map, settings, regexCache,
             allowDestructuring);
         TemplateStyleRules.AnalyzeTrailingPeriod(
@@ -351,6 +354,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         RegexCache regexCache,
         ConcurrentDictionary<SyntaxTree, AnalyzerSettings> settingsCache,
         ConcurrentDictionary<ISymbol, bool> constTemplateExclusivity,
+        ConcurrentDictionary<INamedTypeSymbol,
+            ImmutableDictionary<string, ImmutableArray<SyntaxToken>>> identifierTokensByType,
         ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels)
     {
         if (known.LoggerMessageAttribute is null && known.Logger is null)
@@ -395,6 +400,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
             template.Expression,
             method,
             constTemplateExclusivity,
+            identifierTokensByType,
             semanticModels,
             context.CancellationToken);
 
@@ -668,8 +674,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeForContext(
         SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
-        IMethodSymbol method)
+        InvocationExpressionSyntax invocation)
     {
         var typeArguments = GetTypeArgumentList(invocation);
         if (typeArguments is null || typeArguments.Arguments.Count != 1)
@@ -699,7 +704,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         context.ReportDiagnostic(Diagnostic.Create(
             Descriptors.ContextualLoggerMismatch,
             invocation.GetLocation()));
-        _ = method;
     }
 
     private static void AnalyzeConstructor(SyntaxNodeAnalysisContext context, LoggingInvocationClassifier classifier)

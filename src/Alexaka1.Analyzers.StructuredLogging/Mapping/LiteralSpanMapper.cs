@@ -71,6 +71,12 @@ internal sealed class TemplateSourceMap
 
 internal static class LiteralSpanMapper
 {
+    internal static bool InterpolatedTextUsesDoubleBraceEscapes(
+        InterpolatedStringExpressionSyntax interpolated)
+    {
+        return !IsRawInterpolated(interpolated) || CountDollarSigns(interpolated.StringStartToken.Text) == 1;
+    }
+
     public static bool TryMap(SemanticModel model, ExpressionSyntax expression, CancellationToken cancellationToken,
         out TemplateSourceMap map)
     {
@@ -265,7 +271,7 @@ internal static class LiteralSpanMapper
         var spanStart = token.SpanStart;
         var raw = IsRawInterpolated(interpolated);
         var verbatim = IsVerbatimInterpolated(interpolated);
-        var decodeBraces = !raw || CountDollarSigns(interpolated.StringStartToken.Text) == 1;
+        var decodeBraces = InterpolatedTextUsesDoubleBraceEscapes(interpolated);
         for (var i = 0; i < source.Length; i++)
         {
             var current = source[i];
@@ -552,13 +558,13 @@ internal static class LiteralSpanMapper
             case 'v':
                 return true;
             case 'x':
-                ReadHex(source, ref i, 1, 4);
+                ReadHex(source, ref i, 4);
                 return true;
             case 'u':
-                ReadHex(source, ref i, 4, 4);
+                ReadHex(source, ref i, 4);
                 return true;
             case 'U':
-                var code = ReadHex(source, ref i, 8, 8);
+                var code = ReadHex(source, ref i, 8);
                 if (code > 0xFFFF)
                 {
                     logicalChars = 2;
@@ -570,7 +576,8 @@ internal static class LiteralSpanMapper
         }
     }
 
-    private static int ReadHex(string source, ref int i, int min, int max)
+    // The compiler rejects malformed escapes; mapping only consumes the hex digits that are present.
+    private static int ReadHex(string source, ref int i, int max)
     {
         var value = 0;
         var taken = 0;
@@ -581,7 +588,6 @@ internal static class LiteralSpanMapper
             taken++;
         }
 
-        _ = min;
         return value;
     }
 

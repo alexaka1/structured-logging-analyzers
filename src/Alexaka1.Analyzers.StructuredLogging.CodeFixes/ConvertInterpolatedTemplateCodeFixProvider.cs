@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using Alexaka1.Analyzers.StructuredLogging.Classification;
 using Alexaka1.Analyzers.StructuredLogging.Configuration;
+using Alexaka1.Analyzers.StructuredLogging.Mapping;
 
 namespace Alexaka1.Analyzers.StructuredLogging.CodeFixes;
 
@@ -174,7 +175,15 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
             switch (content)
             {
                 case InterpolatedStringTextSyntax text:
-                    AppendEscaped(builder, text.TextToken.ValueText);
+                    if (LiteralSpanMapper.InterpolatedTextUsesDoubleBraceEscapes(interpolated))
+                    {
+                        builder.Append(text.TextToken.ValueText);
+                    }
+                    else
+                    {
+                        AppendEscapedTemplateText(builder, text.TextToken.ValueText);
+                    }
+
                     break;
                 case InterpolationSyntax interpolation:
                     var type = model.GetTypeInfo(interpolation.Expression, cancellationToken).Type;
@@ -188,6 +197,11 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                         ExpressionPropertyName.TrySuggest(interpolation.Expression, style, nameKind)
                         ?? ExpressionPropertyName.Fallback(style),
                         used);
+                    if (name is null)
+                    {
+                        return false;
+                    }
+
                     builder.Append('{');
                     builder.Append(name);
                     if (interpolation.AlignmentClause != null)
@@ -214,8 +228,16 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
         return true;
     }
 
-    private static void AppendEscaped(StringBuilder builder, string text)
+    private static void AppendEscapedTemplateText(StringBuilder builder, string text)
     {
-        builder.Append(text);
+        foreach (var character in text)
+        {
+            if (character is '{' or '}')
+            {
+                builder.Append(character);
+            }
+
+            builder.Append(character);
+        }
     }
 }

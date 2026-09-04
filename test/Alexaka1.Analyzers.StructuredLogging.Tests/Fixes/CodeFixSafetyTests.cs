@@ -143,7 +143,128 @@ public sealed class CodeFixSafetyTests
                             """,
             "AASL0007",
             typeof(ConvertInterpolatedTemplateCodeFixProvider),
-            expectedActionCount: 1);
+            expectedActionCount: 1,
+            assertTemplateArgumentCountMatches: true);
+    }
+
+    [Fact]
+    public Task Convert_verbatim_interpolation_preserves_escaped_braces()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string userId)
+                                {
+                                    logger.LogInformation({|AASL0007:$@"escaped {{Lit}} for {userId}"|});
+                                }
+                            }
+                            """,
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string userId)
+                                {
+                                    logger.LogInformation("escaped {{Lit}} for {UserId}", userId);
+                                }
+                            }
+                            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 1,
+            assertTemplateArgumentCountMatches: true);
+    }
+
+    [Fact]
+    public Task Convert_single_dollar_raw_interpolation_is_unchanged()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """"
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string userId)
+                                {
+                                    logger.LogInformation({|AASL0007:$"""user {userId}"""|});
+                                }
+                            }
+                            """",
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string userId)
+                                {
+                                    logger.LogInformation("user {UserId}", userId);
+                                }
+                            }
+                            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 1,
+            assertTemplateArgumentCountMatches: true);
+    }
+
+    [Fact]
+    public Task Convert_double_dollar_raw_interpolation_escapes_literal_braces()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """"
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string name)
+                                {
+                                    logger.LogInformation({|AASL0007:$$"""Set {literal} to {{name}}"""|});
+                                }
+                            }
+                            """",
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string name)
+                                {
+                                    logger.LogInformation("Set {{literal}} to {Name}", name);
+                                }
+                            }
+                            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 1,
+            assertTemplateArgumentCountMatches: true);
+    }
+
+    [Fact]
+    public Task Convert_triple_dollar_raw_interpolation_escapes_literal_braces()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """"
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string name)
+                                {
+                                    logger.LogInformation({|AASL0007:$$$"""Set {literal} and {{literal2}} to {{{name}}}"""|});
+                                }
+                            }
+                            """",
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string name)
+                                {
+                                    logger.LogInformation("Set {{literal}} and {{{{literal2}}}} to {Name}", name);
+                                }
+                            }
+                            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 1,
+            assertTemplateArgumentCountMatches: true);
     }
 
     [Fact]

@@ -11,6 +11,8 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Diagnostics.Telemetry;
 using Microsoft.CodeAnalysis.Text;
 
+using Alexaka1.Analyzers.StructuredLogging.Parsing;
+
 using Xunit;
 
 namespace Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
@@ -193,6 +195,75 @@ internal static class AnalyzerTestHost
             allocatedBytes);
     }
 
+    public static async Task<ControlledAnalysisOutcome> AnalyzeAgainstControlAsync(
+        string source,
+        DiagnosticAnalyzer controlAnalyzer,
+        CancellationToken cancellationToken = default)
+    {
+        var analyzer = new StructuredLoggingAnalyzer();
+        var (compilation, _, options) = CreateCompilation(
+            source,
+            editorConfig: null,
+            LanguageVersion.Latest,
+            additionalSources: null,
+            references: null,
+            sourcePath: null);
+
+        var control = await AnalyzeCompilationAsync(
+            compilation,
+            options,
+            controlAnalyzer,
+            cancellationToken).ConfigureAwait(false);
+        var outcome = await AnalyzeCompilationAsync(
+            compilation,
+            options,
+            analyzer,
+            cancellationToken).ConfigureAwait(false);
+
+        return new ControlledAnalysisOutcome(outcome, control.AllocatedBytes);
+    }
+
+    private static async Task<AnalysisOutcome> AnalyzeCompilationAsync(
+        Compilation compilation,
+        AnalyzerOptions options,
+        DiagnosticAnalyzer analyzer,
+        CancellationToken cancellationToken)
+    {
+        var exceptions = new List<Exception>();
+        var analysisOptions = new CompilationWithAnalyzersOptions(
+            options,
+            onAnalyzerException: (exception, _, _) => exceptions.Add(exception),
+            concurrentAnalysis: false,
+            logAnalyzerExecutionTime: true);
+        var compilationWithAnalyzers = compilation.WithAnalyzers(
+            ImmutableArray.Create(analyzer),
+            analysisOptions);
+
+        var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+        var wallClock = Stopwatch.StartNew();
+        var result = await compilationWithAnalyzers.GetAnalysisResultAsync(cancellationToken).ConfigureAwait(false);
+        wallClock.Stop();
+        var allocatedBytes = GC.GetTotalAllocatedBytes(precise: true) - allocatedBefore;
+
+        if (exceptions.Count > 0)
+        {
+            Assert.Fail("Analyzer threw: " + string.Join("; ", exceptions.Select(e => e.ToString())));
+        }
+
+        if (!result.AnalyzerTelemetryInfo.TryGetValue(analyzer, out var telemetry))
+        {
+            telemetry = await compilationWithAnalyzers
+                .GetAnalyzerTelemetryInfoAsync(analyzer, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return new AnalysisOutcome(
+            result.GetAllDiagnostics(analyzer),
+            telemetry,
+            wallClock.Elapsed,
+            allocatedBytes);
+    }
+
     public static Task VerifyPackageVersionAsync(
         string markedSource,
         string packageId,
@@ -239,7 +310,8 @@ internal static class AnalyzerTestHost
         int codeActionIndex = 0,
         int? expectedActionCount = null,
         int? remainingCount = null,
-        string? sourcePath = null)
+        string? sourcePath = null,
+        bool assertTemplateArgumentCountMatches = false)
     {
         var (source, expected) = Markup.Parse(markedSource);
         var diagnostics = await GetDiagnosticsAsync(source, editorConfig, sourcePath: sourcePath).ConfigureAwait(false);
@@ -263,7 +335,8 @@ internal static class AnalyzerTestHost
                 beforeCount,
                 remainingCount: remainingCount ?? beforeCount - 1,
                 beforeErrors,
-                sourcePath)
+                sourcePath,
+                assertTemplateArgumentCountMatches)
             .ConfigureAwait(false);
     }
 
@@ -420,7 +493,8 @@ internal static class AnalyzerTestHost
         int beforeCount,
         int remainingCount,
         IReadOnlyCollection<string> beforeErrors,
-        string? sourcePath = null)
+        string? sourcePath = null,
+        bool assertTemplateArgumentCountMatches = false)
     {
         var text = await updated.GetTextAsync().ConfigureAwait(false);
         var secondPass = await GetDiagnosticsAsync(text.ToString(), editorConfig, sourcePath: sourcePath)
@@ -433,6 +507,35 @@ internal static class AnalyzerTestHost
         var newErrors = afterErrors.Where(error => !beforeErrors.Contains(error)).ToList();
         Assert.True(newErrors.Count == 0, "Fix introduced compiler errors: " + string.Join("; ", newErrors));
         AssertLoggingInvocationsBind(await updated.GetSemanticModelAsync().ConfigureAwait(false));
+        if (assertTemplateArgumentCountMatches)
+        {
+            AssertTemplateArgumentCountsMatch(await updated.GetSyntaxRootAsync().ConfigureAwait(false));
+        }
+    }
+
+    private static void AssertTemplateArgumentCountsMatch(SyntaxNode? root)
+    {
+        Assert.NotNull(root);
+        var checkedInvocations = 0;
+        foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        {
+            var arguments = invocation.ArgumentList.Arguments;
+            for (var templateIndex = 0; templateIndex < arguments.Count; templateIndex++)
+            {
+                if (arguments[templateIndex].Expression is not LiteralExpressionSyntax literal ||
+                    !literal.IsKind(SyntaxKind.StringLiteralExpression))
+                {
+                    continue;
+                }
+
+                var holeCount = MessageTemplateParser.Parse(literal.Token.ValueText).Properties.Length;
+                Assert.Equal(holeCount, arguments.Count - templateIndex - 1);
+                checkedInvocations++;
+                break;
+            }
+        }
+
+        Assert.True(checkedInvocations > 0, "Expected a rewritten logging template to check.");
     }
 
     private static async Task<HashSet<string>> GetCompilerErrorKeysAsync(Document document)
@@ -707,6 +810,13 @@ internal readonly record struct AnalysisOutcome(
     AnalyzerTelemetryInfo Telemetry,
     TimeSpan WallClock,
     long AllocatedBytes);
+
+internal readonly record struct ControlledAnalysisOutcome(
+    AnalysisOutcome Analyzer,
+    long ControlAllocatedBytes)
+{
+    public long AllocationDeltaBytes => Analyzer.AllocatedBytes - ControlAllocatedBytes;
+}
 
 internal readonly struct ExpectedDiagnostic
 {

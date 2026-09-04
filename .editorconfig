@@ -9,5 +9,10 @@ dotnet_separate_import_directive_groups = true
 dotnet_sort_system_directives_first = true
 indent_size = 4
 
+[*.cs]
+dotnet_diagnostic.RS1022.severity = error
+dotnet_diagnostic.RS1038.severity = error
+dotnet_diagnostic.RS1041.severity = error
+
 [{*.csproj,*.json,*.json5,*.yml,*.yaml,*.xml,*.props,*.nuspec,*.config}]
 indent_size = 2

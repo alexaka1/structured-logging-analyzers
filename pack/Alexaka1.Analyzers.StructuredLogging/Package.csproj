@@ -29,16 +29,25 @@
   <PropertyGroup>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackAnalyzerFiles</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
-  <Target Name="PackAnalyzerFiles">
+  <Target Name="PreparePackAnalyzerFiles">
     <PropertyGroup>
-      <_AnalyzerDll>$(MSBuildThisFileDirectory)..\..\src\Alexaka1.Analyzers.StructuredLogging\bin\$(Configuration)\netstandard2.0\Alexaka1.Analyzers.StructuredLogging.dll</_AnalyzerDll>
-      <_CodeFixDll>$(MSBuildThisFileDirectory)..\..\src\Alexaka1.Analyzers.StructuredLogging.CodeFixes\bin\$(Configuration)\netstandard2.0\Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll</_CodeFixDll>
+      <BuildProjectReferences>false</BuildProjectReferences>
     </PropertyGroup>
-    <Error Condition="!Exists('$(_AnalyzerDll)')" Text="Analyzer assembly not found at $(_AnalyzerDll)" />
-    <Error Condition="!Exists('$(_CodeFixDll)')" Text="Code-fix assembly not found at $(_CodeFixDll)" />
+  </Target>
+  <Target Name="PackAnalyzerFiles" DependsOnTargets="PreparePackAnalyzerFiles;ResolveProjectReferences">
     <ItemGroup>
-      <TfmSpecificPackageFile Include="$(_AnalyzerDll)" PackagePath="analyzers/dotnet/cs" />
-      <TfmSpecificPackageFile Include="$(_CodeFixDll)" PackagePath="analyzers/dotnet/cs" />
+      <_AnalyzerAssembly Include="@(_ResolvedProjectReferencePaths)"
+                         Condition="'%(Filename)%(Extension)' == 'Alexaka1.Analyzers.StructuredLogging.dll'" />
+      <_CodeFixAssembly Include="@(_ResolvedProjectReferencePaths)"
+                        Condition="'%(Filename)%(Extension)' == 'Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll'" />
+    </ItemGroup>
+    <Error Condition="'@(_AnalyzerAssembly->Count())' != '1'"
+           Text="Expected exactly one resolved Alexaka1.Analyzers.StructuredLogging.dll project-reference output, found @(_AnalyzerAssembly->Count())." />
+    <Error Condition="'@(_CodeFixAssembly->Count())' != '1'"
+           Text="Expected exactly one resolved Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll project-reference output, found @(_CodeFixAssembly->Count())." />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(_AnalyzerAssembly)" PackagePath="analyzers/dotnet/cs" />
+      <TfmSpecificPackageFile Include="@(_CodeFixAssembly)" PackagePath="analyzers/dotnet/cs" />
     </ItemGroup>
   </Target>
 </Project>
