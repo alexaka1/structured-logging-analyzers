@@ -80,7 +80,11 @@ must not contain `Microsoft.CodeAnalysis*` or `lib/` assets. A package
 consumption test restores a temporary `PackageReference` consumer from a local
 feed, verifies an AASL diagnostic during `dotnet build`, and checks that the
 consumer output contains neither analyzer nor Roslyn assemblies. These checks
-prove compiler analyzer loading and output isolation. They do not prove that an
+prove compiler analyzer loading and output isolation. A metadata-level package
+test also verifies that the shipped analyzer does not reference
+`Microsoft.CodeAnalysis.Workspaces` or `Microsoft.CodeAnalysis.CSharp.Workspaces`,
+while the shipped code-fix assembly does. It reads assembly references without
+loading either assembly into the test process. These tests do not prove that an
 IDE host loads the CodeFixes assembly; that requires a host-specific integration
 test.
 

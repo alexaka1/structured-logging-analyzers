@@ -24,8 +24,9 @@ The analyzer must:
 - Parse each recognized constant template once, then run independent rules
   on that parse.
 - Cache `.editorconfig` settings and semantic models used for cross-tree
-  `const` reference checks per syntax tree, and ignore-regex objects per
-  compilation (`RegexCache`). No process-wide mutable caches.
+  `const` reference checks per syntax tree. Cache ignore-regex objects and
+  match results per compilation (`RegexCache`), and disable a pattern after
+  its first match timeout. No process-wide mutable caches.
 - Skip generated trees except Razor/Blazor source-generated C# (see
   [compatibility.md](compatibility.md#razor--blazor)).
 - Honor `CancellationToken` on semantic queries.
@@ -58,7 +59,7 @@ marker registers zero syntax-node actions.
 | `SyntaxNodeActionsCount` | `0` through `4`, according to resolved gates | Invocation, method, constructor, type (primary ctor) |
 | `SyntaxTreeActionsCount` | `0` | Too coarse for this analyzer |
 | `SemanticModelActionsCount` | `0` | Too coarse for this analyzer |
-| `OperationActionsCount` | `0` | IOperation not used |
+| `OperationActionsCount` | `0` | No operation actions registered; `GetOperation` is used inside syntax actions |
 | `SymbolActionsCount` | `0` | Syntax actions plus compilation-start cache |
 
 The four syntax-node registrations are:
@@ -85,17 +86,17 @@ policy change: update this page and the assertion in
 
 ## Regression gates
 
-Ceilings cover allocations during `GetAnalysisResultAsync` on a **warmed**
-process, after `CompilationWithAnalyzers` is constructed. Setup and host
-construction are outside the measured window. Retune after SDK or Roslyn
-upgrades.
+Allocation ceilings cover the delta between the structured logging analyzer
+and a no-op analyzer during `GetAnalysisResultAsync` over the same compilation
+on a **warmed** process. Setup and host construction are outside the measured
+window. Retune after SDK or Roslyn upgrades.
 
 | Gate | Input | Limits |
 |---|---|---|
-| Unrelated compilation | 4,000 `Console.WriteLine` calls | Wall clock under 20 s; analyzer execution under 500 ms; allocated under 18 MiB; no AASL diagnostics |
+| Unrelated compilation | 4,000 `Console.WriteLine` calls | Wall clock under 20 s; analyzer execution under 500 ms; allocation delta vs control under 16 MiB; no AASL diagnostics |
 | No logging library | 4,000 `Console.WriteLine` calls and platform references only | Zero syntax-node actions; no AASL diagnostics |
-| Logging compilation | 500 Serilog `Information` calls with unique named holes | Wall clock under 20 s; analyzer execution under 500 ms; allocated under 10 MiB; no AASL diagnostics |
-| `[LoggerMessage]` constants | 120 methods, each with its own private `const` template, sized to leave headroom on shared CI runners | Warm analyzer execution under 500 ms; four-action telemetry shape; no AASL diagnostics |
+| Logging compilation | 500 Serilog `Information` calls with unique named holes | Wall clock under 20 s; analyzer execution under 500 ms; allocation delta vs control under 8 MiB; no AASL diagnostics |
+| `[LoggerMessage]` constants | 480 methods, each with its own private `const` template, sized to leave headroom on shared CI runners | Warm analyzer execution under 500 ms; four-action telemetry shape; no AASL diagnostics |
 | Cold / warm telemetry | 200 logging calls, two consecutive analyses | Concurrent + action shape; execution under 500 ms each; no AASL diagnostics |
 | Concurrent determinism | 8 parallel analyses vs one sequential run | Same ordered diagnostic keys; telemetry shape on every run |
 | Invalid `.editorconfig` | Unclosed `ignored_properties_regex` | Analyzer does not throw; `AASL0009` still reports |
@@ -113,7 +114,8 @@ gates. They still require that analyzer assemblies do not copy to output.
 dotnet run --project test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj -c Release --no-launch-profile -- -class Alexaka1.Analyzers.StructuredLogging.Tests.PackageAndPerformanceTests
 ```
 
-Facts print wall-clock, analyzer execution time, and allocated bytes to
-test output. If a gate fails after an SDK or Roslyn host change, confirm
+Facts print wall-clock, analyzer execution time, raw analyzer and control
+allocations, and the allocation delta to test output. If a gate fails after
+an SDK or Roslyn host change, confirm
 the new numbers on a warmed Release run, then update the constants in
 `PackageAndPerformanceTests` **and** the table above together.

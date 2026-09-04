@@ -102,10 +102,16 @@ dotnet_code_quality.AASL.ignored_properties_regex =
 
 The same options can be scoped to `AASL0009` or `AASL0010`, for example
 `dotnet_code_quality.AASL0009.property_naming`. A rule-scoped key applies
-only to that diagnostic. Prefix-level keys apply to both and win when set.
+only to that diagnostic and wins when set. The prefix-level key applies to
+each rule that has no valid rule-scoped value. Invalid values are ignored and
+fall through to the next level.
 
-Invalid configuration is ignored; analyzers do not throw. An invalid
-prefix-level naming value does not mask a valid rule-scoped value.
+Invalid configuration does not make analyzers throw.
+
+**Correction.** Rule-scoped naming and ignored-property keys take precedence
+over prefix-level keys. An invalid value falls through to the next level, then
+to the built-in default. Earlier versions incorrectly let a valid prefix-level
+key override a valid rule-scoped key.
 
 ## Argument mapping
 

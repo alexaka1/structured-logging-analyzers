@@ -183,6 +183,77 @@ public sealed class NamingAnalyzerTests
     }
 
     [Fact]
+    public Task Rule_scoped_naming_wins_over_prefix_and_stays_isolated()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{myProperty}", 1);
+                                    Log.Logger.Information("{|AASL0009:{my_property}|}", 2);
+                                    LogContext.PushProperty("my_property", 3);
+                                    LogContext.PushProperty({|AASL0010:"myProperty"|}, 4);
+                                }
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.property_naming = pascal_case
+                                                dotnet_code_quality.AASL0009.property_naming = camel_case
+                                                dotnet_code_quality.AASL0010.property_naming = snake_case
+                                                """);
+    }
+
+    [Fact]
+    public Task Invalid_rule_scoped_naming_falls_back_to_prefix()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{myProperty}", 1);
+                                    LogContext.PushProperty("myProperty", 2);
+                                }
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.property_naming = camel_case
+                                                dotnet_code_quality.AASL0009.property_naming = invalid
+                                                dotnet_code_quality.AASL0010.property_naming = invalid
+                                                """);
+    }
+
+    [Fact]
+    public Task Invalid_prefix_naming_does_not_mask_rule_scoped_naming()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{myProperty}", 1);
+                                    LogContext.PushProperty("myProperty", 2);
+                                }
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.property_naming = invalid
+                                                dotnet_code_quality.AASL0009.property_naming = camel_case
+                                                dotnet_code_quality.AASL0010.property_naming = camel_case
+                                                """);
+    }
+
+    [Fact]
     public Task Ignored_regex()
     {
         return AnalyzerTestHost.VerifyAsync(
@@ -193,6 +264,50 @@ public sealed class NamingAnalyzerTests
                                 public static void Main()
                                 {
                                     Log.Logger.Information("{MY_IGNORED.Property_}", 1);
+                                }
+                            }
+                            """,
+            editorConfig: "dotnet_code_quality.AASL.ignored_properties_regex = MY_.*");
+    }
+
+    [Fact]
+    public Task Rule_scoped_ignored_regex_wins_over_prefix_and_stays_isolated()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Context;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{Template_name}", 1);
+                                    Log.Logger.Information("{|AASL0009:{Prefix_name}|}", 2);
+                                    LogContext.PushProperty("Context_name", 3);
+                                    LogContext.PushProperty({|AASL0010:"Prefix_name"|}, 4);
+                                }
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.ignored_properties_regex = ^Prefix
+                                                dotnet_code_quality.AASL0009.ignored_properties_regex = ^Template
+                                                dotnet_code_quality.AASL0010.ignored_properties_regex = ^Context
+                                                """);
+    }
+
+    [Fact]
+    public Task Ignored_regex_still_ignores_repeated_property_names()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            public static class Program
+                            {
+                                public static void Main()
+                                {
+                                    Log.Logger.Information("{MY_IGNORED}", 1);
+                                    Log.Logger.Information("{MY_IGNORED}", 2);
+                                    Log.Logger.Information("{MY_IGNORED}", 3);
                                 }
                             }
                             """,
@@ -220,6 +335,35 @@ public sealed class NamingAnalyzerTests
             cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Contains(outcome.Diagnostics, d => d.Id == "AASL0009");
+    }
+
+    [Fact]
+    public async Task Timed_out_ignored_regex_is_disabled_for_later_property_names()
+    {
+        const int holeCount = 20;
+        var expensivePrefix = new string('a', 5_000) + "b";
+        var template = string.Concat(Enumerable.Range(0, holeCount).Select(i => "{" + expensivePrefix + i + "}"));
+        var arguments = string.Join(", ", Enumerable.Repeat("1", holeCount));
+        var source = $$"""
+                       using Serilog;
+                       public static class Program
+                       {
+                           public static void Main()
+                           {
+                               Log.Logger.Information("{{template}}", {{arguments}});
+                           }
+                       }
+                       """;
+
+        var outcome = await AnalyzerTestHost.AnalyzeAsync(
+            source,
+            editorConfig: "dotnet_code_quality.AASL.ignored_properties_regex = (a+)+$",
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(holeCount, outcome.Diagnostics.Count(d => d.Id == "AASL0009"));
+        Assert.True(
+            outcome.Telemetry.ExecutionTime < TimeSpan.FromSeconds(1),
+            $"Timed-out ignore regex consumed {outcome.Telemetry.ExecutionTime} of analyzer time.");
     }
 
     [Fact]
@@ -401,6 +545,24 @@ public sealed class NamingAnalyzerTests
                             }
                             """,
             editorConfig: "dotnet_code_quality.AASL0010.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task Generated_logging_uses_rule_scoped_template_naming_over_prefix()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Started")]
+                                public static partial void Started(ILogger logger);
+                            }
+                            """,
+            editorConfig: /*lang=editorconfig*/ """
+                                                dotnet_code_quality.AASL.property_naming = camel_case
+                                                dotnet_code_quality.AASL0009.property_naming = semantic_conventions
+                                                """);
     }
 
     [Fact]

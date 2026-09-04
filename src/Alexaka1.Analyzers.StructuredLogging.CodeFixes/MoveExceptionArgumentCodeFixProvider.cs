@@ -31,11 +31,15 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return;
         }
 
+        var known = KnownSymbols.Resolve(model.Compilation, context.CancellationToken);
+        var classifier = new LoggingInvocationClassifier(known);
         foreach (var diagnostic in context.Diagnostics)
         {
             if (GetFixCandidate(
                     root,
                     model,
+                    known,
+                    classifier,
                     diagnostic,
                     context.CancellationToken) is null)
             {
@@ -63,7 +67,9 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var candidate = GetFixCandidate(root, model, diagnostic, cancellationToken);
+        var known = KnownSymbols.Resolve(model.Compilation, cancellationToken);
+        var classifier = new LoggingInvocationClassifier(known);
+        var candidate = GetFixCandidate(root, model, known, classifier, diagnostic, cancellationToken);
         if (candidate is null)
         {
             return document;
@@ -85,12 +91,14 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return updatedDocument;
         }
 
-        return await RemoveHoleAsync(updatedDocument, holeIndex, cancellationToken).ConfigureAwait(false);
+        return await RemoveHoleAsync(updatedDocument, classifier, holeIndex, cancellationToken).ConfigureAwait(false);
     }
 
     private static FixCandidate? GetFixCandidate(
         SyntaxNode root,
         SemanticModel model,
+        KnownSymbols known,
+        LoggingInvocationClassifier classifier,
         Diagnostic diagnostic,
         CancellationToken cancellationToken)
     {
@@ -106,8 +114,6 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return null;
         }
 
-        var classifier = new LoggingInvocationClassifier(
-            KnownSymbols.Resolve(model.Compilation, cancellationToken));
         var templateParameterName = classifier.GetTemplateParameterName(method);
         if (templateParameterName is null)
         {
@@ -133,6 +139,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
                 method,
                 template.Value.Parameter,
                 exceptionArgument,
+                known,
                 cancellationToken))
         {
             return null;
@@ -146,6 +153,7 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
 
     private static async Task<Document> RemoveHoleAsync(
         Document document,
+        LoggingInvocationClassifier classifier,
         int holeIndex,
         CancellationToken cancellationToken)
     {
@@ -175,7 +183,6 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
             return document;
         }
 
-        var classifier = new LoggingInvocationClassifier(KnownSymbols.Resolve(model.Compilation, cancellationToken));
         var templateParameterName = classifier.GetTemplateParameterName(method);
         if (templateParameterName is null)
         {
@@ -440,9 +447,9 @@ public sealed class MoveExceptionArgumentCodeFixProvider : CodeFixProvider
         IMethodSymbol method,
         IParameterSymbol templateParameter,
         ArgumentSyntax exceptionArgument,
+        KnownSymbols known,
         CancellationToken cancellationToken)
     {
-        var known = KnownSymbols.Resolve(model.Compilation, cancellationToken);
         if (known.Exception is null)
         {
             return false;

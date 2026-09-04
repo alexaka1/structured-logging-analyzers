@@ -40,7 +40,7 @@ internal static class ExpressionPropertyName
         return string.IsNullOrEmpty(suggested) ? "Value" : suggested;
     }
 
-    public static string Uniquify(string name, HashSet<string> used)
+    public static string? Uniquify(string name, HashSet<string> used)
     {
         if (used.Add(name))
         {
@@ -56,7 +56,7 @@ internal static class ExpressionPropertyName
             }
         }
 
-        return name + Guid.NewGuid().ToString("N");
+        return null;
     }
 
     public static bool IsPositionalName(string name)

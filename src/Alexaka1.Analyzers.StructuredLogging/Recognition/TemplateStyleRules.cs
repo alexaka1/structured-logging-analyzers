@@ -322,6 +322,11 @@ internal static class TemplateStyleRules
                 ? leaf
                 : qualified;
             var primary = ExpressionPropertyName.Uniquify(primaryRaw, usedPrimary);
+            if (primary is null)
+            {
+                continue;
+            }
+
             leafNames[i] = primary;
             usedQualified.Add(primary);
 

@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -52,17 +50,12 @@ internal readonly struct AnalyzerSettings
 
     public PropertyNamingStyle GetNaming(string diagnosticId)
     {
-        if (_prefixNaming is { } prefix)
-        {
-            return prefix;
-        }
-
         if (diagnosticId == DiagnosticIds.InconsistentContextPropertyNaming)
         {
-            return _contextNaming ?? PropertyNamingStyle.PascalCase;
+            return _contextNaming ?? _prefixNaming ?? PropertyNamingStyle.PascalCase;
         }
 
-        return _templateNaming ?? PropertyNamingStyle.PascalCase;
+        return _templateNaming ?? _prefixNaming ?? PropertyNamingStyle.PascalCase;
     }
 
     public bool TemplateNamingIsSemanticConventions =>
@@ -70,34 +63,16 @@ internal readonly struct AnalyzerSettings
 
     public bool IsIgnored(string propertyName, RegexCache cache, string diagnosticId)
     {
-        var pattern = _prefixIgnored;
-        if (string.IsNullOrEmpty(pattern))
-        {
-            pattern = diagnosticId == DiagnosticIds.InconsistentContextPropertyNaming
-                ? _contextIgnored
-                : _templateIgnored;
-        }
+        var pattern = diagnosticId == DiagnosticIds.InconsistentContextPropertyNaming
+            ? _contextIgnored ?? _prefixIgnored
+            : _templateIgnored ?? _prefixIgnored;
 
         if (string.IsNullOrEmpty(pattern))
         {
             return false;
         }
 
-        var regex = cache.Get(pattern!);
-        if (regex is null)
-        {
-            return false;
-        }
-
-        try
-        {
-            return regex.IsMatch(propertyName);
-        }
-        catch (RegexMatchTimeoutException)
-        {
-            // A user-supplied pattern must not be able to abort analysis.
-            return false;
-        }
+        return cache.IsMatch(pattern!, propertyName);
     }
 
     private static PropertyNamingStyle? TryGetNaming(AnalyzerConfigOptions options, string scope)
