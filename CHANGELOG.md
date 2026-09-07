@@ -1,5 +1,20 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.11
+
+### Patch Changes
+
+- [#66](https://github.com/alexaka1/structured-logging-analyzers/pull/66) [`8e19b17`](https://github.com/alexaka1/structured-logging-analyzers/commit/8e19b17d2c304d1bd289afe849ccd136c94c1f9f) Thanks [@alexaka1](https://github.com/alexaka1)! - Report AASL0005 when an exception is passed as a template argument even if another exception already occupies the exception slot. The move-before-template fix is not offered in that case.
+
+- [#70](https://github.com/alexaka1/structured-logging-analyzers/pull/70) [`ddf5dc2`](https://github.com/alexaka1/structured-logging-analyzers/commit/ddf5dc2978fafc516106466ecab4052594c85ba5) Thanks [@alexaka1](https://github.com/alexaka1)! - Fix analyzer crashes, incorrect diagnostics, and an unsafe code fix for named
+  exception arguments, cross-file constants, half-written calls, unresolved
+  context types, explicit params arrays, collection expressions, and constant
+  template tails.
+
+- [#70](https://github.com/alexaka1/structured-logging-analyzers/pull/70) [`ddf5dc2`](https://github.com/alexaka1/structured-logging-analyzers/commit/ddf5dc2978fafc516106466ecab4052594c85ba5) Thanks [@alexaka1](https://github.com/alexaka1)! - Keep empty-format holes aligned, preserve digit-to-uppercase naming words, honor valid rule-scoped naming settings, and analyze ZLogger and LoggerMessage template forms that were previously skipped.
+
+- [#70](https://github.com/alexaka1/structured-logging-analyzers/pull/70) [`ddf5dc2`](https://github.com/alexaka1/structured-logging-analyzers/commit/ddf5dc2978fafc516106466ecab4052594c85ba5) Thanks [@alexaka1](https://github.com/alexaka1)! - Speed up `[LoggerMessage]` analysis for private constant templates, keep cross-file diagnostics in the logging method's document, analyze Razor design-time documents, and skip syntax analysis when neither a supported logging library nor a source-declared `MessageTemplateFormatMethodAttribute` is present. Custom attributed wrappers declared in the project remain analyzed without a logging-library reference.
+
 ## 0.1.0-preview.10
 
 ### Patch Changes
