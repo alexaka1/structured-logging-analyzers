@@ -148,6 +148,40 @@ public sealed class CodeFixSafetyTests
     }
 
     [Fact]
+    public Task Convert_interpolation_ignores_non_logging_invocations_when_matching_arguments()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string userId)
+                                {
+                                    logger.LogInformation({|AASL0007:$"user {userId}"|});
+                                    Console.WriteLine("status", userId);
+                                }
+                            }
+                            """,
+            /*lang=csharp*/ """
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(ILogger logger, string userId)
+                                {
+                                    logger.LogInformation("user {UserId}", userId);
+                                    Console.WriteLine("status", userId);
+                                }
+                            }
+                            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 1,
+            assertTemplateArgumentCountMatches: true);
+    }
+
+    [Fact]
     public Task Convert_verbatim_interpolation_preserves_escaped_braces()
     {
         return AnalyzerTestHost.VerifyFixAsync(

@@ -519,6 +519,12 @@ internal static class AnalyzerTestHost
         var checkedInvocations = 0;
         foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
+            var name = GetInvokedMethodName(invocation);
+            if (name is null || !IsLoggingMethodName(name))
+            {
+                continue;
+            }
+
             var arguments = invocation.ArgumentList.Arguments;
             for (var templateIndex = 0; templateIndex < arguments.Count; templateIndex++)
             {
@@ -566,12 +572,7 @@ internal static class AnalyzerTestHost
         Assert.NotNull(model);
         foreach (var invocation in model.SyntaxTree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>())
         {
-            var name = invocation.Expression switch
-            {
-                MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
-                IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
-                _ => null
-            };
+            var name = GetInvokedMethodName(invocation);
             if (name is null || !IsLoggingMethodName(name))
             {
                 continue;
@@ -581,6 +582,16 @@ internal static class AnalyzerTestHost
             Assert.NotNull(symbol);
             Assert.True(symbol.MethodKind is MethodKind.Ordinary or MethodKind.ReducedExtension);
         }
+    }
+
+    private static string? GetInvokedMethodName(InvocationExpressionSyntax invocation)
+    {
+        return invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax member => member.Name.Identifier.ValueText,
+            IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+            _ => null
+        };
     }
 
     private static bool IsLoggingMethodName(string name)
