@@ -29,6 +29,8 @@ internal static class ConstTemplateMapper
         ExpressionSyntax? expression,
         ISymbol loggingMethod,
         ConcurrentDictionary<ISymbol, bool> exclusivityCache,
+        ConcurrentDictionary<INamedTypeSymbol,
+            ImmutableDictionary<string, ImmutableArray<SyntaxToken>>> identifierTokensByType,
         ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels,
         CancellationToken cancellationToken)
     {
@@ -75,6 +77,7 @@ internal static class ConstTemplateMapper
                 model,
                 constSymbol,
                 loggingMethod,
+                identifierTokensByType,
                 semanticModels,
                 cancellationToken);
             exclusivityCache.TryAdd(constSymbol, exclusive);
@@ -133,6 +136,8 @@ internal static class ConstTemplateMapper
         SemanticModel callerModel,
         ISymbol constSymbol,
         ISymbol loggingMethod,
+        ConcurrentDictionary<INamedTypeSymbol,
+            ImmutableDictionary<string, ImmutableArray<SyntaxToken>>> identifierTokensByType,
         ConcurrentDictionary<SyntaxTree, SemanticModel> semanticModels,
         CancellationToken cancellationToken)
     {
@@ -143,25 +148,25 @@ internal static class ConstTemplateMapper
             return false;
         }
 
-        var candidates = new List<SyntaxToken>();
-        foreach (var syntaxRef in containingType.DeclaringSyntaxReferences)
+        var identifiers = identifierTokensByType.GetOrAdd(
+            containingType,
+            type => IndexIdentifierTokens(type, cancellationToken));
+        if (!identifiers.TryGetValue(constSymbol.Name, out var candidates))
+        {
+            return false;
+        }
+
+        var candidateCount = 0;
+        foreach (var token in candidates)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var root = syntaxRef.GetSyntax(cancellationToken);
-            foreach (var token in root.DescendantTokens())
+            if (!IsDeclarationToken(token, constSymbol))
             {
-                if (!token.IsKind(SyntaxKind.IdentifierToken) ||
-                    token.ValueText != constSymbol.Name ||
-                    IsDeclarationToken(token, constSymbol))
-                {
-                    continue;
-                }
-
-                candidates.Add(token);
+                candidateCount++;
             }
         }
 
-        if (candidates.Count == 1)
+        if (candidateCount == 1)
         {
             return true;
         }
@@ -169,6 +174,12 @@ internal static class ConstTemplateMapper
         var uses = 0;
         foreach (var token in candidates)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsDeclarationToken(token, constSymbol))
+            {
+                continue;
+            }
+
             if (token.Parent is not IdentifierNameSyntax identifier)
             {
                 continue;
@@ -192,6 +203,42 @@ internal static class ConstTemplateMapper
         }
 
         return uses == 1;
+    }
+
+    private static ImmutableDictionary<string, ImmutableArray<SyntaxToken>> IndexIdentifierTokens(
+        INamedTypeSymbol containingType,
+        CancellationToken cancellationToken)
+    {
+        var tokensByName = new Dictionary<string, List<SyntaxToken>>(StringComparer.Ordinal);
+        foreach (var syntaxRef in containingType.DeclaringSyntaxReferences)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var root = syntaxRef.GetSyntax(cancellationToken);
+            foreach (var token in root.DescendantTokens())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!token.IsKind(SyntaxKind.IdentifierToken))
+                {
+                    continue;
+                }
+
+                if (!tokensByName.TryGetValue(token.ValueText, out var tokens))
+                {
+                    tokens = new List<SyntaxToken>();
+                    tokensByName.Add(token.ValueText, tokens);
+                }
+
+                tokens.Add(token);
+            }
+        }
+
+        var result = ImmutableDictionary.CreateBuilder<string, ImmutableArray<SyntaxToken>>(StringComparer.Ordinal);
+        foreach (var pair in tokensByName)
+        {
+            result.Add(pair.Key, pair.Value.ToImmutableArray());
+        }
+
+        return result.ToImmutable();
     }
 
     private static bool IsDeclarationToken(SyntaxToken token, ISymbol constSymbol)

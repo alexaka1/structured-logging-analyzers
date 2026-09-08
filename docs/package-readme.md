@@ -79,8 +79,9 @@ Use `semantic_conventions` for Semantic Conventions names such as
 can be scoped to
 `AASL0009` or `AASL0010` (for example
 `dotnet_code_quality.AASL0009.property_naming`).
-A rule-scoped key applies only to that diagnostic. Prefix-level keys
-apply to both and win when set.
+A rule-scoped key applies only to that diagnostic and wins when set. The
+prefix-level key applies to each rule that has no valid rule-scoped value.
+Invalid values are ignored and fall through to the next level.
 
 ## Diagnostics
 

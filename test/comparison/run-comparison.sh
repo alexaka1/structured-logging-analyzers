@@ -46,11 +46,6 @@ install_cli() {
 
 install_cli "$CLI_LATEST_DIR" "$CLI_LATEST_VERSION"
 
-if [[ ! -f "$ROOT/test/comparison/ComparisonCorpus.sln" ]]; then
-  dotnet new sln -n ComparisonCorpus -o "$ROOT/test/comparison" --format sln --force
-  dotnet sln "$ROOT/test/comparison/ComparisonCorpus.sln" add "$ROOT/test/comparison/corpus/ComparisonCorpus.csproj"
-fi
-
 echo "Building comparison corpus"
 dotnet build "$ROOT/test/comparison/corpus/ComparisonCorpus.csproj" -c Release --nologo
 
@@ -61,7 +56,7 @@ run_inspect() {
   local out_types="$REPORTS_DIR/inspectcode-${label}-issuetypes.xml"
   local log="$REPORTS_DIR/inspectcode-${label}.log"
   echo "Running InspectCode ($label) via $jb"
-  "$jb" inspectcode "$ROOT/test/comparison/ComparisonCorpus.sln" \
+  "$jb" inspectcode "$ROOT/test/comparison/ComparisonCorpus.slnx" \
     -o="$out_xml" \
     -f=Xml \
     -e=WARNING \
@@ -74,7 +69,7 @@ run_inspect() {
     --verbosity=INFO \
     --build \
     >"$log" 2>&1 || true
-  "$jb" inspectcode "$ROOT/test/comparison/ComparisonCorpus.sln" \
+  "$jb" inspectcode "$ROOT/test/comparison/ComparisonCorpus.slnx" \
     --dumpIssuesTypes \
     -o="$out_types" \
     -f=Xml \

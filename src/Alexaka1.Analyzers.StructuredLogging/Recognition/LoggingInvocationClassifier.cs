@@ -14,6 +14,9 @@ internal sealed class LoggingInvocationClassifier
     private readonly ConcurrentDictionary<IMethodSymbol, string?> _templateParameterNames =
         new(SymbolEqualityComparer.Default);
 
+    private readonly ConcurrentDictionary<IMethodSymbol, bool> _supportsDestructuringOperator =
+        new(SymbolEqualityComparer.Default);
+
     public LoggingInvocationClassifier(KnownSymbols known)
     {
         _known = known;
@@ -170,7 +173,14 @@ internal sealed class LoggingInvocationClassifier
         return null;
     }
 
-    public static bool SupportsDestructuringOperator(IMethodSymbol method)
+    public bool SupportsDestructuringOperator(IMethodSymbol method)
+    {
+        return _supportsDestructuringOperator.GetOrAdd(
+            method.OriginalDefinition,
+            ResolveSupportsDestructuringOperator);
+    }
+
+    private static bool ResolveSupportsDestructuringOperator(IMethodSymbol method)
     {
         if (IsMicrosoftLoggerExtensions(method) || IsZLogger(method))
         {

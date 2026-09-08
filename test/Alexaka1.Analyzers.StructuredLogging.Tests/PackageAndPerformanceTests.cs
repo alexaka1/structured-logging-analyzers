@@ -1,6 +1,9 @@
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
@@ -8,6 +11,7 @@ using System.Xml.Linq;
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Diagnostics.Telemetry;
 
 using Xunit;
@@ -20,13 +24,13 @@ public sealed class PackageAndPerformanceCollection;
 [Collection("PackageAndPerformance")]
 public sealed class PackageAndPerformanceTests
 {
-    // These ceilings cover GetAnalysisResultAsync allocations on a warmed
-    // process, after CompilationWithAnalyzers is constructed. Retune after
-    // SDK or Roslyn upgrades. Keep docs/performance-policy.md in sync.
+    // These ceilings cover the allocation delta between this analyzer and a
+    // no-op analyzer over the same compilation on a warmed process. Retune
+    // after SDK or Roslyn upgrades. Keep docs/performance-policy.md in sync.
     private static readonly TimeSpan MaxWallClock = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan MaxAnalyzerExecution = TimeSpan.FromMilliseconds(500);
-    private const long UnrelatedAllocationLimitBytes = 18 * 1024 * 1024;
-    private const long LoggingAllocationLimitBytes = 10 * 1024 * 1024;
+    private const long UnrelatedAllocationDeltaLimitBytes = 16 * 1024 * 1024;
+    private const long LoggingAllocationDeltaLimitBytes = 8 * 1024 * 1024;
     private readonly ITestOutputHelper _output;
 
     public PackageAndPerformanceTests(ITestOutputHelper output)
@@ -69,6 +73,23 @@ public sealed class PackageAndPerformanceTests
     }
 
     [Fact]
+    public void Packed_analyzer_excludes_workspaces_references()
+    {
+        using var package = Pack();
+        using var zip = ZipFile.OpenRead(package.PackagePath);
+
+        var analyzerReferences = ReadAssemblyReferences(
+            zip,
+            "analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.dll");
+        Assert.DoesNotContain(analyzerReferences, IsWorkspacesAssembly);
+
+        var codeFixReferences = ReadAssemblyReferences(
+            zip,
+            "analyzers/dotnet/cs/Alexaka1.Analyzers.StructuredLogging.CodeFixes.dll");
+        Assert.Contains(codeFixReferences, IsWorkspacesAssembly);
+    }
+
+    [Fact]
     public void Packed_package_is_consumed_by_real_package_reference()
     {
         using var package = Pack();
@@ -86,6 +107,7 @@ public sealed class PackageAndPerformanceTests
         var projectPath = Path.Combine(consumer.DirectoryPath, "Consumer.csproj");
         var sourcePath = Path.Combine(consumer.DirectoryPath, "Program.cs");
         var sarifPath = Path.Combine(consumer.DirectoryPath, "consumer.sarif");
+        var nugetConfigPath = Path.Combine(consumer.DirectoryPath, "nuget.config");
 
         File.WriteAllText(
             projectPath,
@@ -117,11 +139,23 @@ public sealed class PackageAndPerformanceTests
                                 }
                             }
                             """);
+        new XDocument(
+                new XElement("configuration",
+                    new XElement("packageSources",
+                        new XElement("clear"),
+                        new XElement("add",
+                            new XAttribute("key", "packed-package"),
+                            new XAttribute("value", feed.DirectoryPath)),
+                        new XElement("add",
+                            new XAttribute("key", "nuget.org"),
+                            new XAttribute("value", "https://api.nuget.org/v3/index.json"),
+                            new XAttribute("protocolVersion", "3")))))
+            .Save(nugetConfigPath);
 
         try
         {
             RunDotNet(
-                $"restore \"{projectPath}\" --source \"{feed.DirectoryPath}\" --source https://api.nuget.org/v3/index.json --packages \"{packages.DirectoryPath}\" --no-cache --nologo --verbosity quiet",
+                $"restore \"{projectPath}\" --configfile \"{nugetConfigPath}\" --packages \"{packages.DirectoryPath}\" --no-cache --nologo --verbosity quiet",
                 packages.DirectoryPath);
             RunDotNet(
                 $"build \"{projectPath}\" --configuration Release --no-restore --nologo -v:minimal -p:ErrorLog=\"{sarifPath}%2cversion=2.1\"",
@@ -155,7 +189,7 @@ public sealed class PackageAndPerformanceTests
         var outcome = await RunPerformanceGateAsync(
             "unrelated compilation",
             CreateUnrelatedSource(4000),
-            UnrelatedAllocationLimitBytes,
+            UnrelatedAllocationDeltaLimitBytes,
             TestContext.Current.CancellationToken);
         Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
     }
@@ -164,7 +198,8 @@ public sealed class PackageAndPerformanceTests
     public async Task Analyzer_registers_no_node_actions_without_logging_references()
     {
         var outcome = await AnalyzerTestHost.AnalyzeAsync(
-            CreateNoLoggingLibrarySource(4000),
+            CreateUnrelatedSource(4000),
+            // The source matches the unrelated-compilation gate; only its reference set differs.
             references: NuGetPackageResolver.GetReferences(),
             cancellationToken: TestContext.Current.CancellationToken);
 
@@ -178,7 +213,7 @@ public sealed class PackageAndPerformanceTests
         var outcome = await RunPerformanceGateAsync(
             "logging compilation",
             CreateLoggingSource(500),
-            LoggingAllocationLimitBytes,
+            LoggingAllocationDeltaLimitBytes,
             TestContext.Current.CancellationToken);
         Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
     }
@@ -187,7 +222,7 @@ public sealed class PackageAndPerformanceTests
     public async Task Analyzer_handles_many_logger_message_constants()
     {
         const string label = "logger message constants";
-        var source = CreateLoggerMessageConstantSource(120);
+        var source = CreateLoggerMessageConstantSource(480);
         var cancellationToken = TestContext.Current.CancellationToken;
         _ = await AnalyzerTestHost.AnalyzeAsync(
             source,
@@ -356,31 +391,50 @@ public sealed class PackageAndPerformanceTests
     private async Task<AnalysisOutcome> RunPerformanceGateAsync(
         string label,
         string source,
-        long maxAllocatedBytes,
+        long maxAllocationDeltaBytes,
         CancellationToken cancellationToken)
     {
-        _ = await AnalyzerTestHost.AnalyzeAsync(
+        _ = await AnalyzerTestHost.AnalyzeAgainstControlAsync(
             source,
-            concurrentAnalysis: false,
+            EmptyAnalyzer.Instance,
             cancellationToken: cancellationToken);
-        var outcome = await AnalyzerTestHost.AnalyzeAsync(
+        var measured = await AnalyzerTestHost.AnalyzeAgainstControlAsync(
             source,
-            concurrentAnalysis: false,
-            measureAllocations: true,
+            EmptyAnalyzer.Instance,
             cancellationToken: cancellationToken);
+        var outcome = measured.Analyzer;
 
         AssertTelemetryShape(outcome.Telemetry);
         _output.WriteLine(
-            $"{label} wall={outcome.WallClock.TotalMilliseconds:F0}ms exec={outcome.Telemetry.ExecutionTime.TotalMilliseconds:F0}ms alloc={outcome.AllocatedBytes} concurrent={outcome.Telemetry.Concurrent}");
+            $"{label} wall={outcome.WallClock.TotalMilliseconds:F0}ms exec={outcome.Telemetry.ExecutionTime.TotalMilliseconds:F0}ms analyzer-alloc={outcome.AllocatedBytes} control-alloc={measured.ControlAllocatedBytes} delta-alloc={measured.AllocationDeltaBytes} concurrent={outcome.Telemetry.Concurrent}");
         Assert.True(outcome.WallClock < MaxWallClock, $"{label} took {outcome.WallClock}");
         Assert.True(
             outcome.Telemetry.ExecutionTime < MaxAnalyzerExecution,
             $"{label} analyzer execution took {outcome.Telemetry.ExecutionTime}");
         Assert.True(
-            outcome.AllocatedBytes < maxAllocatedBytes,
-            $"{label} allocated {outcome.AllocatedBytes} bytes (limit {maxAllocatedBytes})");
+            measured.AllocationDeltaBytes < maxAllocationDeltaBytes,
+            $"{label} allocation delta was {measured.AllocationDeltaBytes} bytes (limit {maxAllocationDeltaBytes}; analyzer {outcome.AllocatedBytes}; control {measured.ControlAllocatedBytes})");
         return outcome;
     }
+
+    private static string[] ReadAssemblyReferences(ZipArchive zip, string entryName)
+    {
+        var entry = zip.GetEntry(entryName);
+        Assert.NotNull(entry);
+        using var entryStream = entry.Open();
+        using var assemblyStream = new MemoryStream();
+        entryStream.CopyTo(assemblyStream);
+        assemblyStream.Position = 0;
+        using var peReader = new PEReader(assemblyStream);
+        var metadata = peReader.GetMetadataReader();
+        return metadata.AssemblyReferences
+            .Select(handle => metadata.GetString(metadata.GetAssemblyReference(handle).Name))
+            .ToArray();
+    }
+
+    private static bool IsWorkspacesAssembly(string assemblyName) =>
+        string.Equals(assemblyName, "Microsoft.CodeAnalysis.Workspaces", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(assemblyName, "Microsoft.CodeAnalysis.CSharp.Workspaces", StringComparison.OrdinalIgnoreCase);
 
     private static void AssertTelemetryShape(
         AnalyzerTelemetryInfo telemetry,
@@ -396,21 +450,6 @@ public sealed class PackageAndPerformanceTests
     }
 
     private static string CreateUnrelatedSource(int callCount)
-    {
-        var builder = new StringBuilder();
-        builder.AppendLine("using System;");
-        builder.AppendLine("public static class Program {");
-        builder.AppendLine("public static void Main() {");
-        for (var i = 0; i < callCount; i++)
-        {
-            builder.AppendLine($"Console.WriteLine({i});");
-        }
-
-        builder.AppendLine("}}");
-        return builder.ToString();
-    }
-
-    private static string CreateNoLoggingLibrarySource(int callCount)
     {
         var builder = new StringBuilder();
         builder.AppendLine("using System;");
@@ -683,6 +722,22 @@ public sealed class PackageAndPerformanceTests
     }
 
     private static readonly XNamespace NuspecNamespace = "http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd";
+
+#pragma warning disable RS1036 // This analyzer exists only as a no-op allocation control.
+    [DiagnosticAnalyzer(LanguageNames.CSharp)]
+    private sealed class EmptyAnalyzer : DiagnosticAnalyzer
+    {
+        public static readonly EmptyAnalyzer Instance = new();
+
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [];
+
+        public override void Initialize(AnalysisContext context)
+        {
+            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+            context.EnableConcurrentExecution();
+        }
+    }
+#pragma warning restore RS1036
 
     private static XElement ReadPackageMetadata(PackedPackage package)
     {

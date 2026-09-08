@@ -20,7 +20,7 @@ public sealed class RenameTemplatePropertyCodeFixProvider : CodeFixProvider
 
     public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
 
-    public override async Task RegisterCodeFixesAsync(CodeFixContext context)
+    public override Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         foreach (var diagnostic in context.Diagnostics)
         {
@@ -56,7 +56,7 @@ public sealed class RenameTemplatePropertyCodeFixProvider : CodeFixProvider
             }
         }
 
-        await Task.CompletedTask.ConfigureAwait(false);
+        return Task.CompletedTask;
     }
 
     private static async Task<Document> ApplyAsync(

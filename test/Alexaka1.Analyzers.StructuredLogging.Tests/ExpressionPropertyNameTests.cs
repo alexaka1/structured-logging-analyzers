@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Alexaka1.Analyzers.StructuredLogging.Classification;
 
 using Microsoft.CodeAnalysis.CSharp;
@@ -49,6 +51,18 @@ public sealed class ExpressionPropertyNameTests
         var used = new HashSet<string>(StringComparer.Ordinal);
         Assert.Equal("Id", ExpressionPropertyName.Uniquify("Id", used));
         Assert.Equal("Id2", ExpressionPropertyName.Uniquify("Id", used));
+    }
+
+    [Fact]
+    public void Uniquify_withholds_name_when_numeric_suffixes_are_exhausted()
+    {
+        var used = new HashSet<string>(StringComparer.Ordinal) { "Id" };
+        for (var i = 2; i < 1000; i++)
+        {
+            used.Add("Id" + i.ToString(CultureInfo.InvariantCulture));
+        }
+
+        Assert.Null(ExpressionPropertyName.Uniquify("Id", used));
     }
 
     [Theory]
