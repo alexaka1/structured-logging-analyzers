@@ -1,5 +1,15 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.12
+
+### Patch Changes
+
+- [#71](https://github.com/alexaka1/structured-logging-analyzers/pull/71) [`0836569`](https://github.com/alexaka1/structured-logging-analyzers/commit/0836569a9958e43b4d142f55a35e482ef6c68735) Thanks [@alexaka1](https://github.com/alexaka1)! - Preserve literal braces when converting multi-dollar raw interpolated strings, speed up `[LoggerMessage]` analysis with many private constant templates, and stop repeated ignore-regex timeouts from consuming analysis time.
+
+- [#71](https://github.com/alexaka1/structured-logging-analyzers/pull/71) [`0836569`](https://github.com/alexaka1/structured-logging-analyzers/commit/0836569a9958e43b4d142f55a35e482ef6c68735) Thanks [@alexaka1](https://github.com/alexaka1)! - Make rule-scoped `property_naming` and `ignored_properties_regex` settings take precedence over prefix-level settings. Explicit `pascal_case` naming values are now recognized at both scopes. Invalid rule-scoped values, including malformed ignored-property regexes, fall through to valid prefix-level settings. Users who relied on a prefix-level key to override a rule-scoped key will see the rule-scoped setting applied instead.
+
+- [#71](https://github.com/alexaka1/structured-logging-analyzers/pull/71) [`0836569`](https://github.com/alexaka1/structured-logging-analyzers/commit/0836569a9958e43b4d142f55a35e482ef6c68735) Thanks [@alexaka1](https://github.com/alexaka1)! - Withhold a template-property code fix when all deterministic numeric suffixes are already in use instead of generating a random replacement name.
+
 ## 0.1.0-preview.11
 
 ### Patch Changes
