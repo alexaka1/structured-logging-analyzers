@@ -133,16 +133,28 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
     private static void ReportGeneratedLoggingSemanticConventions(
         SyntaxNodeAnalysisContext context,
         AnalyzerSettings settings,
-        Location location)
+        Location location,
+        PropertyHole[] named,
+        LoggerMessageParameters parameters)
     {
         if (!settings.TemplateNamingIsSemanticConventions)
         {
             return;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(
-            Descriptors.GeneratedLoggingCannotUseSemanticConventions,
-            location));
+        foreach (var hole in named)
+        {
+            if (LoggerMessageParameterMapper.IsSpecialPlaceholder(parameters, hole.PropertyName) ||
+                PropertyNaming.Suggest(hole.PropertyName, PropertyNamingStyle.SemanticConventions).IndexOf('.') < 0)
+            {
+                continue;
+            }
+
+            context.ReportDiagnostic(Diagnostic.Create(
+                Descriptors.GeneratedLoggingCannotUseSemanticConventions,
+                location));
+            return;
+        }
     }
 
     private static void AnalyzeInvocation(
@@ -173,7 +185,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
         var settings = GetSettings(invocation.SyntaxTree, context.Options, settingsCache);
 
-        if (LoggingInvocationClassifier.IsSerilogForContext(method))
+        if (classifier.IsSerilogForContext(method))
         {
             AnalyzeForContext(context, invocation);
         }
@@ -325,11 +337,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         }
 
         var named = parsed.NamedProperties;
-        var argumentExpressions = new ExpressionSyntax?[named.Length];
-        for (var i = 0; i < named.Length; i++)
-        {
-            argumentExpressions[i] = PropertyArgumentMapper.ArgumentForHole(arguments, template, i);
-        }
+        var argumentExpressions = PropertyArgumentMapper.ArgumentsForNamedHoles(arguments, template, named.Length);
 
         TemplateStyleRules.AnalyzeNamed(
             context,
@@ -387,7 +395,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
         }
 
         var settings = GetSettings(methodDecl.SyntaxTree, context.Options, settingsCache);
-        ReportGeneratedLoggingSemanticConventions(context, settings, template.Attribute.Name.GetLocation());
 
         if (template.Expression is not null && template.Expression.ContainsDiagnostics)
         {
@@ -428,6 +435,8 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
         if (parsed.NamedProperties != null)
         {
+            ReportGeneratedLoggingSemanticConventions(
+                context, settings, template.Attribute.Name.GetLocation(), parsed.NamedProperties, parameters);
             TemplateStyleRules.AnalyzeNamed(
                 context,
                 source.Map,

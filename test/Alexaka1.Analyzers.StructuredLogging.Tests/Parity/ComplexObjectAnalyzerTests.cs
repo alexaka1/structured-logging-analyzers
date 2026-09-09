@@ -221,7 +221,7 @@ public sealed class ComplexObjectAnalyzerTests
 
         var arguments = TemplateArgumentResolver.MapArguments(model, invocation, method, cancellationToken);
         var template = arguments.Single(a => a.Argument == invocation.ArgumentList.Arguments[0]);
-        var mapped = PropertyArgumentMapper.ArgumentForHole(arguments, template, 0);
+        var mapped = PropertyArgumentMapper.ArgumentsForNamedHoles(arguments, template, 1)[0];
 
         Assert.Equal("new[] { 1, 2 }", mapped?.ToString());
     }
@@ -302,7 +302,8 @@ public sealed class ComplexObjectAnalyzerTests
         var arguments = TemplateArgumentResolver.MapArguments(model, invocation, method, cancellationToken);
         var template = arguments.Single(a => a.Argument == invocation.ArgumentList.Arguments[0]);
 
-        Assert.Equal("first", PropertyArgumentMapper.ArgumentForHole(arguments, template, 0)?.ToString());
-        Assert.Equal("second", PropertyArgumentMapper.ArgumentForHole(arguments, template, 1)?.ToString());
+        var mapped = PropertyArgumentMapper.ArgumentsForNamedHoles(arguments, template, 2);
+        Assert.Equal("first", mapped[0]?.ToString());
+        Assert.Equal("second", mapped[1]?.ToString());
     }
 }

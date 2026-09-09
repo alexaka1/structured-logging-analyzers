@@ -365,7 +365,7 @@ public sealed class PackageAndPerformanceTests
             var log = RunDotNet(
                 $"build \"{project}\" -c Release --no-incremental --nologo -v:minimal -p:ErrorLog=dotnet-build-error.sarif%2cversion=2.1");
             Assert.True(File.Exists(sarif), $"Expected ErrorLog SARIF at {sarif}. Build output:\n{log}");
-            Assert.Equal(Ordered(ExpectedSampleDiagnostics[relativeProject]), ParseActiveAaslDiagnostics(sarif));
+            Assert.Equal(ReadExpectedSampleDiagnostics(projectDir), ParseActiveAaslDiagnostics(sarif));
         }
         finally
         {
@@ -377,6 +377,8 @@ public sealed class PackageAndPerformanceTests
 
         var output = Path.Combine(repo, relativeOutput.Replace('/', Path.DirectorySeparatorChar));
         Assert.True(Directory.Exists(output), "Sample build did not produce output directory: " + output);
+        Assert.False(File.Exists(Path.Combine(output, "expected-diagnostics.json")),
+            "Sample diagnostic expectations must not be copied to consumer output.");
         var dlls = Directory.GetFiles(output, "*.dll");
         Assert.Contains(dlls,
             path => string.Equals(Path.GetFileName(path), outputAssembly, StringComparison.OrdinalIgnoreCase));
@@ -509,38 +511,16 @@ public sealed class PackageAndPerformanceTests
             .OrderBy(key => key, StringComparer.Ordinal)
             .ToArray();
 
-    private static readonly Dictionary<string, SarifDiagnostic[]> ExpectedSampleDiagnostics =
-        new(StringComparer.Ordinal)
-        {
-            ["samples/Net10Example/Net10Example.csproj"] =
-            [
-                new("AASL0009", "LogMessages.cs", 14, 31),
-                new("AASL0011", "LogMessages.cs", 14, 40),
-                new("AASL0009", "LogMessages.cs", 17, 48),
-                new("AASL0009", "LogMessages.cs", 20, 29),
-                new("AASL0009", "LogMessages.cs", 26, 78),
-                new("AASL0009", "LogMessages.cs", 36, 81),
-                new("AASL0009", "LogMessages.cs", 42, 83),
-                new("AASL0009", "LogMessages.cs", 49, 82),
-                new("AASL0011", "LogMessages.cs", 49, 91),
-                new("AASL0009", "LogMessages.cs", 52, 50),
-                new("AASL0009", "Program.cs", 8, 27)
-            ],
-            ["samples/Net10BlazorExample/Net10BlazorExample.csproj"] =
-            [
-                new("AASL0009", "Counter.razor.cs", 16, 40),
-                new("AASL0011", "Counter.razor.cs", 16, 47),
-                new("AASL0009", "Home.razor", 18, 38)
-            ],
-            ["samples/NetStandard20Example/NetStandard20Example.csproj"] =
-            [
-                new("AASL0009", "Sample.cs", 9, 39)
-            ],
-            ["samples/Net472Example/Net472Example.csproj"] =
-            [
-                new("AASL0009", "Sample.cs", 9, 39)
-            ]
-        };
+    private static SarifDiagnostic[] ReadExpectedSampleDiagnostics(string projectDir)
+    {
+        using var stream = File.OpenRead(Path.Combine(projectDir, "expected-diagnostics.json"));
+        using var doc = JsonDocument.Parse(stream);
+        return Ordered(doc.RootElement.EnumerateArray().Select(d => new SarifDiagnostic(
+            d.GetProperty("ruleId").GetString()!,
+            d.GetProperty("file").GetString()!,
+            d.GetProperty("line").GetInt32(),
+            d.GetProperty("column").GetInt32())));
+    }
 
     private readonly record struct SarifDiagnostic(string RuleId, string FileName, int Line, int Column);
 

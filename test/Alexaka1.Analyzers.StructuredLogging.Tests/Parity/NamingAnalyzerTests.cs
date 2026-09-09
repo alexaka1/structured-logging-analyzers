@@ -686,8 +686,8 @@ public sealed class NamingAnalyzerTests
                             using Microsoft.Extensions.Logging;
                             public static partial class Log
                             {
-                                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Started")]
-                                public static partial void Started(ILogger logger);
+                                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Started {service.name}")]
+                                public static partial void Started(ILogger logger, string service);
                             }
                             """,
             editorConfig: /*lang=editorconfig*/ """

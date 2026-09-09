@@ -46,14 +46,52 @@ internal sealed class LoggingInvocationClassifier
                    { Name: "Serilog", ContainingNamespace.IsGlobalNamespace: true };
     }
 
-    public static bool IsSerilogForContext(IMethodSymbol method)
+    public bool IsSerilogForContext(IMethodSymbol method)
     {
-        return method.Name == "ForContext" &&
-               method.TypeParameters.Length == 1 &&
-               method.ContainingType != null &&
-               (method.ContainingType.ToDisplayString() == "Serilog.ILogger" ||
-                method.ContainingType.ToDisplayString() == "Serilog.Log");
+        if (method.Name != "ForContext" || method.TypeParameters.Length != 1 ||
+            method.ContainingType is not { } containing)
+        {
+            return false;
+        }
+
+        if (_known.SerilogLogger is { } logger)
+        {
+            if (SymbolEqualityComparer.Default.Equals(containing, logger) ||
+                SymbolEqualityComparer.Default.Equals(containing, _known.SerilogLog))
+            {
+                return true;
+            }
+
+            foreach (var implemented in containing.AllInterfaces)
+            {
+                if (SymbolEqualityComparer.Default.Equals(implemented, logger))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (IsSerilogType(containing, "ILogger") || IsSerilogType(containing, "Log"))
+        {
+            return true;
+        }
+
+        foreach (var implemented in containing.AllInterfaces)
+        {
+            if (IsSerilogType(implemented, "ILogger"))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
+
+    private static bool IsSerilogType(INamedTypeSymbol type, string name) =>
+        type.MetadataName == name && type.ContainingType is null &&
+        type.ContainingNamespace is { Name: "Serilog", ContainingNamespace.IsGlobalNamespace: true };
 
     public bool IsGenericMicrosoftLogger(ITypeSymbol type, out ITypeSymbol? typeArgument)
     {

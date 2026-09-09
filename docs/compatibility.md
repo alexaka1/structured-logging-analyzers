@@ -213,6 +213,8 @@ Replacement for JetBrains `StringUtil` naming:
 ## Contextual loggers
 
 **Improvement.** Primary constructors are analyzed (upstream issue #130).
+Serilog `ForContext<T>()` calls are checked on `Serilog.ILogger`, concrete
+`Serilog.Core.Logger`, other `ILogger` implementations, and `Serilog.Log`.
 Unresolved category and `ForContext<T>` type arguments are skipped until the
 compiler can bind the type.
 
@@ -243,7 +245,12 @@ The parser follows the public message-template grammar for:
 For recovery and naming diagnostics, the parser also recognizes property names
 containing `.`, spaces, or non-ASCII letters. These names extend the public
 grammar so rules can report and safely rewrite library-specific or invalid
-names instead of treating the whole hole as text.
+names instead of treating the whole hole as text. Serilog 4.4 treats
+`{Hello World}` as literal text, while Microsoft.Extensions.Logging accepts
+it as a hole. For `{Hello World} {Id}`, Serilog's runtime parser returns only
+one property token, `Id`, while the analyzer recognizes two holes. On Serilog
+calls this can shift argument-to-hole alignment for AASL0001, AASL0002,
+AASL0005, AASL0006, and AASL0008, including which hole the AASL0005 fix removes.
 
 ## Literal mapping
 
@@ -280,11 +287,15 @@ period, `AASL0011` points at that fragment and remains diagnostic-only.
 | [AASL0006](rules/AASL0006.md) | Rename duplicate holes to unique names | Invocations only. Subsequent holes are uniquified (`{Test}` `{Test2}`), or renamed from argument identifiers when those can be derived. Leaf and qualified primary suggestions share one used-name set. Qualified names are a second action when they differ. Not offered for `[LoggerMessage]` (renaming a hole would not add a C# parameter). |
 | [AASL0008](rules/AASL0008.md) | Rename positional hole | `[LoggerMessage]` when the remaining parameters match the holes. Invocations when the aligned argument has a derivable identifier (`order.Id` → `{Id}`). Qualified names as a second action when they differ. Not offered for literals, anonymous objects, `LoggerMessage.Define` / `DefineScope`, or a params array passed as a single variable. |
 | [AASL0009](rules/AASL0009.md) | Rename hole to suggested name | Full when the source map is rewriteable; also `[LoggerMessage]` attribute strings. Unmappable and shared-constant templates remain diagnostic-only. |
-| [AASL0010](rules/AASL0010.md) | Replace `PushProperty` name | Full for a constant `name` argument, including named/reordered calls |
+| [AASL0010](rules/AASL0010.md) | Replace `PushProperty` name | Full for a string literal `name` argument, including named/reordered calls. Constant identifiers and concatenations remain diagnostic-only. |
 | [AASL0011](rules/AASL0011.md) | Remove trailing `.` | Full when the diagnostic span contains exactly the period; unmappable and shared-constant templates remain diagnostic-only. |
-| [AASL0007](rules/AASL0007.md) | Convert interpolation | Partial: deterministic leaf names; extra action uses qualified names when they differ. Escaped braces remain escaped. No fix is offered when an interpolation value is ref-like or a pointer, because the generated object argument would not compile. |
+| [AASL0007](rules/AASL0007.md) | Convert interpolation | Partial: deterministic leaf names; extra action uses qualified names when they differ. Escaped braces remain escaped. No fix is offered when an interpolation value is ref-like or a pointer, because the generated object argument would not compile, or when the logging method cannot accept the extracted values, as with `LoggerMessage.Define` / `DefineScope`. |
 
-No code fix for [AASL0012](rules/AASL0012.md): the diagnostic fires on `[LoggerMessage]` whenever template naming is `semantic_conventions`, so a template rewrite cannot clear it. Converting the method to `LoggerMessage.Define` or a `Log*` call is an API choice (and fights CA1848).
+No code fix for [AASL0012](rules/AASL0012.md): with template naming set to
+`semantic_conventions`, it reports only when a parsed, non-special named
+hole's suggestion contains `.`. Keeping dotted names requires an API choice
+such as `LoggerMessage.Define` or a `Log*` call; keeping `[LoggerMessage]`
+requires identifier-compatible holes that match its parameters.
 
 ## Source-generated logging (`[LoggerMessage]`)
 
@@ -319,7 +330,7 @@ such as `{Value:E}` are preserved.
 | [AASL0008](rules/AASL0008.md) positional properties | Apply; rename fix when parameters are unambiguous |
 | [AASL0009](rules/AASL0009.md) property naming | Apply |
 | [AASL0011](rules/AASL0011.md) trailing period | Apply |
-| [AASL0012](rules/AASL0012.md) generated logging vs Semantic Conventions | Apply to `[LoggerMessage]` when template naming is `semantic_conventions`. Not applied to `Define` / `DefineScope`. |
+| [AASL0012](rules/AASL0012.md) generated logging vs Semantic Conventions | Apply to `[LoggerMessage]` when template naming is `semantic_conventions` and a parsed, non-special named hole's suggestion contains `.`. Already-dotted names report; hole-less, identifier-only suggestions, and unresolved templates do not. At most one diagnostic per method, on the attribute name. Not applied to `Define` / `DefineScope`. |
 | [AASL0001](rules/AASL0001.md) / [AASL0002](rules/AASL0002.md) destructuring | **Not applied.** MEL templates do not accept Serilog `@`. |
 | [AASL0004](rules/AASL0004.md) contextual logger | Still applied to the containing type / injected `ILogger<T>` |
 | [AASL0007](rules/AASL0007.md) compile-time constant | Not applied to attribute arguments. Applied to `Define`/`DefineScope` when the format is not constant. |
@@ -363,4 +374,4 @@ directives. Code fixes that rewrite the C# template apply to those trees
 map the resulting text changes back to `.razor`. Code-behind `.razor.cs`
 files are ordinary C# and are analyzed and fixed the same way as other
 compilations. `LoggerMessage.g.cs` and other non-Razor-generated files are
-still skipped.
+still skipped unless `generated_code = false` opts the file back into analysis.

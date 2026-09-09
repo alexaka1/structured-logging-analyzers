@@ -26,7 +26,8 @@ public sealed class RenameContextPropertyCodeFixProvider : CodeFixProvider
         foreach (var diagnostic in context.Diagnostics)
         {
             if (!diagnostic.Properties.TryGetValue(FixProperties.SuggestedName, out var suggested) ||
-                string.IsNullOrEmpty(suggested))
+                string.IsNullOrEmpty(suggested) ||
+                FindNameLiteral(root, diagnostic) is null)
             {
                 continue;
             }
@@ -48,10 +49,8 @@ public sealed class RenameContextPropertyCodeFixProvider : CodeFixProvider
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
-        var argument = node.FirstAncestorOrSelf<ArgumentSyntax>() ?? node as ArgumentSyntax;
-        if (argument?.Expression is not LiteralExpressionSyntax literal ||
-            !literal.IsKind(SyntaxKind.StringLiteralExpression))
+        var literal = FindNameLiteral(root, diagnostic);
+        if (literal is null)
         {
             return Task.FromResult(document);
         }
@@ -59,5 +58,15 @@ public sealed class RenameContextPropertyCodeFixProvider : CodeFixProvider
         var replacement = literal.WithToken(SyntaxFactory.Literal(suggested));
         var updated = root.ReplaceNode(literal, replacement);
         return Task.FromResult(document.WithSyntaxRoot(updated));
+    }
+
+    private static LiteralExpressionSyntax? FindNameLiteral(SyntaxNode root, Diagnostic diagnostic)
+    {
+        var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
+        var argument = node.FirstAncestorOrSelf<ArgumentSyntax>();
+        return argument?.Expression is LiteralExpressionSyntax literal &&
+               literal.IsKind(SyntaxKind.StringLiteralExpression)
+            ? literal
+            : null;
     }
 }
