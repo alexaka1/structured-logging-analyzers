@@ -1,0 +1,38 @@
+[
+  {
+    "ruleId": "AASL0006",
+    "file": "Home.razor",
+    "line": 20,
+    "column": 38
+  },
+  {
+    "ruleId": "AASL0006",
+    "file": "Home.razor",
+    "line": 20,
+    "column": 45
+  },
+  {
+    "ruleId": "AASL0008",
+    "file": "Counter.razor.cs",
+    "line": 18,
+    "column": 40
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "Counter.razor.cs",
+    "line": 16,
+    "column": 40
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "Home.razor",
+    "line": 18,
+    "column": 38
+  },
+  {
+    "ruleId": "AASL0011",
+    "file": "Counter.razor.cs",
+    "line": 16,
+    "column": 47
+  }
+]

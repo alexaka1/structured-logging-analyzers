@@ -58,7 +58,7 @@ public sealed class LoggerMessageAnalyzerTests
                             using Microsoft.Extensions.Logging;
                             public static partial class Log
                             {
-                                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Order {|AASL0009:{OrderId}|} started")]
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Order {|AASL0009:{OrderId}|} started")]
                                 public static partial void OrderStarted(ILogger logger, string orderId);
                             }
                             """,
@@ -66,15 +66,82 @@ public sealed class LoggerMessageAnalyzerTests
     }
 
     [Fact]
-    public Task SemanticConventions_warns_on_logger_message_even_without_holes()
+    public Task SemanticConventions_does_not_warn_on_logger_message_without_holes()
     {
         return AnalyzerTestHost.VerifyAsync(
             /*lang=csharp*/ """
                             using Microsoft.Extensions.Logging;
                             public static partial class Log
                             {
-                                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "Started")]
+                                [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Started")]
                                 public static partial void Started(ILogger logger);
+                            }
+                            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Theory]
+    [InlineData("{count}", "count")]
+    [InlineData("{|AASL0009:{userId}|}", "userId")]
+    [InlineData("{|AASL0009:{HttpRequestMethod}|}", "httpRequestMethod")]
+    public Task SemanticConventions_identifier_suggestions_do_not_warn_on_generated_logging(
+        string message, string parameter)
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ $$"""
+                              using Microsoft.Extensions.Logging;
+                              public static partial class Log
+                              {
+                                  [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{{message}}")]
+                                  public static partial void Started(ILogger logger, string {{parameter}});
+                              }
+                              """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("UnknownMessage")]
+    public Task SemanticConventions_unresolved_message_does_not_warn_on_generated_logging(string expression)
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ $$"""
+                              using Microsoft.Extensions.Logging;
+                              public static partial class Log
+                              {
+                                  [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = {{expression}})]
+                                  public static partial void Started(ILogger logger);
+                              }
+                              """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_multiple_dotted_suggestions_report_once_on_attribute_name()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [{|AASL0012:LoggerMessage|}(EventId = 1, Level = LogLevel.Information, Message = "{count} {|AASL0009:{Http.RequestMethod}|} {service.name}")]
+                                public static partial void Started(ILogger logger, int count, string method, string service);
+                            }
+                            """,
+            editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");
+    }
+
+    [Fact]
+    public Task SemanticConventions_special_placeholders_are_skipped()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            using Microsoft.Extensions.Logging;
+                            public static partial class Log
+                            {
+                                [LoggerMessage(EventId = 1, Message = "{Logger} {Level} {Exception}")]
+                                public static partial void Started(ILogger logger, LogLevel level, Exception exception);
                             }
                             """,
             editorConfig: "dotnet_code_quality.AASL.property_naming = semantic_conventions");

@@ -16,11 +16,19 @@ internal static class GeneratedCode
             return false;
         }
 
-        if (options.AnalyzerConfigOptionsProvider.GetOptions(tree).TryGetValue("generated_code", out var value) &&
-            (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
-             string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase)))
+        if (options.AnalyzerConfigOptionsProvider.GetOptions(tree).TryGetValue("generated_code", out var value))
         {
-            return true;
+            if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.Equals(value, "false", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "no", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
         }
 
         if (IsGeneratedFilePath(tree.FilePath))

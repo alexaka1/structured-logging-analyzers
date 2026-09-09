@@ -1,18 +1,22 @@
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-using Alexaka1.Analyzers.StructuredLogging.Parsing;
-
 namespace Alexaka1.Analyzers.StructuredLogging.Recognition;
 
 internal static class PropertyArgumentMapper
 {
-    public static ExpressionSyntax? ArgumentForHole(
+    public static ExpressionSyntax?[] ArgumentsForNamedHoles(
         IReadOnlyList<BoundTemplateArgument> arguments,
         BoundTemplateArgument template,
-        int holeIndex)
+        int holeCount)
     {
         var later = CollectLaterArguments(arguments, template);
-        return ArgumentAt(later, holeIndex);
+        var result = new ExpressionSyntax?[holeCount];
+        for (var i = 0; i < holeCount; i++)
+        {
+            result[i] = ArgumentAt(later, i);
+        }
+
+        return result;
     }
 
     public static ExpressionSyntax?[] ArgumentsForPositionalNames(
@@ -37,26 +41,6 @@ internal static class PropertyArgumentMapper
         }
 
         return result;
-    }
-
-    public static ExpressionSyntax? ArgumentForNamedHole(
-        IReadOnlyList<BoundTemplateArgument> arguments,
-        BoundTemplateArgument template,
-        PropertyHole[] namedProperties,
-        PropertyHole hole)
-    {
-        var index = -1;
-        for (var i = 0; i < namedProperties.Length; i++)
-        {
-            if (namedProperties[i].StartIndex == hole.StartIndex &&
-                namedProperties[i].Length == hole.Length)
-            {
-                index = i;
-                break;
-            }
-        }
-
-        return index < 0 ? null : ArgumentForHole(arguments, template, index);
     }
 
     private static List<BoundTemplateArgument> CollectLaterArguments(

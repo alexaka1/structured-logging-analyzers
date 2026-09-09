@@ -37,6 +37,26 @@ public sealed class PackageVersionMatrixTests
 
     [Theory]
     [MemberData(nameof(SerilogVersions))]
+    public Task Serilog_concrete_logger_context_type_is_checked(string version)
+    {
+        return AnalyzerTestHost.VerifyPackageVersionAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Core;
+                            public class Other { }
+                            public class Orders
+                            {
+                                private static readonly Logger Root = new LoggerConfiguration().CreateLogger();
+                                private static readonly ILogger Wrong = {|AASL0004:Root.ForContext<Other>()|};
+                                private static readonly ILogger Matching = Root.ForContext<Orders>();
+                            }
+                            """,
+            PackageVersionMatrix.SerilogId,
+            version);
+    }
+
+    [Theory]
+    [MemberData(nameof(SerilogVersions))]
     public Task Serilog_push_property_is_recognized(string version)
     {
         return AnalyzerTestHost.VerifyPackageVersionAsync(

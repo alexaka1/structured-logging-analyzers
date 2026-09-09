@@ -102,6 +102,79 @@ public sealed class ContextualLoggerAnalyzerTests
     }
 
     [Fact]
+    public Task Serilog_concrete_logger_wrong_context_type()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Core;
+                            public class Other { }
+                            public class Orders
+                            {
+                                private static readonly Logger Root = new LoggerConfiguration().CreateLogger();
+                                private static readonly ILogger Log = {|AASL0004:Root.ForContext<Other>()|};
+                            }
+                            """,
+            requireSuccessfulCompilation: true);
+    }
+
+    [Fact]
+    public Task Serilog_concrete_logger_correct_context_type()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Core;
+                            public class Orders
+                            {
+                                private static readonly Logger Root = new LoggerConfiguration().CreateLogger();
+                                private static readonly ILogger Log = Root.ForContext<Orders>();
+                            }
+                            """,
+            requireSuccessfulCompilation: true);
+    }
+
+    [Fact]
+    public Task Serilog_logger_implementation_wrong_context_type()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Events;
+                            public class CustomLogger : ILogger
+                            {
+                                public void Write(LogEvent logEvent) { }
+                                public ILogger ForContext<TSource>() => this;
+                            }
+                            public class Other { }
+                            public class Orders
+                            {
+                                private static readonly CustomLogger Root = new CustomLogger();
+                                private static readonly ILogger Log = {|AASL0004:Root.ForContext<Other>()|};
+                            }
+                            """,
+            requireSuccessfulCompilation: true);
+    }
+
+    [Fact]
+    public Task Unrelated_ForContext_method_is_not_reported()
+    {
+        return AnalyzerTestHost.VerifyAsync(
+            /*lang=csharp*/ """
+                            public class CustomLogger
+                            {
+                                public CustomLogger ForContext<TSource>() => this;
+                            }
+                            public class Other { }
+                            public class Orders
+                            {
+                                private static readonly CustomLogger Log = new CustomLogger().ForContext<Other>();
+                            }
+                            """,
+            requireSuccessfulCompilation: true);
+    }
+
+    [Fact]
     public Task Serilog_wrong_context_type_through_conditional_access()
     {
         return AnalyzerTestHost.VerifyAsync( /*lang=csharp*/ """

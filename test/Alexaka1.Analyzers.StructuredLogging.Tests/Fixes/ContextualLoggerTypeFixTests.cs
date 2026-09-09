@@ -148,6 +148,34 @@ public sealed class ContextualLoggerTypeFixTests
     }
 
     [Fact]
+    public Task AASL0004_replaces_concrete_logger_ForContext_type_argument()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Core;
+                            public class Other { }
+                            public class Orders
+                            {
+                                private static readonly Logger Root = new LoggerConfiguration().CreateLogger();
+                                private static readonly ILogger Log = {|AASL0004:Root.ForContext<Other>()|};
+                            }
+                            """,
+            /*lang=csharp*/ """
+                            using Serilog;
+                            using Serilog.Core;
+                            public class Other { }
+                            public class Orders
+                            {
+                                private static readonly Logger Root = new LoggerConfiguration().CreateLogger();
+                                private static readonly ILogger Log = Root.ForContext<Orders>();
+                            }
+                            """,
+            "AASL0004",
+            typeof(ReplaceContextualLoggerTypeCodeFixProvider));
+    }
+
+    [Fact]
     public Task AASL0004_does_not_rewrite_nested_type()
     {
         return AnalyzerTestHost.VerifyFixAsync(

@@ -11,6 +11,8 @@ internal sealed class KnownSymbols
         INamedTypeSymbol? logLevel,
         INamedTypeSymbol? loggerMessageAttribute,
         INamedTypeSymbol? loggerMessage,
+        INamedTypeSymbol? serilogLogger,
+        INamedTypeSymbol? serilogLog,
         bool hasAnyLoggingLibrary,
         bool hasMicrosoftLogging,
         bool hasGenericMicrosoftLogger)
@@ -21,6 +23,8 @@ internal sealed class KnownSymbols
         LogLevel = logLevel;
         LoggerMessageAttribute = loggerMessageAttribute;
         LoggerMessage = loggerMessage;
+        SerilogLogger = serilogLogger;
+        SerilogLog = serilogLog;
         HasAnyLoggingLibrary = hasAnyLoggingLibrary;
         HasMicrosoftLogging = hasMicrosoftLogging;
         HasGenericMicrosoftLogger = hasGenericMicrosoftLogger;
@@ -37,6 +41,10 @@ internal sealed class KnownSymbols
     public INamedTypeSymbol? LoggerMessageAttribute { get; }
 
     public INamedTypeSymbol? LoggerMessage { get; }
+
+    public INamedTypeSymbol? SerilogLogger { get; }
+
+    public INamedTypeSymbol? SerilogLog { get; }
 
     public bool HasAnyLoggingLibrary { get; }
 
@@ -84,6 +92,8 @@ internal sealed class KnownSymbols
             compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.LogLevel"),
             compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessageAttribute"),
             GetUnambiguousType(loggerMessages),
+            GetUnambiguousType(serilogLoggers),
+            GetUnambiguousType(compilation.GetTypesByMetadataName("Serilog.Log")),
             hasAnyLoggingLibrary,
             hasMicrosoftLogging,
             genericLoggers.Length > 0);

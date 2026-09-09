@@ -6,6 +6,7 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
   <ItemGroup>
+    <Content Remove="expected-diagnostics.json" />
     <ProjectReference Include="..\..\src\Alexaka1.Analyzers.StructuredLogging\Analyzer.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />

@@ -1,0 +1,128 @@
+[
+  {
+    "ruleId": "AASL0001",
+    "file": "Program.cs",
+    "line": 12,
+    "column": 30
+  },
+  {
+    "ruleId": "AASL0002",
+    "file": "Program.cs",
+    "line": 14,
+    "column": 27
+  },
+  {
+    "ruleId": "AASL0003",
+    "file": "Program.cs",
+    "line": 16,
+    "column": 26
+  },
+  {
+    "ruleId": "AASL0004",
+    "file": "Program.cs",
+    "line": 39,
+    "column": 24
+  },
+  {
+    "ruleId": "AASL0005",
+    "file": "Program.cs",
+    "line": 20,
+    "column": 36
+  },
+  {
+    "ruleId": "AASL0006",
+    "file": "Program.cs",
+    "line": 22,
+    "column": 28
+  },
+  {
+    "ruleId": "AASL0006",
+    "file": "Program.cs",
+    "line": 22,
+    "column": 38
+  },
+  {
+    "ruleId": "AASL0007",
+    "file": "Program.cs",
+    "line": 25,
+    "column": 20
+  },
+  {
+    "ruleId": "AASL0008",
+    "file": "Program.cs",
+    "line": 27,
+    "column": 27
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "LogMessages.cs",
+    "line": 16,
+    "column": 31
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "LogMessages.cs",
+    "line": 20,
+    "column": 48
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "LogMessages.cs",
+    "line": 24,
+    "column": 29
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "LogMessages.cs",
+    "line": 31,
+    "column": 78
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "LogMessages.cs",
+    "line": 42,
+    "column": 81
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "LogMessages.cs",
+    "line": 49,
+    "column": 83
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "LogMessages.cs",
+    "line": 58,
+    "column": 82
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "LogMessages.cs",
+    "line": 62,
+    "column": 50
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "Program.cs",
+    "line": 9,
+    "column": 27
+  },
+  {
+    "ruleId": "AASL0010",
+    "file": "Program.cs",
+    "line": 18,
+    "column": 49
+  },
+  {
+    "ruleId": "AASL0011",
+    "file": "LogMessages.cs",
+    "line": 16,
+    "column": 40
+  },
+  {
+    "ruleId": "AASL0011",
+    "file": "LogMessages.cs",
+    "line": 58,
+    "column": 91
+  }
+]

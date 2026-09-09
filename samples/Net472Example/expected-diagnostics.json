@@ -1,0 +1,26 @@
+[
+  {
+    "ruleId": "AASL0005",
+    "file": "Sample.cs",
+    "line": 13,
+    "column": 48
+  },
+  {
+    "ruleId": "AASL0008",
+    "file": "Sample.cs",
+    "line": 15,
+    "column": 39
+  },
+  {
+    "ruleId": "AASL0009",
+    "file": "Sample.cs",
+    "line": 11,
+    "column": 39
+  },
+  {
+    "ruleId": "AASL0011",
+    "file": "Sample.cs",
+    "line": 17,
+    "column": 41
+  }
+]

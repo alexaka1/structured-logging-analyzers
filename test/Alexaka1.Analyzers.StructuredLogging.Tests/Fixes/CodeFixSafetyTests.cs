@@ -8,6 +8,161 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Fixes;
 public sealed class CodeFixSafetyTests
 {
     [Fact]
+    public Task Rename_context_property_does_not_offer_fix_for_const_name()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using Serilog.Context;
+                            class C
+                            {
+                                private const string Name = "user_id";
+
+                                void M(int value)
+                                {
+                                    LogContext.PushProperty({|AASL0010:Name|}, value);
+                                }
+                            }
+                            """,
+            "AASL0010",
+            typeof(RenameContextPropertyCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Rename_context_property_does_not_offer_fix_for_concatenated_name()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using Serilog.Context;
+                            class C
+                            {
+                                void M(int value)
+                                {
+                                    LogContext.PushProperty(value: value, name: {|AASL0010:"user" + "_id"|});
+                                }
+                            }
+                            """,
+            "AASL0010",
+            typeof(RenameContextPropertyCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Convert_interpolation_does_not_offer_fix_for_logger_message_define()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(string user)
+                                {
+                                    LoggerMessage.Define(LogLevel.Information, new EventId(1), {|AASL0007:$"User {user.Length}"|});
+                                }
+                            }
+                            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Convert_interpolation_does_not_offer_fix_for_logger_message_define_scope()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            class C
+                            {
+                                void M(string user)
+                                {
+                                    LoggerMessage.DefineScope({|AASL0007:$"User {user.Length}"|});
+                                }
+                            }
+                            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Convert_interpolation_does_not_offer_fix_for_wrapper_without_value_parameters()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            class C
+                            {
+                                [MessageTemplateFormatMethod("template")]
+                                static void LogIt(string template) { }
+
+                                void M(string user)
+                                {
+                                    LogIt({|AASL0007:$"User {user.Length}"|});
+                                }
+                            }
+
+                            [AttributeUsage(AttributeTargets.Method)]
+                            sealed class MessageTemplateFormatMethodAttribute : Attribute
+                            {
+                                public MessageTemplateFormatMethodAttribute(string name) { }
+                            }
+                            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Convert_interpolation_uses_wrapper_params_overload()
+    {
+        return AnalyzerTestHost.VerifyFixAsync(
+            /*lang=csharp*/ """
+                            using System;
+                            class C
+                            {
+                                [MessageTemplateFormatMethod("template")]
+                                static void LogInformation(string template) { }
+
+                                [MessageTemplateFormatMethod("template")]
+                                static void LogInformation(string template, params object[] values) { }
+
+                                void M(int id)
+                                {
+                                    LogInformation({|AASL0007:$"User {id}"|});
+                                }
+                            }
+
+                            [AttributeUsage(AttributeTargets.Method)]
+                            sealed class MessageTemplateFormatMethodAttribute : Attribute
+                            {
+                                public MessageTemplateFormatMethodAttribute(string name) { }
+                            }
+                            """,
+            /*lang=csharp*/ """
+                            using System;
+                            class C
+                            {
+                                [MessageTemplateFormatMethod("template")]
+                                static void LogInformation(string template) { }
+
+                                [MessageTemplateFormatMethod("template")]
+                                static void LogInformation(string template, params object[] values) { }
+
+                                void M(int id)
+                                {
+                                    LogInformation("User {Id}", id);
+                                }
+                            }
+
+                            [AttributeUsage(AttributeTargets.Method)]
+                            sealed class MessageTemplateFormatMethodAttribute : Attribute
+                            {
+                                public MessageTemplateFormatMethodAttribute(string name) { }
+                            }
+                            """,
+            "AASL0007",
+            typeof(ConvertInterpolatedTemplateCodeFixProvider),
+            expectedActionCount: 1,
+            assertTemplateArgumentCountMatches: true);
+    }
+
+    [Fact]
     public Task Remove_trailing_period_does_not_offer_fix_for_const_field_template()
     {
         return AnalyzerTestHost.VerifyNoFixAsync(

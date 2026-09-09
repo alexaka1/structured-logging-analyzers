@@ -16,6 +16,8 @@
         Logger.LogInformation("Hello {Name}", "world");
         // Intentional AASL0009: build-time diagnostic coverage for .razor @code.
         Logger.LogInformation("Hello {name}", "world");
+        // Intentional AASL0006: duplicate holes in Razor map back to this source.
+        Logger.LogInformation("Names {Name} {Name}", "first", "second");
     }
 
 }

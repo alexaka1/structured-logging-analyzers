@@ -112,30 +112,10 @@ jobs:
             ' "$sarif"
           }
 
-          assert_aasl samples/Net10Example/dotnet-build-error.sarif '[
-            {"ruleId":"AASL0009","file":"LogMessages.cs","line":14,"column":31},
-            {"ruleId":"AASL0011","file":"LogMessages.cs","line":14,"column":40},
-            {"ruleId":"AASL0009","file":"LogMessages.cs","line":17,"column":48},
-            {"ruleId":"AASL0009","file":"LogMessages.cs","line":20,"column":29},
-            {"ruleId":"AASL0009","file":"LogMessages.cs","line":26,"column":78},
-            {"ruleId":"AASL0009","file":"LogMessages.cs","line":36,"column":81},
-            {"ruleId":"AASL0009","file":"LogMessages.cs","line":42,"column":83},
-            {"ruleId":"AASL0009","file":"LogMessages.cs","line":49,"column":82},
-            {"ruleId":"AASL0011","file":"LogMessages.cs","line":49,"column":91},
-            {"ruleId":"AASL0009","file":"LogMessages.cs","line":52,"column":50},
-            {"ruleId":"AASL0009","file":"Program.cs","line":8,"column":27}
-          ]'
-          assert_aasl samples/Net10BlazorExample/dotnet-build-error.sarif '[
-            {"ruleId":"AASL0009","file":"Counter.razor.cs","line":16,"column":40},
-            {"ruleId":"AASL0011","file":"Counter.razor.cs","line":16,"column":47},
-            {"ruleId":"AASL0009","file":"Home.razor","line":18,"column":38}
-          ]'
-          assert_aasl samples/NetStandard20Example/dotnet-build-error.sarif '[
-            {"ruleId":"AASL0009","file":"Sample.cs","line":9,"column":39}
-          ]'
-          assert_aasl samples/Net472Example/dotnet-build-error.sarif '[
-            {"ruleId":"AASL0009","file":"Sample.cs","line":9,"column":39}
-          ]'
+          assert_aasl samples/Net10Example/dotnet-build-error.sarif "$(cat samples/Net10Example/expected-diagnostics.json)"
+          assert_aasl samples/Net10BlazorExample/dotnet-build-error.sarif "$(cat samples/Net10BlazorExample/expected-diagnostics.json)"
+          assert_aasl samples/NetStandard20Example/dotnet-build-error.sarif "$(cat samples/NetStandard20Example/expected-diagnostics.json)"
+          assert_aasl samples/Net472Example/dotnet-build-error.sarif "$(cat samples/Net472Example/expected-diagnostics.json)"
 
       - name: Upload nupkg
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

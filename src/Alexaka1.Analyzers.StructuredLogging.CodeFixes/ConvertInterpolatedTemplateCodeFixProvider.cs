@@ -54,7 +54,8 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
                 interpolated.SyntaxTree).GetNaming(DiagnosticIds.InconsistentTemplatePropertyNaming);
 
             if (!TryBuild(interpolated, model, style, ExpressionPropertyName.Kind.Leaf,
-                    out var leafTemplate, out _, context.CancellationToken))
+                    out var leafTemplate, out var values, context.CancellationToken) ||
+                TryRewriteInvocation(interpolated, model, leafTemplate, values, context.CancellationToken) is null)
             {
                 continue;
             }
@@ -118,6 +119,31 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
             return document;
         }
 
+        var updatedInvocation =
+            TryRewriteInvocation(interpolated, model, template, valueExpressions, cancellationToken);
+        if (updatedInvocation is null)
+        {
+            return document;
+        }
+
+        var updatedRoot = root.ReplaceNode(invocation, updatedInvocation);
+        return document.WithSyntaxRoot(updatedRoot);
+    }
+
+    private static InvocationExpressionSyntax? TryRewriteInvocation(
+        InterpolatedStringExpressionSyntax interpolated,
+        SemanticModel model,
+        string template,
+        List<ExpressionSyntax> valueExpressions,
+        CancellationToken cancellationToken)
+    {
+        var argument = interpolated.FirstAncestorOrSelf<ArgumentSyntax>();
+        var invocation = argument?.FirstAncestorOrSelf<InvocationExpressionSyntax>();
+        if (argument is null || invocation is null)
+        {
+            return null;
+        }
+
         var literal = SyntaxFactory.LiteralExpression(
                 SyntaxKind.StringLiteralExpression,
                 SyntaxFactory.Literal(template))
@@ -128,7 +154,7 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
         var templateIndex = newArguments.IndexOf(argument);
         if (templateIndex < 0)
         {
-            return document;
+            return null;
         }
 
         newArguments[templateIndex] = newTemplateArgument;
@@ -139,8 +165,11 @@ public sealed class ConvertInterpolatedTemplateCodeFixProvider : CodeFixProvider
 
         var updatedInvocation = invocation.WithArgumentList(
             invocation.ArgumentList.WithArguments(SyntaxFactory.SeparatedList(newArguments)));
-        var updatedRoot = root.ReplaceNode(invocation, updatedInvocation);
-        return document.WithSyntaxRoot(updatedRoot);
+        cancellationToken.ThrowIfCancellationRequested();
+        return model.GetSpeculativeSymbolInfo(
+            invocation.SpanStart, updatedInvocation, SpeculativeBindingOption.BindAsExpression).Symbol is IMethodSymbol
+            ? updatedInvocation
+            : null;
     }
 
     private static bool HasInterpolation(InterpolatedStringExpressionSyntax interpolated)
