@@ -1,5 +1,22 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.13
+
+### Patch Changes
+
+- [#78](https://github.com/alexaka1/structured-logging-analyzers/pull/78) [`22e0146`](https://github.com/alexaka1/structured-logging-analyzers/commit/22e0146be0476a74a24c50069775b57f10737c2d) Thanks [@alexaka1](https://github.com/alexaka1)! - Report AASL0012 on `[LoggerMessage]` only when a named template hole's Semantic Conventions suggestion contains a dot. Hole-less messages, identifier-compatible suggestions, special parameter placeholders, and unresolved templates no longer trigger the warning. AASL0009 still checks property naming.
+
+- [#78](https://github.com/alexaka1/structured-logging-analyzers/pull/78) [`22e0146`](https://github.com/alexaka1/structured-logging-analyzers/commit/22e0146be0476a74a24c50069775b57f10737c2d) Thanks [@alexaka1](https://github.com/alexaka1)! - Report AASL0004 for mismatched `ForContext<T>()` calls on concrete
+  `Serilog.Core.Logger` and other `Serilog.ILogger` implementations, with a
+  code fix to use the containing type on direct calls.
+  
+  Honor `generated_code = false` and `generated_code = no` so files with
+  generated names or auto-generated headers can opt back into analysis.
+
+- [#78](https://github.com/alexaka1/structured-logging-analyzers/pull/78) [`22e0146`](https://github.com/alexaka1/structured-logging-analyzers/commit/22e0146be0476a74a24c50069775b57f10737c2d) Thanks [@alexaka1](https://github.com/alexaka1)! - Withhold AASL0007 interpolation conversion when the logging method cannot accept the extracted values, including `LoggerMessage.Define`, `DefineScope`, and wrappers without a suitable overload. These calls still receive the diagnostic.
+  
+  Offer the AASL0010 context-property rename fix only for string literal names. Constant identifiers and concatenations still receive the diagnostic without a code action that leaves the source unchanged.
+
 ## 0.1.0-preview.12
 
 ### Patch Changes
