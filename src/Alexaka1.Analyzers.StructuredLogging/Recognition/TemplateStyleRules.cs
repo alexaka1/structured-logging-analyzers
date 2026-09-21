@@ -243,11 +243,12 @@ internal static class TemplateStyleRules
             }
 
             ImmutableDictionary<string, string?>? properties = null;
-            if (allowRewrite && uniquifyDuplicates)
+            var allowHoleRewrite = allowRewrite && !ContainsWhitespace(named[i].PropertyName);
+            if (allowHoleRewrite && uniquifyDuplicates)
             {
                 properties = DuplicateFixProperties(named[i], leafNames?[i], qualifiedNames?[i]);
             }
-            else if (!allowRewrite)
+            else if (!allowHoleRewrite)
             {
                 properties = ImmutableDictionary<string, string?>.Empty.Add(FixProperties.AllowRewrite, "false");
             }
@@ -397,7 +398,8 @@ internal static class TemplateStyleRules
                 .Add(FixProperties.PropertyName, hole.PropertyName)
                 .Add(FixProperties.NameLogicalStart, hole.NameStartIndex.ToString(CultureInfo.InvariantCulture))
                 .Add(FixProperties.NameLogicalLength, hole.NameLength.ToString(CultureInfo.InvariantCulture))
-                .Add(FixProperties.AllowRewrite, allowRewrite ? "true" : "false");
+                .Add(FixProperties.AllowRewrite,
+                    allowRewrite && !ContainsWhitespace(hole.PropertyName) ? "true" : "false");
 
             context.ReportDiagnostic(Diagnostic.Create(
                 Descriptors.InconsistentTemplatePropertyNaming,
@@ -406,6 +408,20 @@ internal static class TemplateStyleRules
                 hole.PropertyName,
                 suggested));
         }
+    }
+
+    // Serilog treats names containing whitespace as literal text, so renaming them changes binding.
+    private static bool ContainsWhitespace(string name)
+    {
+        foreach (var character in name)
+        {
+            if (char.IsWhiteSpace(character))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void ReportHole(

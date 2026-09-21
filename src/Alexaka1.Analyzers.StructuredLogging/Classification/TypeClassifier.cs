@@ -20,8 +20,16 @@ internal static class TypeClassifier
 
         if (type is INamedTypeSymbol named &&
             named.OriginalDefinition.SpecialType == SpecialType.None &&
-            named.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic" &&
             named.MetadataName == "Dictionary`2" &&
+            named.ContainingNamespace is
+            {
+                Name: "Generic",
+                ContainingNamespace:
+                {
+                    Name: "Collections",
+                    ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
+                }
+            } &&
             named.TypeArguments.Length == 2)
         {
             return NeedsDestructuringCore(named.TypeArguments[0], inspectingObjectItself: true);
@@ -93,7 +101,8 @@ internal static class TypeClassifier
 
     private static bool IsGuid(ITypeSymbol type)
     {
-        return type.ContainingNamespace?.ToDisplayString() == "System" && type.Name == "Guid";
+        return type.Name == "Guid" &&
+               type.ContainingNamespace is { Name: "System", ContainingNamespace.IsGlobalNamespace: true };
     }
 
     private static bool IsPredefinedNumeric(ITypeSymbol type)

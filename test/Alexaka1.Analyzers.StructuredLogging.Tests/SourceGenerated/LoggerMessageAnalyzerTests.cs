@@ -1,6 +1,11 @@
+using System.Collections.Immutable;
+
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using Alexaka1.Analyzers.StructuredLogging.CodeFixes;
+using Alexaka1.Analyzers.StructuredLogging.Recognition;
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 
 using Xunit;
@@ -9,6 +14,91 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.SourceGenerated;
 
 public sealed class LoggerMessageAnalyzerTests
 {
+    [Theory]
+    [InlineData("ILogger")]
+    [InlineData("ConcreteLogger")]
+    public void Ambiguous_logger_message_symbols_preserve_attribute_and_parameter_binding(string loggerType)
+    {
+        var (compilation, tree, _) = AnalyzerTestHost.CreateCompilation(
+            $$"""
+              extern alias First;
+              using First::Microsoft.Extensions.Logging;
+              using Message = First::Microsoft.Extensions.Logging.LoggerMessageAttribute;
+              class Log
+              {
+                  [Message(Message = "Value {Value}")]
+                  public static void Write({{loggerType}} logger, LogLevel level, int value) { }
+              }
+              """, null, LanguageVersion.Latest, references: AmbiguousLoggingReferences());
+        Assert.DoesNotContain(compilation.GetDiagnostics(TestContext.Current.CancellationToken),
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        var known = KnownSymbols.Resolve(compilation, TestContext.Current.CancellationToken);
+        Assert.Null(known.LoggerMessageAttribute);
+        Assert.Null(known.Logger);
+        Assert.Null(known.LogLevel);
+        var declaration = Assert.Single(tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes()
+            .OfType<MethodDeclarationSyntax>());
+        var method = compilation.GetSemanticModel(tree)
+            .GetDeclaredSymbol(declaration, TestContext.Current.CancellationToken)!;
+
+        Assert.True(LoggerMessageAttributeReader.TryGet(method, known, TestContext.Current.CancellationToken,
+            out var template));
+        Assert.Equal("\"Value {Value}\"", template.Expression!.ToString());
+        var parameters = LoggerMessageParameterMapper.Classify(method, known);
+        Assert.Equal("logger", parameters.Logger?.Name);
+        Assert.Equal("level", parameters.LogLevel?.Name);
+        Assert.Equal("value", Assert.Single(parameters.TemplateParameters).Name);
+    }
+
+    [Theory]
+    [InlineData("Define")]
+    [InlineData("DefineScope")]
+    public void Ambiguous_logger_message_define_is_recognized(string methodName)
+    {
+        var (compilation, tree, _) = AnalyzerTestHost.CreateCompilation(
+            $$"""
+              extern alias First;
+              class C { void M() { First::Microsoft.Extensions.Logging.LoggerMessage.{{methodName}}("Started"); } }
+              """, null, LanguageVersion.Latest, references: AmbiguousLoggingReferences());
+        Assert.DoesNotContain(compilation.GetDiagnostics(TestContext.Current.CancellationToken),
+            diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+        var known = KnownSymbols.Resolve(compilation, TestContext.Current.CancellationToken);
+        Assert.Null(known.LoggerMessage);
+        var invocation = Assert.Single(tree.GetRoot(TestContext.Current.CancellationToken).DescendantNodes()
+            .OfType<InvocationExpressionSyntax>());
+        var method = (IMethodSymbol)compilation.GetSemanticModel(tree)
+            .GetSymbolInfo(invocation, TestContext.Current.CancellationToken).Symbol!;
+
+        Assert.True(LoggerMessageParameterMapper.IsLoggerMessageDefine(method, known));
+    }
+
+    private static ImmutableArray<MetadataReference> AmbiguousLoggingReferences()
+    {
+        var references = NuGetPackageResolver.GetReferences();
+        const string stub = """
+                            namespace Microsoft.Extensions.Logging
+                            {
+                                public interface ILogger { }
+                                public class ConcreteLogger : ILogger { }
+                                public enum LogLevel { Information }
+                                public class LoggerMessageAttribute : System.Attribute
+                                {
+                                    public string Message { get; set; }
+                                }
+                                public static class LoggerMessage
+                                {
+                                    public static void Define(string formatString) { }
+                                    public static void DefineScope(string formatString) { }
+                                }
+                            }
+                            """;
+        var first = CSharpCompilation.Create("First",
+            [CSharpSyntaxTree.ParseText(stub, cancellationToken: TestContext.Current.CancellationToken)], references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        return references.Add(first.ToMetadataReference(aliases: ["First"]))
+            .Add(first.WithAssemblyName("Second").ToMetadataReference(aliases: ["Second"]));
+    }
+
     [Fact]
     public Task Static_partial_named_message_trailing_period()
     {

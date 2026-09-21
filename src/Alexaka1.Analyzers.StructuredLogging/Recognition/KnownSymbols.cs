@@ -5,6 +5,7 @@ namespace Alexaka1.Analyzers.StructuredLogging.Recognition;
 internal sealed class KnownSymbols
 {
     private KnownSymbols(
+        IAssemblySymbol? coreLibrary,
         INamedTypeSymbol? exception,
         INamedTypeSymbol? genericLogger,
         INamedTypeSymbol? logger,
@@ -17,6 +18,7 @@ internal sealed class KnownSymbols
         bool hasMicrosoftLogging,
         bool hasGenericMicrosoftLogger)
     {
+        CoreLibrary = coreLibrary;
         Exception = exception;
         GenericLogger = genericLogger;
         Logger = logger;
@@ -29,6 +31,8 @@ internal sealed class KnownSymbols
         HasMicrosoftLogging = hasMicrosoftLogging;
         HasGenericMicrosoftLogger = hasGenericMicrosoftLogger;
     }
+
+    public IAssemblySymbol? CoreLibrary { get; }
 
     public INamedTypeSymbol? Exception { get; }
 
@@ -86,6 +90,7 @@ internal sealed class KnownSymbols
                                    hasSourceMessageTemplateAttribute;
 
         return new KnownSymbols(
+            compilation.GetSpecialType(SpecialType.System_Object).ContainingAssembly,
             compilation.GetTypeByMetadataName("System.Exception"),
             GetUnambiguousType(genericLoggers),
             GetUnambiguousType(loggers),

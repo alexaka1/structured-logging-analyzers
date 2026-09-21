@@ -95,25 +95,32 @@ internal static class LoggerMessageParameterMapper
 
     public static bool IsLogger(ITypeSymbol type, KnownSymbols known)
     {
-        if (known.Logger is not null &&
-            (SymbolEqualityComparer.Default.Equals(type, known.Logger) ||
-             Implements(type, known.Logger)))
+        if (known.Logger is not null)
+        {
+            return SymbolEqualityComparer.Default.Equals(type, known.Logger) || Implements(type, known.Logger);
+        }
+
+        if (IsMicrosoftLoggingType(type, "ILogger"))
         {
             return true;
         }
 
-        return type.ToDisplayString() == "Microsoft.Extensions.Logging.ILogger" ||
-               ImplementsDisplay(type, "Microsoft.Extensions.Logging.ILogger");
+        foreach (var candidate in type.AllInterfaces)
+        {
+            if (IsMicrosoftLoggingType(candidate, "ILogger"))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static bool IsLogLevel(ITypeSymbol type, KnownSymbols known)
     {
-        if (known.LogLevel is not null && SymbolEqualityComparer.Default.Equals(type, known.LogLevel))
-        {
-            return true;
-        }
-
-        return type.ToDisplayString() == "Microsoft.Extensions.Logging.LogLevel";
+        return known.LogLevel is not null
+            ? SymbolEqualityComparer.Default.Equals(type, known.LogLevel)
+            : IsMicrosoftLoggingType(type, "LogLevel");
     }
 
     public static bool IsException(ITypeSymbol type, KnownSymbols known)
@@ -141,13 +148,9 @@ internal static class LoggerMessageParameterMapper
             return false;
         }
 
-        if (known.LoggerMessageAttribute is not null &&
-            SymbolEqualityComparer.Default.Equals(type, known.LoggerMessageAttribute))
-        {
-            return true;
-        }
-
-        return type.ToDisplayString() == "Microsoft.Extensions.Logging.LoggerMessageAttribute";
+        return known.LoggerMessageAttribute is not null
+            ? SymbolEqualityComparer.Default.Equals(type, known.LoggerMessageAttribute)
+            : IsMicrosoftLoggingType(type, "LoggerMessageAttribute");
     }
 
     public static bool IsLoggerMessageDefine(IMethodSymbol method, KnownSymbols known)
@@ -160,7 +163,7 @@ internal static class LoggerMessageParameterMapper
 
         var isType = known.LoggerMessage is not null
             ? SymbolEqualityComparer.Default.Equals(containing, known.LoggerMessage)
-            : containing.ToDisplayString() == "Microsoft.Extensions.Logging.LoggerMessage";
+            : IsMicrosoftLoggingType(containing, "LoggerMessage");
         return isType && (method.Name is "Define" or "DefineScope");
     }
 
@@ -182,16 +185,15 @@ internal static class LoggerMessageParameterMapper
         return false;
     }
 
-    private static bool ImplementsDisplay(ITypeSymbol type, string display)
-    {
-        foreach (var candidate in type.AllInterfaces)
+    internal static bool IsMicrosoftLoggingType(ITypeSymbol type, string metadataName) =>
+        type.MetadataName == metadataName && type.ContainingType is null &&
+        type.ContainingNamespace is
         {
-            if (candidate.ToDisplayString() == display)
+            Name: "Logging",
+            ContainingNamespace:
             {
-                return true;
+                Name: "Extensions",
+                ContainingNamespace: { Name: "Microsoft", ContainingNamespace.IsGlobalNamespace: true }
             }
-        }
-
-        return false;
-    }
+        };
 }

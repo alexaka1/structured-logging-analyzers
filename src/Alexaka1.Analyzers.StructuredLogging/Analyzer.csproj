@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Alexaka1.Analyzers.StructuredLogging</RootNamespace>
     <AssemblyName>Alexaka1.Analyzers.StructuredLogging</AssemblyName>
+    <!-- Distinct restore project names prevent collisions with the pack project; NuGet otherwise falls back to AssemblyName. -->
     <PackageId>Alexaka1.Analyzers.StructuredLogging.Lib</PackageId>
     <IsPackable>false</IsPackable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
