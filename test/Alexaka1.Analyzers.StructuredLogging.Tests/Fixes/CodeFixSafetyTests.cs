@@ -8,6 +8,78 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Fixes;
 public sealed class CodeFixSafetyTests
 {
     [Fact]
+    public Task Rename_template_property_does_not_offer_fix_for_whitespace_name()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            class C
+                            {
+                                void M()
+                                {
+                                    Log.Logger.Information("{|AASL0009:{Hello World}|} {Id}", 1, 2);
+                                }
+                            }
+                            """,
+            "AASL0009",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Rename_logger_message_property_does_not_offer_fix_for_whitespace_name()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using Microsoft.Extensions.Logging;
+                            partial class C
+                            {
+                                [LoggerMessage(Level = LogLevel.Information, Message = "{|AASL0009:{Hello World}|}")]
+                                static partial void LogHello(ILogger logger, int helloWorld);
+                            }
+                            """,
+            "AASL0009",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Theory]
+    [InlineData("Define<int>(LogLevel.Information, new EventId(1),")]
+    [InlineData("DefineScope<int>(")]
+    public Task Rename_logger_message_define_property_does_not_offer_fix_for_whitespace_name(string call)
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ $$"""
+                              using Microsoft.Extensions.Logging;
+                              class C
+                              {
+                                  void M()
+                                  {
+                                      _ = LoggerMessage.{{call}} "{|AASL0009:{Hello World}|}");
+                                  }
+                              }
+                              """,
+            "AASL0009",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Fact]
+    public Task Rename_duplicate_property_does_not_offer_fix_for_whitespace_name()
+    {
+        return AnalyzerTestHost.VerifyNoFixAsync(
+            /*lang=csharp*/ """
+                            using Serilog;
+                            class C
+                            {
+                                void M()
+                                {
+                                    Log.Logger.Information("{|AASL0006:{My Id}|} {|AASL0006:{My Id}|}", 1, 2);
+                                }
+                            }
+                            """,
+            "AASL0006",
+            typeof(RenameTemplatePropertyCodeFixProvider));
+    }
+
+    [Fact]
     public Task Rename_context_property_does_not_offer_fix_for_const_name()
     {
         return AnalyzerTestHost.VerifyNoFixAsync(

@@ -14,7 +14,12 @@ Compiler-host floors are in [ide-compiler-policy.md](ide-compiler-policy.md).
 The analyzer must:
 
 - Enable concurrent execution.
-- Resolve known logging symbols once per compilation (`KnownSymbols`).
+- Resolve known logging symbols and the core library assembly once per
+  compilation (`KnownSymbols`). Core-library methods bypass the template
+  parameter-name cache.
+- When a known symbol resolves, symbol equality decides type recognition.
+  Per-declaration type recognition must not format display strings; fallbacks
+  check metadata names and namespace symbols.
 - Register one compilation-start action. Compilations with the full logging
   reference set register four syntax-node actions. Compilations with neither
   a supported logging library nor a source-declared
@@ -98,6 +103,8 @@ window. Retune after SDK or Roslyn upgrades.
 | No logging library | 4,000 `Console.WriteLine` calls and platform references only | Zero syntax-node actions; no AASL diagnostics |
 | Logging compilation | 500 Serilog `Information` calls with unique named holes | Wall clock under 20 s; analyzer execution under 500 ms; allocation delta vs control under 8 MiB; no AASL diagnostics |
 | `[LoggerMessage]` constants | 480 methods, each with its own private `const` template, sized to leave headroom on shared CI runners | Warm analyzer execution under 500 ms; four-action telemetry shape; no AASL diagnostics |
+| Attributed methods | 3,000 methods with `[Obsolete]` plus one real `[LoggerMessage]` method | Wall clock under 20 s; warm analyzer execution under 500 ms; allocation delta vs control under 32 MiB; four-action telemetry shape; no AASL diagnostics |
+| Generic constructor parameters | 3,000 constructors taking `List<int>`, `int?`, and `IEnumerable<string>`, plus one matching `ILogger<T>` constructor | Wall clock under 20 s; warm analyzer execution under 500 ms; allocation delta vs control under 80 MiB; four-action telemetry shape; no AASL diagnostics |
 | Cold / warm telemetry | 200 logging calls, two consecutive analyses | Concurrent + action shape; execution under 500 ms each; no AASL diagnostics |
 | Concurrent determinism | 8 parallel analyses vs one sequential run | Same ordered diagnostic keys; telemetry shape on every run |
 | Invalid `.editorconfig` | Unclosed `ignored_properties_regex` | Analyzer does not throw; `AASL0009` still reports |

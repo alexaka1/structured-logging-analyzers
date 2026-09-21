@@ -24,6 +24,12 @@ internal sealed class LoggingInvocationClassifier
 
     public string? GetTemplateParameterName(IMethodSymbol method)
     {
+        if (_known.CoreLibrary is not null &&
+            SymbolEqualityComparer.Default.Equals(method.ContainingAssembly, _known.CoreLibrary))
+        {
+            return null;
+        }
+
         return _templateParameterNames.GetOrAdd(method.OriginalDefinition, ResolveTemplateParameterName);
     }
 
@@ -101,16 +107,10 @@ internal sealed class LoggingInvocationClassifier
             return false;
         }
 
-        if (_known.GenericLogger != null &&
-            SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, _known.GenericLogger))
-        {
-            typeArgument = named.TypeArguments[0];
-            return true;
-        }
-
-        if (named.OriginalDefinition.ToDisplayString() == "Microsoft.Extensions.Logging.ILogger<TCategoryName>" ||
-            (named.OriginalDefinition.MetadataName == "ILogger`1" &&
-             named.ContainingNamespace?.ToDisplayString() == "Microsoft.Extensions.Logging"))
+        var isLogger = _known.GenericLogger is not null
+            ? SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, _known.GenericLogger)
+            : LoggerMessageParameterMapper.IsMicrosoftLoggingType(named.OriginalDefinition, "ILogger`1");
+        if (isLogger)
         {
             typeArgument = named.TypeArguments[0];
             return true;

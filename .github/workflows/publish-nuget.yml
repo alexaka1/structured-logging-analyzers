@@ -200,7 +200,9 @@ jobs:
           user: ${{ vars.NUGET_USER }}
 
       - name: Push to nuget.org
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: >
           dotnet nuget push artifacts/*.nupkg
-          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
-          --source ${{ env.NUGET_SOURCE }}
+          --api-key "$NUGET_API_KEY"
+          --source "$NUGET_SOURCE"

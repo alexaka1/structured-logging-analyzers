@@ -31,6 +31,8 @@ public sealed class PackageAndPerformanceTests
     private static readonly TimeSpan MaxAnalyzerExecution = TimeSpan.FromMilliseconds(500);
     private const long UnrelatedAllocationDeltaLimitBytes = 16 * 1024 * 1024;
     private const long LoggingAllocationDeltaLimitBytes = 8 * 1024 * 1024;
+    private const long AttributedMethodsAllocationDeltaLimitBytes = 32 * 1024 * 1024;
+    private const long GenericConstructorsAllocationDeltaLimitBytes = 80 * 1024 * 1024;
     private readonly ITestOutputHelper _output;
 
     public PackageAndPerformanceTests(ITestOutputHelper output)
@@ -190,6 +192,28 @@ public sealed class PackageAndPerformanceTests
             "unrelated compilation",
             CreateUnrelatedSource(4000),
             UnrelatedAllocationDeltaLimitBytes,
+            TestContext.Current.CancellationToken);
+        Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
+    }
+
+    [Fact]
+    public async Task Analyzer_handles_many_attributed_methods()
+    {
+        var outcome = await RunPerformanceGateAsync(
+            "attributed methods",
+            CreateAttributedMethodsSource(3000),
+            AttributedMethodsAllocationDeltaLimitBytes,
+            TestContext.Current.CancellationToken);
+        Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
+    }
+
+    [Fact]
+    public async Task Analyzer_handles_many_constructors_with_generic_parameters()
+    {
+        var outcome = await RunPerformanceGateAsync(
+            "generic constructor parameters",
+            CreateGenericConstructorsSource(3000),
+            GenericConstructorsAllocationDeltaLimitBytes,
             TestContext.Current.CancellationToken);
         Assert.Empty(AaslDiagnostics(outcome.Diagnostics));
     }
@@ -463,6 +487,38 @@ public sealed class PackageAndPerformanceTests
         }
 
         builder.AppendLine("}}");
+        return builder.ToString();
+    }
+
+    private static string CreateAttributedMethodsSource(int methodCount)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("using System;");
+        builder.AppendLine("using Microsoft.Extensions.Logging;");
+        builder.AppendLine("public static partial class Log {");
+        builder.AppendLine("[LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = \"Started\")]");
+        builder.AppendLine("public static partial void Started(ILogger logger);");
+        for (var i = 0; i < methodCount; i++)
+        {
+            builder.AppendLine($"[Obsolete] public static void Method{i}() {{ }}");
+        }
+
+        builder.AppendLine("}");
+        return builder.ToString();
+    }
+
+    private static string CreateGenericConstructorsSource(int classCount)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("using System.Collections.Generic;");
+        builder.AppendLine("using Microsoft.Extensions.Logging;");
+        builder.AppendLine("public class Logged { public Logged(ILogger<Logged> logger) { } }");
+        for (var i = 0; i < classCount; i++)
+        {
+            builder.AppendLine(
+                $"public class C{i} {{ public C{i}(List<int> list, int? number, IEnumerable<string> values) {{ }} }}");
+        }
+
         return builder.ToString();
     }
 

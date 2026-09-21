@@ -1,3 +1,7 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+
+using Alexaka1.Analyzers.StructuredLogging.Recognition;
 using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 
 using Xunit;
@@ -6,6 +10,30 @@ namespace Alexaka1.Analyzers.StructuredLogging.Tests.Parity;
 
 public sealed class ContextualLoggerAnalyzerTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task Ambiguous_generic_logger_is_recognized(bool primaryConstructor)
+    {
+        var references = NuGetPackageResolver.GetReferences();
+        const string stub = "namespace Microsoft.Extensions.Logging { public interface ILogger<T> { } }";
+        var first = CSharpCompilation.Create("First",
+            [CSharpSyntaxTree.ParseText(stub, cancellationToken: TestContext.Current.CancellationToken)], references,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        var second = first.WithAssemblyName("Second");
+        references = references.Add(first.ToMetadataReference(aliases: ["First"]))
+            .Add(second.ToMetadataReference(aliases: ["Second"]));
+        var declaration = primaryConstructor
+            ? "class A({|AASL0004:ILogger<B>|} logger);"
+            : "class A { public A({|AASL0004:ILogger<B>|} logger) { } }";
+        var source = "extern alias First; using First::Microsoft.Extensions.Logging; class B { } " + declaration;
+        var (compilation, _, _) = AnalyzerTestHost.CreateCompilation(
+            "", null, LanguageVersion.Latest, references: references);
+        Assert.Null(KnownSymbols.Resolve(compilation, TestContext.Current.CancellationToken).GenericLogger);
+
+        return AnalyzerTestHost.VerifyAsync(source, references: references, requireSuccessfulCompilation: true);
+    }
+
     [Fact]
     public Task Mel_wrong_type()
     {
