@@ -1,5 +1,13 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.14
+
+### Patch Changes
+
+- [#92](https://github.com/alexaka1/structured-logging-analyzers/pull/92) [`674b13d`](https://github.com/alexaka1/structured-logging-analyzers/commit/674b13d5d9249d93789592d644c071fca4fb20cc) Thanks [@alexaka1](https://github.com/alexaka1)! - Speed up analysis in projects with many attributed methods or constructors with generic parameters by comparing logging symbols instead of formatting type names. Reported diagnostics are unchanged.
+
+- [#92](https://github.com/alexaka1/structured-logging-analyzers/pull/92) [`674b13d`](https://github.com/alexaka1/structured-logging-analyzers/commit/674b13d5d9249d93789592d644c071fca4fb20cc) Thanks [@alexaka1](https://github.com/alexaka1)! - The AASL0009 and AASL0006 rename fixes are no longer offered for template holes whose names contain whitespace. Serilog treats these holes as literal text, so renaming them would change the logged output. The diagnostics are still reported.
+
 ## 0.1.0-preview.13
 
 ### Patch Changes
