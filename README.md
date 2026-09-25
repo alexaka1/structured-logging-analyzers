@@ -109,8 +109,16 @@ fixed.
 SDK `CA*` / `SYSLIB10xx` rules are recommended alongside this package;
 see [Recommended Microsoft analyzers](#recommended-microsoft-analyzers).
 
+## Credits
+
+The rule set and the original inspection behavior come from
+[resharper-structured-logging](https://github.com/olsh/resharper-structured-logging)
+by Oleg Shevchenko, the ReSharper and Rider Structured Logging plugin. This
+project started as a Roslyn reimplementation of those inspections and has
+grown from there.
+
 ## License
 
 This project is MIT licensed. See [LICENSE](LICENSE).
-The ReSharper plugin is credited in [PROVENANCE.md](PROVENANCE.md), and copied
-test snippets are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Copied test snippets are listed in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
