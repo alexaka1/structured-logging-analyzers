@@ -57,9 +57,6 @@ The comparison runner uses the same map in `test/comparison/runner/RuleMap.cs`.
 
 ## Default diagnostic severities
 
-These defaults intentionally differ from the ReSharper plugin, which registers
-every inspection as `WARNING`.
-
 | Rule | Default severity |
 |---|---|
 | [AASL0001](rules/AASL0001.md) Anonymous objects must be destructured | Warning |
