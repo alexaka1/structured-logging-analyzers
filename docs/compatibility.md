@@ -55,6 +55,37 @@ not a current parity guarantee.
 
 The comparison runner uses the same map in `test/comparison/runner/RuleMap.cs`.
 
+## Default diagnostic severities
+
+These defaults intentionally differ from the ReSharper plugin, which registers
+every inspection as `WARNING`.
+
+| Rule | Default severity |
+|---|---|
+| [AASL0001](rules/AASL0001.md) Anonymous objects must be destructured | Warning |
+| [AASL0002](rules/AASL0002.md) Complex objects should be destructured | Info (suggestion) |
+| [AASL0003](rules/AASL0003.md) Complex objects in log context should be destructured | Info (suggestion) |
+| [AASL0004](rules/AASL0004.md) Contextual logger mismatch | Warning |
+| [AASL0005](rules/AASL0005.md) Exception passed as a template argument | Warning |
+| [AASL0006](rules/AASL0006.md) Duplicate template properties | Warning |
+| [AASL0007](rules/AASL0007.md) Template is not a compile-time constant | Warning |
+| [AASL0008](rules/AASL0008.md) Positional properties | Info (suggestion) |
+| [AASL0009](rules/AASL0009.md) Template property naming | Info (suggestion) |
+| [AASL0010](rules/AASL0010.md) Context property naming | Info (suggestion) |
+| [AASL0011](rules/AASL0011.md) Trailing period | Info (suggestion) |
+| [AASL0012](rules/AASL0012.md) Generated logging cannot use Semantic Conventions property names | Info (suggestion) |
+
+Rules that catch runtime bugs stay Warning: lost exception data, misaligned
+properties, non-constant templates, incorrect `SourceContext`, and anonymous
+objects logged through `ToString()`. Destructuring heuristics and conventions
+such as naming, trailing periods, and positional holes report as Info so that
+installing the package does not fail a `TreatWarningsAsErrors` build over style.
+All rules remain enabled by default; none defaults to Error or Hidden.
+
+Override any default with `.editorconfig` using
+`dotnet_diagnostic.<id>.severity`. For example, restore a warning for positional
+properties with `dotnet_diagnostic.AASL0008.severity = warning`.
+
 ## Host differences (not portable)
 
 | Plugin feature | Roslyn equivalent |

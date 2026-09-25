@@ -19,11 +19,11 @@ and need no extra enablement.
 
 ```editorconfig
 [*.cs]
-dotnet_diagnostic.CA1727.severity = warning
+dotnet_diagnostic.CA1727.severity = suggestion
 dotnet_diagnostic.CA1848.severity = suggestion
 dotnet_diagnostic.CA2017.severity = warning
 dotnet_diagnostic.CA2023.severity = warning
-dotnet_diagnostic.CA2253.severity = warning
+dotnet_diagnostic.CA2253.severity = suggestion
 dotnet_diagnostic.CA2254.severity = warning
 ```
 
@@ -34,7 +34,7 @@ dotnet_diagnostic.CA2254.severity = warning
 | [CA2253](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2253) | Suggestion | Numeric MEL placeholders | `AASL0008` still runs across frameworks. It adds a rename fix for `[LoggerMessage]` when an unambiguous parameter exists, and for invocations when the aligned argument has a derivable identifier. |
 | [CA1727](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1727) | Disabled | PascalCase MEL placeholders | `AASL0009` adds camel/snake/Elastic/Semantic Conventions naming, an ignore regex, and a rename fix, and applies to Serilog/NLog/ZLogger as well. Disable CA1727 if templates use Semantic Conventions names such as `{service.name}`. |
 | [CA2023](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2023) | Warning | Malformed braces in MEL templates | Not reimplemented. Malformed holes are treated as text. |
-| [CA1848](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848) | Disabled | Prefer `LoggerMessage` delegates / source generation | Not reimplemented. Performance guidance only. If template naming is `semantic_conventions`, `AASL0012` warns on `[LoggerMessage]`. |
+| [CA1848](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848) | Disabled | Prefer `LoggerMessage` delegates / source generation | Not reimplemented. Performance guidance only. If template naming is `semantic_conventions`, `AASL0012` reports a suggestion on `[LoggerMessage]`. |
 
 On .NET 10+, CA2017 and CA2023 are already warnings when SDK analyzers
 are enabled. Still set CA1727, CA1848, CA2253, and CA2254 if those are
@@ -46,7 +46,7 @@ The generator already validates method shape, missing/unused parameters,
 the first exception/logger/level parameters, duplicate event IDs, and
 template names that differ only by case ([SYSLIB1021](https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/source-generator-overview)).
 This package does not duplicate those diagnostics. `AASL0012` is the extra:
-it warns when `semantic_conventions` naming is configured and the code uses
+it reports a suggestion when `semantic_conventions` naming is configured and the code uses
 `[LoggerMessage]`, which cannot bind dotted names to C# parameters.
 `LoggerMessage.Define` / `DefineScope` bind values by position, so dotted names
 can work there.
