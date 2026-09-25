@@ -107,3 +107,9 @@ included. Blazor `.razor` `@code` and `.razor.cs` code-behind are analyzed and
 fixed.
 SDK `CA*` / `SYSLIB10xx` rules are recommended alongside this package;
 see [Recommended Microsoft analyzers](#recommended-microsoft-analyzers).
+
+## License
+
+This project is MIT licensed. See [LICENSE](LICENSE).
+The ReSharper plugin is credited in [PROVENANCE.md](PROVENANCE.md), and copied
+test fixtures are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

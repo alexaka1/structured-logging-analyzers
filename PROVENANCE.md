@@ -21,8 +21,10 @@ were:
 - The public [message-template specification](https://messagetemplates.org/).
 - Public Serilog, NLog, Microsoft.Extensions.Logging, and ZLogger calling
   conventions.
-- Behavioral characterization tests derived from upstream golden fixtures and
-  InspectCode output.
+- Comparison corpus fixtures copied from upstream test data with namespace
+  renames. Several parity tests embed the same snippets. InspectCode output
+  was used for behavioral characterization. The copied fixtures' notice is in
+  [THIRD-PARTY-NOTICES.md](https://github.com/alexaka1/structured-logging-analyzers/blob/main/THIRD-PARTY-NOTICES.md).
 
 The upstream plugin contains parser files derived from Serilog under
 Apache-2.0, including its
@@ -33,3 +35,11 @@ contain source copied or mechanically translated from those files.
 Behavioral compatibility does not imply source-code lineage. Product behavior
 and intentional differences are documented in
 [docs/compatibility.md](docs/compatibility.md).
+
+## Licensing
+
+This repository and the package are MIT licensed, copyright Alex Martossy
+(alexaka1). The upstream plugin is MIT licensed, copyright 2019 Oleg Shevchenko.
+The upstream notice is retained for the copied test fixtures in
+[THIRD-PARTY-NOTICES.md](https://github.com/alexaka1/structured-logging-analyzers/blob/main/THIRD-PARTY-NOTICES.md).
+No upstream source is shipped in the package.

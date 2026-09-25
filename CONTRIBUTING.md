@@ -33,3 +33,6 @@ Please:
 - Add a changeset (`pnpm changeset`) when a pull request changes the
   published `Alexaka1.Analyzers.StructuredLogging` package. CI versioning and GitHub
   releases are driven by those files.
+- By submitting a change, you agree it is licensed under the MIT license in
+  [LICENSE](LICENSE). Copied third-party material must be listed in
+  [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) with its notice.
