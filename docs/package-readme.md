@@ -48,11 +48,11 @@ Central package management:
 
 ```editorconfig
 [*.cs]
-dotnet_diagnostic.CA1727.severity = warning
+dotnet_diagnostic.CA1727.severity = suggestion
 dotnet_diagnostic.CA1848.severity = suggestion
 dotnet_diagnostic.CA2017.severity = warning
 dotnet_diagnostic.CA2023.severity = warning
-dotnet_diagnostic.CA2253.severity = warning
+dotnet_diagnostic.CA2253.severity = suggestion
 dotnet_diagnostic.CA2254.severity = warning
 ```
 
