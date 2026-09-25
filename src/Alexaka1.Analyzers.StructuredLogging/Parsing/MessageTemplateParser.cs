@@ -2,7 +2,7 @@ namespace Alexaka1.Analyzers.StructuredLogging.Parsing;
 
 /// <summary>
 /// Parses the shared message-template grammar documented in
-/// docs/compatibility.md. See PROVENANCE.md for implementation lineage.
+/// docs/behavior.md. See PROVENANCE.md for implementation lineage.
 /// </summary>
 internal static class MessageTemplateParser
 {

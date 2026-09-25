@@ -33,7 +33,7 @@ The analyzer must:
   match results per compilation (`RegexCache`), and disable a pattern after
   its first match timeout. No process-wide mutable caches.
 - Skip generated trees except Razor/Blazor source-generated C# (see
-  [compatibility.md](compatibility.md#razor--blazor)).
+  [behavior.md](behavior.md#razor--blazor)).
 - Honor `CancellationToken` on semantic queries.
 - Avoid reflection and filesystem access on the analysis path.
 - Avoid `RegexOptions.Compiled`. Configurable ignore regexes use a 100 ms

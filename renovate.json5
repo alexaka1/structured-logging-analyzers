@@ -65,16 +65,6 @@
     },
     {
       description: [
-        "Ignore the frozen InspectCode vs Roslyn parity harness",
-        "Top-level ignorePaths does not apply to nuget when :ignoreModulesAndTests is in the preset chain",
-      ],
-      matchFileNames: [
-        "**/test/comparison/**",
-      ],
-      enabled: false,
-    },
-    {
-      description: [
         "Keep the analyzer compile-time Roslyn API at the VS 2022 17.8 floor",
       ],
       matchManagers: ["nuget"],
@@ -155,8 +145,6 @@
     '**/vendor/**',
     '**/examples/**',
     '**/samples/**',
-    // Frozen InspectCode vs Roslyn parity harness; not a consumption project.
-    '**/test/comparison/**',
     '**/__tests__/**',
     '**/tests/**',
     '**/__fixtures__/**',
@@ -174,7 +162,6 @@
       '**/vendor/**',
       '**/examples/**',
       '**/samples/**',
-      '**/test/comparison/**',
       '**/__fixtures__/**',
     ],
   },
