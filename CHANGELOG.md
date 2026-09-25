@@ -1,5 +1,11 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.15
+
+### Patch Changes
+
+- [#95](https://github.com/alexaka1/structured-logging-analyzers/pull/95) [`280819b`](https://github.com/alexaka1/structured-logging-analyzers/commit/280819bc213092add0955edfe0abe3f1337898c3) Thanks [@alexaka1](https://github.com/alexaka1)! - AASL0002, AASL0003, AASL0008, AASL0009, AASL0010, AASL0011, and AASL0012 now report as suggestions instead of warnings by default. Destructuring heuristics and logging conventions no longer fail `TreatWarningsAsErrors` builds over style. Rules that catch runtime bugs remain warnings, and all rules stay enabled by default. To restore warnings for any of these rules, set `dotnet_diagnostic.<id>.severity = warning` in `.editorconfig`.
+
 ## 0.1.0-preview.14
 
 ### Patch Changes
