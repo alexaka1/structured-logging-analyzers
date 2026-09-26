@@ -1,5 +1,11 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.16
+
+### Patch Changes
+
+- [#96](https://github.com/alexaka1/structured-logging-analyzers/pull/96) [`e64b8fe`](https://github.com/alexaka1/structured-logging-analyzers/commit/e64b8fe07d18941aac26b2e6688aaa37bf66ec61) Thanks [@alexaka1](https://github.com/alexaka1)! - The NuGet package now declares the MIT license expression and ships the LICENSE file.
+
 ## 0.1.0-preview.15
 
 ### Patch Changes
