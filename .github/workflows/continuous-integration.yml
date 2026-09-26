@@ -48,6 +48,8 @@ jobs:
           --project test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj
           -c Release
           --no-launch-profile
+          --
+          -reporter verbose
 
   pack-and-samples:
     name: Pack and build samples
