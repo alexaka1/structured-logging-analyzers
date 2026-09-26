@@ -1,12 +1,12 @@
 # Contributing
 
-This repository is in a finished state for its intended scope. The
-structured-logging inspections from the ReSharper/Rider plugin are
-available as Roslyn analyzers, with additional coverage and fixes
-beyond that parity. I do not plan on making new features.
+This is a personal project maintained at my discretion. It began as a
+Roslyn reimplementation of the ReSharper/Rider Structured Logging plugin's
+inspections and matched them at a point in time. It does not track the
+plugin and may gain rules of its own.
 
-If you need something, please open an issue and a matching pull request.
-I may look at them, but I make no commitment to review or merge either.
+Issues and matching pull requests are welcome. I make no commitment to
+review or merge either.
 
 ## If you send a change
 
@@ -26,8 +26,8 @@ Please:
   create another test project. See
   [PackageVersionMatrixTests.cs](test/Alexaka1.Analyzers.StructuredLogging.Tests/Frameworks/PackageVersionMatrixTests.cs)
   and [LatestStablePackageTests.cs](test/Alexaka1.Analyzers.StructuredLogging.Tests/Frameworks/LatestStablePackageTests.cs).
-- Preserve documented compatibility behavior unless a change is called out
-  in `docs/compatibility.md`.
+- Preserve documented behavior unless the change is called out in
+  `docs/behavior.md`.
 - Do not reimplement .NET SDK `CA*` or `SYSLIB10xx` diagnostics unless the
   extra behavior is documented in `docs/microsoft-recommendations.md`.
 - Add a changeset (`pnpm changeset`) when a pull request changes the

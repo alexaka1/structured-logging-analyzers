@@ -6,15 +6,14 @@ with it.
 
 ## resharper-structured-logging
 
-The 38 files in `test/comparison/corpus/` and the logging snippets embedded in
-the Parity tests were copied from `test/data/Analyzers` in
+Short logging snippets embedded in the tests under
+`test/Alexaka1.Analyzers.StructuredLogging.Tests/Rules/` were copied from
+upstream `test/data/Analyzers` in
 [resharper-structured-logging](https://github.com/olsh/resharper-structured-logging)
 at reference commit
 [`2c05392577cbf5f582dcb3820c22a8da6e9617d5`](https://github.com/olsh/resharper-structured-logging/commit/2c05392577cbf5f582dcb3820c22a8da6e9617d5).
-The corpus copies differ only by namespace renames and an added header comment.
-Several Parity tests embed the same logging snippets inline. These files are
-test data, are not shipped in the NuGet package, and are used under upstream's
-MIT license.
+They are test data, are not shipped in the NuGet package, and are used under
+upstream's MIT license.
 
 ```text
 MIT License
@@ -39,5 +38,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
-The ReSharper plugin binary used by `test/comparison/run-comparison.sh` is downloaded from the JetBrains Marketplace at run time and is not redistributed here.

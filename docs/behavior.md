@@ -1,59 +1,12 @@
-# Compatibility specification
+# Behavior specification
 
-This document is the behavioral contract for the Roslyn analyzers. It records
-preserved quirks and intentional corrections.
+This document specifies how the analyzers, parser, literal mapping, fixes,
+and configuration behave.
 
 Diagnostic prefix: `AASL` (`Alexaka1.Analyzers.StructuredLogging`).
 Package ID: `Alexaka1.Analyzers.StructuredLogging`.
 Host and compiler floors: [ide-compiler-policy.md](ide-compiler-policy.md).
 Allocation and concurrency gates: [performance-policy.md](performance-policy.md).
-
-## ReSharper CLI comparison
-
-Run `./test/comparison/run-comparison.sh` to compare InspectCode plus the
-published [marketplace plugin](https://github.com/olsh/resharper-structured-logging)
-(`ReSharper.Structured.Logging` 2025.1.0.373) with these analyzers on the
-characterization corpus under `test/comparison/corpus`.
-
-- Latest 2025.x InspectCode is tried first (currently 2025.3.5, Wave 253).
-  The published plugin depends on Wave 251. InspectCode 2025.3.5 still loaded
-  it in the original comparison environment; the script falls back to
-  InspectCode 2025.1.9 if the plugin does not load.
-- The upstream plugin unit tests omit
-  `TemplateIsNotCompileTimeConstantProblem`; Roslyn still reports `AASL0007`
-  on non-constant templates.
-- Elastic naming and ignored-property regex cases use ReSharper settings
-  layers in the plugin. Default InspectCode/Roslyn comparison uses PascalCase
-  with no ignore regex.
-- `AASL0011` highlights the trailing period; the plugin highlights the
-  whole literal. Comparison is by file and rule id, not span.
-- The plugin returns on the first `Exception` argument, including the
-  dedicated exception slot, so a later template-argument exception is
-  missed. `AASL0005` reports that later exception.
-
-See `test/comparison/README.md` and `test/comparison/reports/comparison.md`.
-The committed report is a frozen snapshot of source commit
-[`e59964669bbc1dbe84d945eb815be499709eb1bc`](https://github.com/alexaka1/structured-logging-analyzers/commit/e59964669bbc1dbe84d945eb815be499709eb1bc),
-not a current parity guarantee.
-
-## Diagnostic ID mapping
-
-| ReSharper / Rider inspection | AASL |
-|---|---|
-| `AnonymousObjectDestructuringProblem` | [AASL0001](rules/AASL0001.md) |
-| `ComplexObjectDestructuringProblem` | [AASL0002](rules/AASL0002.md) |
-| `ComplexObjectInContextDestructuringProblem` | [AASL0003](rules/AASL0003.md) |
-| `ContextualLoggerProblem` | [AASL0004](rules/AASL0004.md) |
-| `ExceptionPassedAsTemplateArgumentProblem` | [AASL0005](rules/AASL0005.md) |
-| `TemplateDuplicatePropertyProblem` | [AASL0006](rules/AASL0006.md) |
-| `TemplateIsNotCompileTimeConstantProblem` | [AASL0007](rules/AASL0007.md) |
-| `PositionalPropertyUsedProblem` | [AASL0008](rules/AASL0008.md) |
-| `InconsistentLogPropertyNaming` | [AASL0009](rules/AASL0009.md) |
-| `InconsistentContextLogPropertyNaming` | [AASL0010](rules/AASL0010.md) |
-| `LogMessageIsSentenceProblem` | [AASL0011](rules/AASL0011.md) |
-| *(no plugin equivalent)* | [AASL0012](rules/AASL0012.md) |
-
-The comparison runner uses the same map in `test/comparison/runner/RuleMap.cs`.
 
 ## Default diagnostic severities
 
@@ -82,15 +35,6 @@ All rules remain enabled by default; none defaults to Error or Hidden.
 Override any default with `.editorconfig` using
 `dotnet_diagnostic.<id>.severity`. For example, restore a warning for positional
 properties with `dotnet_diagnostic.AASL0008.severity = warning`.
-
-## Host differences (not portable)
-
-| Plugin feature | Roslyn equivalent |
-|---|---|
-| `// ReSharper disable once TemplateIsNotCompileTimeConstantProblem` | `#pragma warning disable AASL0007` or `.editorconfig` severity |
-| ReSharper options page | `.editorconfig` keys below |
-| Inspection wiki / PSI highlighting | Diagnostic descriptors and rule docs |
-| Live-template hotspots for interpolation conversion | Deterministic names; extra names as separate code actions |
 
 ## Package consumption
 
@@ -136,16 +80,15 @@ fall through to the next level.
 
 Invalid configuration does not make analyzers throw.
 
-**Correction.** Rule-scoped naming and ignored-property keys take precedence
-over prefix-level keys. An invalid value falls through to the next level, then
+Rule-scoped naming and ignored-property keys take precedence over
+prefix-level keys. An invalid value falls through to the next level, then
 to the built-in default. Earlier versions incorrectly let a valid prefix-level
 key override a valid rule-scoped key.
 
 ## Argument mapping
 
-**Correction.** Template properties are paired with arguments using semantic
-parameter binding (named, optional, `params`, and reordered arguments). The
-plugin used source position after the template argument.
+Template properties are paired with arguments using semantic parameter
+binding (named, optional, `params`, and reordered arguments).
 
 This includes named and reordered arguments to
 `Serilog.Context.LogContext.PushProperty`; its `name`, `value`, and
@@ -174,22 +117,20 @@ when the selected parameter is a string.
 
 ## Mixed templates
 
-**Preserved.** Templates that mix positional and named holes are treated as
-named templates. `AASL0008` is not reported for mixed templates.
+Templates that mix positional and named holes are treated as named
+templates. `AASL0008` is not reported for mixed templates.
 
 ## Non-constant templates
 
-**Preserved / combined pipeline.** Most template-parsing rules skip dynamic
-templates. Exception placement (`AASL0005`) still runs. The analyzer does not
-return early after `AASL0007`.
+Most template-parsing rules skip dynamic templates. Exception placement
+(`AASL0005`) still runs. The analyzer does not return early after `AASL0007`.
 
 ## Exception placement
 
-**Correction.** An exception bound to a parameter before the template (the
-dedicated exception slot) does not suppress [AASL0005](rules/AASL0005.md)
+An exception bound to a parameter before the template (the dedicated
+exception slot) does not suppress [AASL0005](rules/AASL0005.md)
 for later exceptions that are still template arguments, including when
-named arguments put `messageTemplate` before `exception`. The plugin
-returns on the first `Exception` argument in source order.
+named arguments put `messageTemplate` before `exception`.
 
 "Before" and "after" refer to parameter binding, not source argument order.
 Named and reordered arguments therefore behave like their positional forms.
@@ -197,9 +138,8 @@ Type parameters constrained to `Exception` are treated as exception types.
 
 ## Complex-type classification
 
-**Preserved, with characterization tests.** An argument needs destructuring
-when walking its class hierarchy does not find an override of `Object.ToString()`,
-with these exceptions:
+An argument needs destructuring when walking its class hierarchy does not
+find an override of `Object.ToString()`, with these exceptions:
 
 - `object` itself
 - predefined numeric types
@@ -207,22 +147,19 @@ with these exceptions:
 - `Guid`
 - nullable types unwrap to the underlying type
 - exact `System.Collections.Generic.Dictionary<TKey,TValue>` inspects `TKey`
-  (plugin quirk)
 - other generic enumerables inspect the element type
 - interfaces, structs, type parameters, and error types are not flagged
 - anonymous objects are flagged by creation syntax, not `ToString()` heuristics
 
 ## Naming
 
-Replacement for JetBrains `StringUtil` naming:
+Property names are normalized as follows:
 
 - Split on non-alphanumeric separators, camelCase and acronym boundaries,
   and a digit followed by an uppercase letter (`Utf8Bytes` is `Utf8` +
   `Bytes`). A letter followed by a digit stays in the same word.
 - `pascal_case`: capitalize each word; remaining letters in a word are
-  lowercased (`MY_IGNORED` → `MyIgnored`). JetBrains `StringUtil` keeps
-  some all-caps prefixes (`MYIgnored`). This only shows up when such a
-  name is not ignored by regex.
+  lowercased (`MY_IGNORED` → `MyIgnored`).
 - `camel_case`: PascalCase then decapitalize the first letter.
 - `snake_case`: lowercase words joined by `_`.
 - `elastic_naming`: snake_case with `_` replaced by `.`.
@@ -240,7 +177,7 @@ Replacement for JetBrains `StringUtil` naming:
 
 ## Contextual loggers
 
-**Improvement.** Primary constructors are analyzed (upstream issue #130).
+Primary constructors are analyzed for contextual logger mismatches.
 Serilog `ForContext<T>()` calls are checked on `Serilog.ILogger`, concrete
 `Serilog.Core.Logger`, other `ILogger` implementations, and `Serilog.Log`.
 Unresolved category and `ForContext<T>` type arguments are skipped until the
@@ -329,10 +266,6 @@ requires identifier-compatible holes that match its parameters.
 
 ## Source-generated logging (`[LoggerMessage]`)
 
-This is an extension beyond original-plugin parity (upstream
-[#81](https://github.com/olsh/resharper-structured-logging/issues/81) and
-[#64](https://github.com/olsh/resharper-structured-logging/issues/64)).
-
 Analysis targets the attributed method and the attribute message string, not
 generated implementations. The Microsoft generator marks the partial
 implementation with `[GeneratedCode]`, so the analyzer inspects user syntax
@@ -352,7 +285,7 @@ instead of emitting an implementation.
 Placeholder-to-parameter matching is case-insensitive and ignores parameter
 order. The first `ILogger`, `LogLevel`, and `Exception` parameters are
 special; later instances are ordinary template parameters. Format specifiers
-such as `{Value:E}` are preserved.
+such as `{Value:E}` remain unchanged.
 
 | Rule | `[LoggerMessage]` / `Define` |
 |---|---|

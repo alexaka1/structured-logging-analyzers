@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Operations;
 
 using Xunit;
 
-namespace Alexaka1.Analyzers.StructuredLogging.Tests.Parity;
+namespace Alexaka1.Analyzers.StructuredLogging.Tests.Rules;
 
 public sealed class ComplexObjectAnalyzerTests
 {

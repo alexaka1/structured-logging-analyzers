@@ -57,7 +57,7 @@ or newer.
 | Visual Studio 2022 | 17.8 | Matches the 4.8 API pin. |
 | Visual Studio 2026 | 18.0 | Newer Roslyn; analyzer stays on 4.8 APIs. |
 | `dotnet build` / `dotnet format` | SDK compiler that loads Roslyn 4.8+ | CI and samples use the .NET 10 SDK. |
-| Rider, C# Dev Kit, other Roslyn IDEs | Host Roslyn 4.8 or newer | Load this package as a NuGet analyzer, not the JetBrains plugin. |
+| Rider, C# Dev Kit, other Roslyn IDEs | Host Roslyn 4.8 or newer | Load this package as a NuGet analyzer. |
 
 Consumer **project** TFM is independent of the analyzer TFM. Samples cover
 `net10.0` (console and Blazor), `netstandard2.0`, and SDK-style `net472`.
@@ -65,7 +65,7 @@ Support for `net472` means `PackageReference`. `packages.config` install
 scripts are out of scope.
 
 Blazor `.razor` `@code` and `.razor.cs` code-behind are analyzed. See
-[compatibility.md](compatibility.md#razor--blazor).
+[behavior.md](behavior.md#razor--blazor).
 
 ## Package layout (host loading)
 

@@ -2,7 +2,7 @@ using Alexaka1.Analyzers.StructuredLogging.Tests.Infrastructure;
 
 using Xunit;
 
-namespace Alexaka1.Analyzers.StructuredLogging.Tests.Parity;
+namespace Alexaka1.Analyzers.StructuredLogging.Tests.Rules;
 
 public sealed class NamingAnalyzerTests
 {

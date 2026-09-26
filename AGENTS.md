@@ -49,7 +49,7 @@ When communicating, use these terms:
 - **logging library** means Microsoft.Extensions.Logging, Serilog, NLog, or ZLogger. Roslyn is not a logging library.
 - **template** means the structured logging message template being parsed.
 - **rule** means one documented diagnostic in the `AASL0001` through `AASL0012` family.
-- **compatibility contract** means the behavior documented in `docs/compatibility.md`, including intentional differences from the ReSharper plugin.
+- **behavior specification** means the behavior documented in `docs/behavior.md`.
 
 ## The three ways to hurt yourself
 
@@ -69,7 +69,7 @@ The most common bad change here is one that works for the example in front of yo
 - **Configuration.** Test defaults, prefix-level keys, rule-level keys, invalid values, and invalid regexes.
 - **Fixes.** A diagnostic working does not prove its fix is safe. Verify exact spans, rewritten source, trivia, and unsupported shapes.
 - **Package.** Analyzer loading, package entries, sample output, host compatibility, and performance are product behavior.
-- **Docs.** A changed rule is not finished until its rule page and compatibility contract describe what now ships.
+- **Docs.** A changed rule is not finished until its rule page and behavior specification describe what now ships.
 
 ## How it works
 
@@ -79,14 +79,13 @@ Configuration is cached per syntax tree. Regexes are cached per compilation. Dia
 
 Generated-code analysis stays enabled because Razor and `[LoggerMessage]` need it. The analyzer filters generated trees itself.
 
-Read `docs/compatibility.md` before changing rule behavior and `docs/ide-compiler-policy.md` before touching Roslyn or target frameworks.
+Read `docs/behavior.md` before changing rule behavior and `docs/ide-compiler-policy.md` before touching Roslyn or target frameworks.
 
 ## Where code lives
 
 - `src/Alexaka1.Analyzers.StructuredLogging` - analyzers, template parsing, symbol resolution, configuration, and diagnostics.
 - `src/Alexaka1.Analyzers.StructuredLogging.CodeFixes` - safe Roslyn code fixes and source rewriting.
 - `test/Alexaka1.Analyzers.StructuredLogging.Tests` - xUnit.net v3 tests running as a .NET 10 executable.
-- `test/comparison` - legacy InspectCode comparison against the spiritual ancestor ReSharper plugin.
 - `pack/Alexaka1.Analyzers.StructuredLogging` - the analyzer-only NuGet package.
 - `samples` - real consumer projects for .NET 10, Blazor, .NET Standard 2.0, and SDK-style .NET Framework 4.7.2.
 - `docs/rules` - public documentation for each diagnostic.
@@ -133,7 +132,7 @@ If you could not run a relevant check, say exactly which check you skipped and w
 
 Every behavior change needs a focused test that fails without it.
 
-- `Parity` owns analyzer behavior and characterized compatibility.
+- `Rules` owns analyzer behavior for each diagnostic.
 - `Fixes` owns code actions and rewritten source.
 - `Frameworks` owns logging-library integrations and version coverage.
 - `SourceGenerated` owns `[LoggerMessage]`, generator, and Razor behavior.

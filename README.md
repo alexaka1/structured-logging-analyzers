@@ -10,7 +10,8 @@ interpolated-string-handler APIs have no message template and are not analyzed.
 This package inspects structured logging templates in any C# IDE or
 `dotnet build`. It is not affiliated with JetBrains or the maintainers of the
 [ReSharper/Rider Structured Logging plugin](https://github.com/olsh/resharper-structured-logging).
-See [PROVENANCE.md](PROVENANCE.md) and [docs/compatibility.md](docs/compatibility.md).
+Plugin users can read the [migration guide](docs/migrating-from-resharper-plugin.md);
+see [PROVENANCE.md](PROVENANCE.md) for the project's origins.
 
 Package ID: `Alexaka1.Analyzers.StructuredLogging` (diagnostic prefix `AASL`).
 Use the latest version from [NuGet](https://www.nuget.org/packages/Alexaka1.Analyzers.StructuredLogging). `x.y.z` is a placeholder.
@@ -108,8 +109,16 @@ fixed.
 SDK `CA*` / `SYSLIB10xx` rules are recommended alongside this package;
 see [Recommended Microsoft analyzers](#recommended-microsoft-analyzers).
 
+## Credits
+
+The rule set and the original inspection behavior come from
+[resharper-structured-logging](https://github.com/olsh/resharper-structured-logging)
+by Oleg Shevchenko, the ReSharper and Rider Structured Logging plugin. This
+project started as a Roslyn reimplementation of those inspections and has
+grown from there.
+
 ## License
 
 This project is MIT licensed. See [LICENSE](LICENSE).
-The ReSharper plugin is credited in [PROVENANCE.md](PROVENANCE.md), and copied
-test fixtures are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Copied test snippets are listed in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
