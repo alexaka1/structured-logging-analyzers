@@ -294,7 +294,7 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
         var parsed = MessageTemplateParser.Parse(map.Value);
         var allowDestructuring = classifier.SupportsDestructuringOperator(method);
-        AnalyzeTemplateRules(context, invocation, template, arguments, parsed, map, settings, regexCache,
+        AnalyzeTemplateRules(context, template, arguments, parsed, map, settings, regexCache,
             allowDestructuring);
         TemplateStyleRules.AnalyzeTrailingPeriod(
             context,
@@ -307,7 +307,6 @@ public sealed class StructuredLoggingAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeTemplateRules(
         SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
         BoundTemplateArgument template,
         List<BoundTemplateArgument> arguments,
         ParsedTemplate parsed,
