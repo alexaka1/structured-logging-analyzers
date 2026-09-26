@@ -42,8 +42,6 @@ jobs:
           dotnet-version: |
             10.0.x
 
-      # The default xUnit reporter stays silent until the run finishes.
-      # Verbose prints each test as it starts and finishes so CI shows progress.
       - name: Test
         run: >
           dotnet run
