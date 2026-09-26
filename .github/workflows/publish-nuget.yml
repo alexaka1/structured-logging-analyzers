@@ -52,12 +52,16 @@ jobs:
           fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
+      # The default xUnit reporter stays silent until the run finishes.
+      # Verbose prints each test as it starts and finishes so CI shows progress.
       - name: Test
         run: >
           dotnet run
           --project test/Alexaka1.Analyzers.StructuredLogging.Tests/Alexaka1.Analyzers.StructuredLogging.Tests.csproj
           -c Release
           --no-launch-profile
+          --
+          -reporter verbose
 
       - name: Pack
         run: dotnet pack pack/Alexaka1.Analyzers.StructuredLogging/Package.csproj -c Release -o artifacts
