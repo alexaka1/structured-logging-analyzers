@@ -75,6 +75,22 @@ public sealed class PackageAndPerformanceTests
     }
 
     [Fact]
+    public void Packed_nupkg_declares_mit_license_and_ships_license_file()
+    {
+        using var package = Pack();
+        using var zip = ZipFile.OpenRead(package.PackagePath);
+        var metadata = ReadPackageMetadata(zip);
+        var license = metadata.Element(NuspecNamespace + "license");
+
+        Assert.Equal("MIT", license?.Value);
+        Assert.Equal("expression", license?.Attribute("type")?.Value);
+        Assert.Equal(
+            "Copyright (c) 2026 Alex Martossy (alexaka1)",
+            metadata.Element(NuspecNamespace + "copyright")?.Value);
+        Assert.Contains(zip.Entries, entry => entry.FullName == "LICENSE");
+    }
+
+    [Fact]
     public void Packed_analyzer_excludes_workspaces_references()
     {
         using var package = Pack();
