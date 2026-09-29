@@ -1,5 +1,11 @@
 # Alexaka1.Analyzers.StructuredLogging
 
+## 0.1.0-preview.17
+
+### Patch Changes
+
+- [#108](https://github.com/alexaka1/structured-logging-analyzers/pull/108) [`4545f16`](https://github.com/alexaka1/structured-logging-analyzers/commit/4545f160147e2affd9cfd24cabc9d5c267dbf22b) Thanks [@alexaka1](https://github.com/alexaka1)! - The recommended `.editorconfig` now turns CA1727 off because it conflicts with non-PascalCase AASL0009 naming and duplicates AASL0009 under the default.
+
 ## 0.1.0-preview.16
 
 ### Patch Changes

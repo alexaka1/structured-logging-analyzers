@@ -43,12 +43,12 @@ Central package management:
 
 > [!TIP]
 > This package complements the .NET SDK logging rules. After installing,
-> enable these `CA*` diagnostics if they are not already on. Several are
+> add these `CA*` settings if they are not already configured. Several are
 > disabled or only suggestions by default.
 
 ```editorconfig
 [*.cs]
-dotnet_diagnostic.CA1727.severity = suggestion
+dotnet_diagnostic.CA1727.severity = none
 dotnet_diagnostic.CA1848.severity = suggestion
 dotnet_diagnostic.CA2017.severity = warning
 dotnet_diagnostic.CA2023.severity = warning
