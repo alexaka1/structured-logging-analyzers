@@ -32,20 +32,18 @@ dotnet package add Alexaka1.Analyzers.StructuredLogging
 
 > [!TIP]
 > This package complements the .NET SDK logging rules. After installing,
-> enable these `CA*` diagnostics if they are not already on. Several are
+> add these `CA*` settings if they are not already configured. Several are
 > disabled or only suggestions by default.
 
 ```editorconfig
 [*.cs]
+dotnet_diagnostic.CA1727.severity = none
 dotnet_diagnostic.CA1848.severity = suggestion
 dotnet_diagnostic.CA2017.severity = warning
 dotnet_diagnostic.CA2023.severity = warning
 dotnet_diagnostic.CA2253.severity = suggestion
 dotnet_diagnostic.CA2254.severity = warning
 ```
-
-CA1727 is intentionally not recommended because AASL0009 replaces it;
-set `dotnet_diagnostic.CA1727.severity = none` if it is enabled elsewhere.
 
 Projects targeting .NET Standard or .NET Framework also need
 `<EnableNETAnalyzers>true</EnableNETAnalyzers>`. Overlap with AASL rules

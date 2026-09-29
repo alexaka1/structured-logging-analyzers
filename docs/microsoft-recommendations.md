@@ -1,6 +1,6 @@
 # Microsoft shipped logging rules
 
-This package **recommends** enabling the .NET SDK logging rules in the block below
+This package **recommends** the .NET SDK logging rule settings below
 when you install it. They complement, rather than replace, AASL
 diagnostics. Skip any rule you have already configured.
 
@@ -19,6 +19,7 @@ and need no extra enablement.
 
 ```editorconfig
 [*.cs]
+dotnet_diagnostic.CA1727.severity = none
 dotnet_diagnostic.CA1848.severity = suggestion
 dotnet_diagnostic.CA2017.severity = warning
 dotnet_diagnostic.CA2023.severity = warning
@@ -31,12 +32,12 @@ dotnet_diagnostic.CA2254.severity = warning
 | [CA2254](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2254) | Suggestion | MEL templates must be constant expressions | `AASL0007` still runs on Serilog/NLog/ZLogger and on `LoggerMessage.Define` when the format is not constant. `[LoggerMessage]` attribute arguments are already constants, so `AASL0007` is not reported there. |
 | [CA2017](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2017) | Warning | MEL placeholder/argument count | Not reimplemented. `[LoggerMessage]` uses [SYSLIB1014](https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/syslib1014) / [SYSLIB1015](https://learn.microsoft.com/dotnet/fundamentals/syslib-diagnostics/syslib1015). |
 | [CA2253](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2253) | Suggestion | Numeric MEL placeholders | `AASL0008` still runs across frameworks. It adds a rename fix for `[LoggerMessage]` when an unambiguous parameter exists, and for invocations when the aligned argument has a derivable identifier. |
-| [CA1727](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1727) | Disabled | PascalCase MEL placeholders | `AASL0009` supersedes it with configurable naming, an ignore regex, a rename fix, and Serilog/NLog/ZLogger coverage. CA1727 contradicts `AASL0009` under any non-PascalCase `property_naming` and duplicates it under the default. Leave it off; set `dotnet_diagnostic.CA1727.severity = none` if enabled elsewhere. |
+| [CA1727](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1727) | Disabled | PascalCase MEL placeholders | `AASL0009` supersedes it with configurable naming, an ignore regex, a rename fix, and Serilog/NLog/ZLogger coverage. CA1727 contradicts `AASL0009` under any non-PascalCase `property_naming` and duplicates it under the default, so the recommended configuration turns it off. |
 | [CA2023](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca2023) | Warning | Malformed braces in MEL templates | Not reimplemented. Malformed holes are treated as text. |
 | [CA1848](https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1848) | Disabled | Prefer `LoggerMessage` delegates / source generation | Not reimplemented. Performance guidance only. If template naming is `semantic_conventions`, `AASL0012` reports a suggestion on `[LoggerMessage]`. |
 
 On .NET 10+, CA2017 and CA2023 are already warnings when SDK analyzers
-are enabled. Still set CA1848, CA2253, and CA2254 if those are
+are enabled. Still set CA1727, CA1848, CA2253, and CA2254 if those are
 not already configured.
 
 ## `LoggerMessage` generator diagnostics (`SYSLIB10xx`)
