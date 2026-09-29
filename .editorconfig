@@ -13,6 +13,8 @@ indent_size = 4
 dotnet_diagnostic.RS1022.severity = error
 dotnet_diagnostic.RS1038.severity = error
 dotnet_diagnostic.RS1041.severity = error
+dotnet_diagnostic.RS2000.severity = error
+dotnet_diagnostic.RS2001.severity = error
 
 [{*.csproj,*.json,*.json5,*.yml,*.yaml,*.xml,*.props,*.nuspec,*.config}]
 indent_size = 2
