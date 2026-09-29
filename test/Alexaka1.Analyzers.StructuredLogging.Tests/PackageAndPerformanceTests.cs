@@ -64,13 +64,13 @@ public sealed class PackageAndPerformanceTests
                      .StartsWith("Microsoft.CodeAnalysis", StringComparison.OrdinalIgnoreCase));
 
         var metadata = ReadPackageMetadata(zip);
-        var dependencies = metadata.Element(NuspecNamespace + "dependencies");
+        var dependencies = metadata.Element(metadata.Name.Namespace + "dependencies");
         Assert.True(
             dependencies is null || !dependencies.Elements().Any(),
             "The analyzer-only package must not declare NuGet dependencies.");
         Assert.Equal(
             "true",
-            metadata.Element(NuspecNamespace + "developmentDependency")?.Value,
+            metadata.Element(metadata.Name.Namespace + "developmentDependency")?.Value,
             ignoreCase: true);
     }
 
@@ -80,13 +80,13 @@ public sealed class PackageAndPerformanceTests
         using var package = Pack();
         using var zip = ZipFile.OpenRead(package.PackagePath);
         var metadata = ReadPackageMetadata(zip);
-        var license = metadata.Element(NuspecNamespace + "license");
+        var license = metadata.Element(metadata.Name.Namespace + "license");
 
         Assert.Equal("MIT", license?.Value);
         Assert.Equal("expression", license?.Attribute("type")?.Value);
         Assert.Equal(
             "Copyright (c) 2026 Alex Martossy (alexaka1)",
-            metadata.Element(NuspecNamespace + "copyright")?.Value);
+            metadata.Element(metadata.Name.Namespace + "copyright")?.Value);
         Assert.Contains(zip.Entries, entry => entry.FullName == "LICENSE");
     }
 
@@ -118,9 +118,9 @@ public sealed class PackageAndPerformanceTests
         var packageFileName = Path.GetFileName(package.PackagePath);
         File.Copy(package.PackagePath, Path.Combine(feed.DirectoryPath, packageFileName));
         var metadata = ReadPackageMetadata(package);
-        var packageId = metadata.Element(NuspecNamespace + "id")?.Value
+        var packageId = metadata.Element(metadata.Name.Namespace + "id")?.Value
                         ?? throw new InvalidOperationException("Packed package nuspec has no id.");
-        var packageVersion = metadata.Element(NuspecNamespace + "version")?.Value
+        var packageVersion = metadata.Element(metadata.Name.Namespace + "version")?.Value
                              ?? throw new InvalidOperationException("Packed package nuspec has no version.");
         var projectPath = Path.Combine(consumer.DirectoryPath, "Consumer.csproj");
         var sourcePath = Path.Combine(consumer.DirectoryPath, "Program.cs");
@@ -773,8 +773,6 @@ public sealed class PackageAndPerformanceTests
         return stdoutTask.Result + Environment.NewLine + stderrTask.Result;
     }
 
-    private static readonly XNamespace NuspecNamespace = "http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd";
-
 #pragma warning disable RS1036 // This analyzer exists only as a no-op allocation control.
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     private sealed class EmptyAnalyzer : DiagnosticAnalyzer
@@ -803,7 +801,8 @@ public sealed class PackageAndPerformanceTests
             entry => entry.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
         using var stream = nuspec.Open();
         var document = XDocument.Load(stream);
-        var metadata = document.Root?.Element(NuspecNamespace + "metadata");
+        var root = document.Root;
+        var metadata = root?.Element(root.Name.Namespace + "metadata");
         Assert.NotNull(metadata);
         return metadata;
     }
