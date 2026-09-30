@@ -70,9 +70,12 @@ jobs:
           name: nuget-package
           path: artifacts/*.nupkg
           if-no-files-found: error
+          overwrite: true
 
-  github-release:
-    name: Create GitHub release
+  # Draft, push to NuGet, then publish: immutable releases lock assets and tags.
+  # If nuget.org rejects the package, delete the draft and tag before re-tagging the same version.
+  draft-release:
+    name: Create draft GitHub release
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -99,12 +102,6 @@ jobs:
           dotnet-version: |
             10.0.x
 
-      - name: Detect duplicate release
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          VERSION: ${{ needs.build.outputs.version }}
-        run: ./build/detect-duplicate-release.cs "${GITHUB_REF_NAME}" "${VERSION}" "${PACKAGE_NAME}"
-
       - name: Download nupkg
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -119,7 +116,7 @@ jobs:
           ./build/extract-changelog.cs CHANGELOG.md "${output_file}"
           echo "changes=${output_file}" >> "$GITHUB_OUTPUT"
 
-      - name: Create immutable GitHub release
+      - name: Prepare release package
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           VERSION: ${{ needs.build.outputs.version }}
@@ -142,40 +139,56 @@ jobs:
             extra_args+=(--latest)
           fi
 
-          release_state="$(gh release view "${tag}" --json isDraft --jq '.isDraft' 2>/dev/null || true)"
-          if [[ "${release_state}" == "false" ]]; then
-            echo "GitHub release ${tag} is already published; retaining it for this publish retry."
-            exit 0
+          release_error="${RUNNER_TEMP}/release-view.stderr"
+          if ! release_state="$(gh release view "${tag}" --json isDraft --jq '.isDraft' 2>"${release_error}")"; then
+            if grep -qF 'release not found' "${release_error}"; then
+              release_state=""
+            else
+              cat "${release_error}" >&2
+              exit 1
+            fi
           fi
-
+          # The draft asset is the source of truth and may already be on NuGet;
+          # never refresh its assets or metadata on a retry.
           if [[ "${release_state}" == "true" ]]; then
-            echo "GitHub release ${tag} is a draft; refreshing its assets and publishing it."
-            gh release upload "${tag}" "${files[@]}" --clobber
-            gh release edit "${tag}" \
+            echo "GitHub release ${tag} is a draft; reusing it unchanged."
+          elif [[ "${release_state}" == "false" ]]; then
+            echo "GitHub release ${tag} is already published; reusing it unchanged."
+          else
+            ./build/detect-duplicate-release.cs "${VERSION}" "${PACKAGE_NAME}"
+            gh release create "${tag}" \
+              --draft \
               --title "${title}" \
               --notes-file "${NOTES_FILE}" \
-              --draft=false \
-              "${extra_args[@]}"
-            exit 0
+              --generate-notes \
+              "${extra_args[@]}" \
+              "${files[@]}"
           fi
 
-          # Draft first, attach assets, then publish. Immutable releases lock
-          # assets and tags as soon as the release is published.
-          gh release create "${tag}" \
-            --draft \
-            --title "${title}" \
-            --notes-file "${NOTES_FILE}" \
-            --generate-notes \
-            "${extra_args[@]}" \
-            "${files[@]}"
+          gh release download "${tag}" --pattern '*.nupkg' --dir release-package
+          release_files=(release-package/*.nupkg)
+          if [ ${#release_files[@]} -ne 1 ]; then
+            echo "::error::Expected exactly one nupkg in the release."
+            exit 1
+          fi
 
-          gh release edit "${tag}" --draft=false
+          asset_commit="$(unzip -p "${release_files[0]}" "${PACKAGE_NAME}.nuspec" | sed -n 's/.*<repository[^>]* commit="\([^"]*\)".*/\1/p')"
+          if [[ -z "${asset_commit}" || "${asset_commit}" != "$(git rev-parse HEAD)" ]]; then
+            echo "::error::The release asset was not built from the tagged commit; a stale draft must be deleted before re-tagging."
+            exit 1
+          fi
+
+      - name: Upload release package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-package
+          path: release-package/*.nupkg
+          if-no-files-found: error
+          overwrite: true
 
   publish-nuget:
     name: Push to nuget.org
-    needs:
-      - build
-      - github-release
+    needs: draft-release
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: nuget
@@ -192,7 +205,7 @@ jobs:
       - name: Download nupkg
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: nuget-package
+          name: release-package
           path: artifacts
 
       - name: NuGet login
@@ -208,3 +221,35 @@ jobs:
           dotnet nuget push artifacts/*.nupkg
           --api-key "$NUGET_API_KEY"
           --source "$NUGET_SOURCE"
+          --skip-duplicate
+
+  publish-release:
+    name: Publish GitHub release
+    needs: publish-nuget
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - name: Generate GitHub App token to create releases
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Publish draft release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          release_state="$(gh release view "${tag}" --json isDraft --jq '.isDraft')"
+          if [[ "${release_state}" == "true" ]]; then
+            gh release edit "${tag}" --draft=false
+          else
+            echo "GitHub release ${tag} is already published; leaving it unchanged."
+          fi
