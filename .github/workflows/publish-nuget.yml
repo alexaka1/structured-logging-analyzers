@@ -72,8 +72,7 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
-  # Draft, push to NuGet, then publish: immutable releases lock assets and tags.
-  # If nuget.org rejects the package, delete the draft and tag before re-tagging the same version.
+  # The release starts as a draft whose nupkg is used for both the NuGet push and the published release.
   draft-release:
     name: Create draft GitHub release
     needs: build
@@ -186,6 +185,8 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
+  # The draft's asset is pushed to NuGet before the GitHub release is published.
+  # If nuget.org rejects the package, delete the draft and the tag before re-tagging the same version.
   publish-nuget:
     name: Push to nuget.org
     needs: draft-release
@@ -223,6 +224,7 @@ jobs:
           --source "$NUGET_SOURCE"
           --skip-duplicate
 
+  # The draft is published only after the NuGet push succeeds.
   publish-release:
     name: Publish GitHub release
     needs: publish-nuget
